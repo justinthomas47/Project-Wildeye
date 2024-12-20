@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WildEye - Home</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="/static/js/firebase.js" defer></script>
+</head>
+<body>
+    <button onclick="logOut()">Logout</button>
+    <h1>Add Camera Details</h1>
+    <form method="post">
+        <input type="text" name="camera_name" placeholder="Camera Name" required><br>
+        <input type="text" name="rtsp_url" placeholder="RTSP URL" required><br>
+        <input type="text" name="address" placeholder="Address" required><br>
+        <input type="text" name="latitude" placeholder="Latitude"><br>
+        <input type="text" name="longitude" placeholder="Longitude"><br>
+        <button type="submit">Add Camera</button>
+    </form>
+</body>
+</html>
