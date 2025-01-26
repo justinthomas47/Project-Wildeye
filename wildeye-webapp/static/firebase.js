@@ -1,3 +1,7 @@
+// Import Firebase SDK modules
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+
 // Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCIDC0y-ggQxTuvM9FX2u_Q7LCE2QGnSU4",
@@ -7,17 +11,18 @@ const firebaseConfig = {
     messagingSenderId: "539234224023",
     appId: "1:539234224023:web:3361ab33852cbf097166d2",
     measurementId: "G-4Z19900X33"
-  };  
+};
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 // Signup function
 function signUp() {
     const email = document.getElementById("signup-email").value;
     const password = document.getElementById("signup-password").value;
 
-    firebase.auth().createUserWithEmailAndPassword(email, password)
+    createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
             alert("Signup successful!");
         })
@@ -31,7 +36,7 @@ function logIn() {
     const email = document.getElementById("login-email").value;
     const password = document.getElementById("login-password").value;
 
-    firebase.auth().signInWithEmailAndPassword(email, password)
+    signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
             window.location.href = "/home"; // Redirect to home
         })
@@ -42,10 +47,10 @@ function logIn() {
 
 // Logout function
 function logOut() {
-    firebase.auth().signOut()
+    signOut(auth)
         .then(() => {
             alert("Logged out successfully!");
-            window.location.href = "/";
+            window.location.href = "/"; // Redirect to the login page
         })
         .catch((error) => {
             alert(error.message);

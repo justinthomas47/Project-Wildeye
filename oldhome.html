@@ -23,17 +23,6 @@
             padding: 1rem 0;
         }
 
-        .nav-link {
-            color: white;
-            margin: 0 1rem;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .nav-link:hover {
-            color: #60a5fa;
-        }
-
         .form-container {
             max-width: 400px;
             margin: 2rem auto;
@@ -43,7 +32,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .form-container input, .form-container select {
+        .form-container input {
             width: calc(100% - 2rem);
             margin: 0.5rem 1rem;
             padding: 0.75rem;
@@ -83,37 +72,12 @@
         #logout-btn:hover {
             background-color: #b91c1c;
         }
-
-        .show-cameras-btn {
-            display: block;
-            width: 200px;
-            margin: 2rem auto;
-            padding: 1rem;
-            background-color: #2563eb;
-            color: white;
-            text-align: center;
-            border-radius: 8px;
-            font-weight: bold;
-            transition: background-color 0.3s;
-            text-decoration: none;
-        }
-
-        .show-cameras-btn:hover {
-            background-color: #1d4ed8;
-        }
     </style>
 </head>
 <body>
-    <!-- Header with Navigation -->
+    <!-- Header -->
     <header class="flex justify-between items-center px-6">
-        <div class="flex items-center">
-            <h1 class="text-2xl font-bold mr-4">WildEye</h1>
-            <nav>
-                <a href="/about" class="nav-link">About</a>
-                <a href="/contact" class="nav-link">Contact</a>
-                <a href="/faq" class="nav-link">FAQ</a>
-            </nav>
-        </div>
+        <h1 class="text-2xl font-bold">WildEye</h1>
         <button id="logout-btn" onclick="logOut()">Logout</button>
     </header>
 
@@ -121,30 +85,24 @@
     <main class="p-8">
         <div class="form-container">
             <h2 class="text-xl font-semibold text-center mb-4">Add Camera Details</h2>
-            <form method="post" id="cameraForm">
-                <select name="input_type" required class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="" disabled selected>Select Input Type</option>
-                    <option value="rtsp_url">RTSP URL</option>
-                    <option value="youtube_link">YouTube Link</option>
-                    <option value="manual">Local Camera</option>
-                </select>
+            <form method="post">
                 <input type="text" name="camera_name" placeholder="Camera Name" required 
                        class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <input type="text" name="input_value" placeholder="Input Value (URL or details)" required
+                <input type="text" name="rtsp_url" placeholder="RTSP URL" required
                        class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <input type="text" name="google_maps_link" placeholder="Google Maps Link (optional)"
+                <input type="text" name="address" placeholder="Address" required
                        class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <input type="text" name="mobile_number" placeholder="Mobile Number (optional)"
-                       pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number."
+                <input type="text" name="latitude" placeholder="Latitude"
+                       pattern="^-?([1-8]?[0-9]|90)\.[0-9]{1,6}$"
+                       title="Please enter a valid latitude."
+                       class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input type="text" name="longitude" placeholder="Longitude"
+                       pattern="^-?((1[0-7][0-9])|([1-9]?[0-9])|180)\.[0-9]{1,6}$"
+                       title="Please enter a valid longitude."
                        class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <button type="submit">Add Camera</button>
             </form>
         </div>
-
-        <!-- Show Cameras Button -->
-        <a href="/cameras" class="show-cameras-btn hover:bg-blue-700">
-            Show Cameras
-        </a>
     </main>
 
     <script type="module">
@@ -184,13 +142,6 @@
                 window.location.href = '/';
             }
         });
-
-        // Form submission handling
-        document.getElementById('cameraForm').addEventListener('submit', function(e) {
-            const submitButton = this.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Adding Camera...';
-        });
     </script>
 </body>
-</html>
+</html>  

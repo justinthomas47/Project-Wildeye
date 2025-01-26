@@ -4,9 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact WildEye</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Contact Us</h1>
-    <p>Email: support@wildeye.com</p>
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Contact Us</h1>
+        <p>For inquiries, please email: contact@wildeye.com</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
+            authDomain: "wildeye-finalyear.firebaseapp.com",
+            projectId: "wildeye-finalyear",
+            storageBucket: "wildeye-finalyear.firebasestorage.app",
+            messagingSenderId: "836572506957",
+            appId: "1:836572506957:web:22eba4a18f00868032e504",
+            measurementId: "G-X4WDV45CXR"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user && window.location.pathname === '/contact') {
+                window.location.href = '/';
+            }
+        });
+    </script>
 </body>
 </html>

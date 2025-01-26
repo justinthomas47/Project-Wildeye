@@ -1,0 +1,1 @@
+model = YOLO(r"C:\Users\JUSTIN THOMAS\Desktop\Project Final code\runs\detect\wild_animal_detection_model8\weights\best.pt")
