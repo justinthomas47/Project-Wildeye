@@ -8,6 +8,14 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from process_stream import process_stream
 from werkzeug.serving import is_running_from_reloader
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -17,7 +25,7 @@ try:
     firebase_admin.initialize_app(cred)
     db = firestore.client()
 except Exception as e:
-    print(f"Firebase initialization error: {e}")
+    logger.error(f"Firebase initialization error: {e}")
     db = None
 
 # Store active camera streams with thread-safe dictionary
@@ -25,9 +33,10 @@ active_streams = {}
 stream_lock = threading.Lock()
 
 class CameraStream:
-    def __init__(self, input_type, input_value):
+    def __init__(self, input_type, input_value, seek_time=0):
         self.input_type = input_type
         self.input_value = input_value
+        self.seek_time = seek_time
         self.thread = None
         self.frame = None
         self.running = threading.Event()
@@ -48,7 +57,11 @@ class CameraStream:
         while self.running.is_set() and self.reconnect_attempts < self.max_reconnect_attempts:
             try:
                 print(f"Starting stream generator for {self.input_value}")
-                self.stream_generator = process_stream(self.input_type, self.input_value)
+                self.stream_generator = process_stream(
+                    self.input_type, 
+                    self.input_value, 
+                    seek_time=self.seek_time
+                )
                 
                 for frame in self.stream_generator:
                     if not self.running.is_set():
@@ -64,12 +77,15 @@ class CameraStream:
             except Exception as e:
                 print(f"Stream update error: {e}")
                 self.reconnect_attempts += 1
-                time.sleep(2)
+                if self.reconnect_attempts < self.max_reconnect_attempts:
+                    time.sleep(2)
+                    continue
+                break
 
     def get_frame(self):
         with self.frame_lock:
             current_time = time.time()
-            if current_time - self.last_frame_time > 10:
+            if current_time - self.last_frame_time > 5:  # Reduced timeout to 5 seconds
                 self.stop()
                 return None
             return self.frame
@@ -78,10 +94,10 @@ class CameraStream:
         if self.running.is_set():
             self.running.clear()
             if self.thread and self.thread.is_alive():
-                self.thread.join(timeout=5)
+                self.thread.join(timeout=2)  # Reduced timeout to 2 seconds
                 if self.thread.is_alive():
-                    print(f"Warning: Thread didn't terminate properly")
-
+                    print("Warning: Thread didn't terminate properly")
+                    
 def cleanup_streams():
     with stream_lock:
         for stream in active_streams.values():
@@ -163,64 +179,85 @@ def cameras():
     except Exception as e:
         print(f"Error fetching cameras: {e}")
         return render_template("cameras.html", cameras=[], error=str(e))
+    
 @app.route('/video_feed/<camera_name>')
 def video_feed(camera_name):
     def generate():
         try:
-            print(f"Starting video feed for {camera_name}")  # Debug print
+            logger.info(f"Starting video feed for {camera_name}")
             with stream_lock:
                 if camera_name not in active_streams:
                     camera_ref = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
                     
                     if not camera_ref:
+                        logger.error(f"Camera {camera_name} not found in database")
                         return
                         
                     camera_doc = camera_ref[0]
                     camera = camera_doc.to_dict()
                     
+                    # Stop existing stream if any
+                    if camera_name in active_streams:
+                        active_streams[camera_name].stop()
+                        
                     stream = CameraStream(camera["input_type"], camera["input_value"])
                     stream.start()
                     active_streams[camera_name] = stream
+                    
+                    # Give the stream some time to initialize
+                    time.sleep(1)
 
-              # Existing code...
             while True:
+                if camera_name not in active_streams:
+                    logger.error(f"Stream {camera_name} not found in active streams")
+                    break
+                    
                 frame = active_streams[camera_name].get_frame()
-                
                 if frame is None:
-                    print(f"No frame for {camera_name}")  # Debug print
                     time.sleep(0.1)
                     continue
                     
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-                
+                try:
+                    yield frame
+                except Exception as e:
+                    logger.error(f"Error yielding frame: {e}")
+                    break
+                    
         except Exception as e:
-            print(f"Video feed error for {camera_name}: {e}")  # Debug print
+            logger.error(f"Video feed error for {camera_name}: {e}")
+            if camera_name in active_streams:
+                active_streams[camera_name].stop()
+                del active_streams[camera_name]
         
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/camera/<camera_name>/details')
-def camera_details(camera_name):
-    if db is None:
-        return jsonify({"error": "Firebase not initialized"}), 500
-
+@app.route('/camera/<camera_name>/seek', methods=['POST'])
+def seek_video(camera_name):
     try:
-        camera_ref = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
+        data = request.get_json()
+        seconds = data.get('seconds', 0)
         
-        if not camera_ref:
-            return jsonify({"error": "Camera not found"}), 404
-        
-        camera_data = camera_ref[0].to_dict()
-        return jsonify({
-            "camera_name": camera_data.get("camera_name", ""),
-            "input_type": camera_data.get("input_type", ""),
-            "status": "Active" if camera_name in active_streams else "Inactive",
-            "google_maps_link": camera_data.get("google_maps_link", ""),
-            "mobile_number": camera_data.get("mobile_number", ""),
-            "timestamp": camera_data.get("timestamp", "")
-        })
+        with stream_lock:
+            if camera_name in active_streams:
+                # Stop existing stream
+                active_streams[camera_name].stop()
+                
+                # Get camera details from database
+                camera_ref = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
+                if not camera_ref:
+                    return jsonify({"success": False, "error": "Camera not found"})
+                
+                camera = camera_ref[0].to_dict()
+                
+                # Create new stream with seek parameter
+                stream = CameraStream(camera["input_type"], camera["input_value"], seek_time=seconds)
+                stream.start()
+                active_streams[camera_name] = stream
+                
+                return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error seeking video: {e}")
+        return jsonify({"success": False, "error": str(e)})
 
 @app.route('/camera/<camera_name>/remove', methods=['POST'])
 def remove_camera(camera_name):
