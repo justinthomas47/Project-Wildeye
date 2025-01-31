@@ -203,38 +203,109 @@
     </script>
 
     <script>
-        function checkStreamStatus(cameraName) {
-            const img = document.getElementById(`feed-${cameraName.replace(/\s+/g, '-')}`);
-            const statusDiv = img.closest('.camera-card').querySelector('.stream-status');
-            
-            if (!img.complete || img.naturalHeight === 0) {
-                statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
-                handleStreamError(cameraName);
-            } else {
-                statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
-            }
-        }
+       function checkStreamStatus(cameraName) {
+    const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
+    const img = cameraCard.querySelector('img');
+    const statusDiv = cameraCard.querySelector('.stream-status');
+    const spinner = cameraCard.querySelector('.loading-spinner');
+    
+    // Create a timeout to check if the image loads
+    let loadTimeout = setTimeout(() => {
+        statusDiv.innerHTML = '<p class="text-red-500">Stream connection timeout</p>';
+        handleStreamError(cameraName);
+    }, 5000); // Reduced to 5 second timeout
 
-        function handleStreamError(cameraName) {
-            const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
-            const img = cameraCard.querySelector('img');
-            const spinner = cameraCard.querySelector('.loading-spinner');
-            
+    img.onload = function() {
+        clearTimeout(loadTimeout);
+        statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
+        spinner.classList.add('hidden');
+    };
+
+    img.onerror = function() {
+        clearTimeout(loadTimeout);
+        statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
+        handleStreamError(cameraName);
+    };
+}
+
+function handleStreamError(cameraName) {
+    const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
+    const img = cameraCard.querySelector('img');
+    const spinner = cameraCard.querySelector('.loading-spinner');
+    
+    spinner.classList.add('hidden');
+    
+    let retryBtn = cameraCard.querySelector('.retry-btn');
+    if (!retryBtn) {
+        retryBtn = document.createElement('button');
+        retryBtn.className = 'retry-btn bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded mx-auto block mt-2';
+        retryBtn.textContent = 'Reconnect Stream';
+        cameraCard.appendChild(retryBtn);
+    }
+
+    retryBtn.onclick = function() {
+        spinner.classList.remove('hidden');
+        const timestamp = new Date().getTime();
+        img.src = `/video_feed/${cameraName}?t=${timestamp}`;
+        setTimeout(() => checkStreamStatus(cameraName), 1000);
+    };
+}
+
+function seekVideo(cameraName, seconds) {
+    const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
+    const img = cameraCard.querySelector('img');
+    const spinner = cameraCard.querySelector('.loading-spinner');
+    const controlsDiv = cameraCard.querySelector('.video-controls');
+    
+    // Disable seek buttons during seek operation
+    const buttons = controlsDiv.querySelectorAll('button');
+    buttons.forEach(btn => btn.disabled = true);
+    
+    spinner.classList.remove('hidden');
+    
+    fetch(`/camera/${cameraName}/seek`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ seconds: seconds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to seek video');
+        }
+        const timestamp = new Date().getTime();
+        img.src = `/video_feed/${cameraName}?t=${timestamp}`;
+        
+        // Re-enable seek buttons after a short delay
+        setTimeout(() => {
+            buttons.forEach(btn => btn.disabled = false);
             spinner.classList.add('hidden');
-            
-            let retryBtn = cameraCard.querySelector('.retry-btn');
-            if (!retryBtn) {
-                retryBtn = document.createElement('button');
-                retryBtn.className = 'retry-btn bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded mx-auto block mt-2';
-                retryBtn.textContent = 'Reconnect Stream';
-                cameraCard.appendChild(retryBtn);
-            }
+        }, 1000);
+    })
+    .catch(error => {
+        console.error('Error seeking video:', error);
+        alert('Error seeking video: ' + error);
+        buttons.forEach(btn => btn.disabled = false);
+        spinner.classList.add('hidden');
+    });
+}
 
-            retryBtn.onclick = () => {
-                spinner.classList.remove('hidden');
-                img.src = `/video_feed/${cameraName}?t=${Date.now()}`;
-            };
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    const cameras = document.querySelectorAll('.camera-card');
+    cameras.forEach(camera => {
+        const cameraName = camera.id.replace('camera-', '');
+        checkStreamStatus(cameraName);
+        
+        // Periodically check stream status when tab is visible
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                checkStreamStatus(cameraName);
+            }
+        }, 5000); // Check every 5 seconds
+    });
+});
 
         function showCameraDetails(cameraName) {
             const modal = document.getElementById('cameraDetailsModal');
