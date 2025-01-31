@@ -108,6 +108,20 @@ def cleanup_streams():
 def index():
     return render_template("index.html")
 
+@app.route("/reset_password", methods=["POST"])
+def reset_password():
+    if db is None:
+        return jsonify({"error": "Firebase not initialized"}), 500
+
+    try:
+        email = request.json.get("email")
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Error in password reset: {e}")
+        return jsonify({"error": str(e)}), 500
+    
 @app.route("/home", methods=["GET", "POST"])
 def home():
     if db is None:
