@@ -23,6 +23,19 @@
             background-position: center;
         }
 
+        .logo-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .logo-container img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
         @keyframes blurAnimation {
             0% {
                 filter: blur(10px);
@@ -143,6 +156,7 @@
             font-size: 16px;
             color: #333;
             font-weight: 600;
+            margin-bottom: 10px;
         }
 
         .register-link {
@@ -164,9 +178,32 @@
         .hidden {
             display: none;
         }
+
+        .divider {
+            text-align: center;
+            margin: 15px 0;
+            color: #fff;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #fff;
+        }
+
+        .google-btn img {
+            width: 18px;
+            height: 18px;
+        }
     </style>
 </head>
 <body>
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='login_logo.png') }}" alt="WildEye Logo">
+    </div>
+
     <div class="wrapper" id="login-card">
         <h1 class="animated-title">
             <span>W</span>
@@ -191,6 +228,11 @@
                 <a href="#">Forgot Password?</a>
             </div>
             <button type="submit" class="btn">Login</button>
+            <div class="divider">or</div>
+            <button type="button" class="btn google-btn" id="google-signin">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Sign in with Google
+            </button>
             <div class="register-link">
                 <p>Don't have an account? <a href="#" id="to-signup">Register</a></p>
             </div>
@@ -217,6 +259,11 @@
                 <i class='bx bxs-hide show-hide' onclick="togglePassword('signup-password', this)"></i>
             </div>
             <button type="submit" class="btn">Register</button>
+            <div class="divider">or</div>
+            <button type="button" class="btn google-btn" id="google-signup">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Sign up with Google
+            </button>
             <div class="register-link">
                 <p>Already have an account? <a href="#" id="to-login">Login</a></p>
             </div>
@@ -225,7 +272,7 @@
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
@@ -239,6 +286,20 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        
+        // Google Sign In
+        const handleGoogleSignIn = async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                window.location.href = '/home';
+            } catch (error) {
+                alert('Google sign-in failed: ' + error.message);
+            }
+        };
+
+        document.getElementById('google-signin').addEventListener('click', handleGoogleSignIn);
+        document.getElementById('google-signup').addEventListener('click', handleGoogleSignIn);
         
         // Forgot password functionality
         document.querySelector('.remember-forgot a').addEventListener('click', async (e) => {
@@ -303,7 +364,7 @@
                     loginCard.classList.remove('hidden');
                 })
                 .catch((error) => {
-                    alert('Error creating account. Please try again.');
+                    alert('Error creating account: ' + error.message);
                 });
         });
 
