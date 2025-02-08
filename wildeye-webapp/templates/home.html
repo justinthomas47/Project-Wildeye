@@ -15,23 +15,7 @@
             padding: 0;
             background-color: #f4f4f9;
             color: #333;
-        }
-
-        header {
-            background: linear-gradient(to left, #000000, #111827);
-            color: #fff;
-            padding: 1rem 0;
-        }
-
-        .nav-link {
-            color: white;
-            margin: 0 1rem;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .nav-link:hover {
-            color: #60a5fa;
+            min-height: 100vh;
         }
 
         .form-container {
@@ -68,22 +52,6 @@
             background-color: #1e40af;
         }
 
-        #logout-btn {
-            background-color: #dc2626;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            margin: 1rem;
-            cursor: pointer;
-            border-radius: 4px;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-
-        #logout-btn:hover {
-            background-color: #b91c1c;
-        }
-
         .show-cameras-btn {
             display: block;
             width: 200px;
@@ -104,18 +72,7 @@
     </style>
 </head>
 <body>
-    <!-- Header with Navigation -->
-    <header class="flex justify-between items-center px-6">
-        <div class="flex items-center">
-            <h1 class="text-2xl font-bold mr-4">WildEye</h1>
-            <nav>
-                <a href="/about" class="nav-link">About</a>
-                <a href="/contact" class="nav-link">Contact</a>
-                <a href="/faq" class="nav-link">FAQ</a>
-            </nav>
-        </div>
-        <button id="logout-btn" onclick="logOut()">Logout</button>
-    </header>
+    {% include 'includes/navbar.html' %}
 
     <!-- Main Content -->
     <main class="p-8">
@@ -148,42 +105,13 @@
     </main>
 
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-        import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+        import { initAuthStateObserver, logout } from '/static/js/firebase-auth.js';
 
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
-            authDomain: "wildeye-finalyear.firebaseapp.com",
-            projectId: "wildeye-finalyear",
-            storageBucket: "wildeye-finalyear.firebasestorage.app",
-            messagingSenderId: "836572506957",
-            appId: "1:836572506957:web:22eba4a18f00868032e504",
-            measurementId: "G-X4WDV45CXR"
-        };
+        // Initialize auth state observer
+        initAuthStateObserver();
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        // Logout function
-        window.logOut = function() {
-            signOut(auth)
-                .then(() => {
-                    window.location.href = '/';
-                })
-                .catch((error) => {
-                    console.error('Logout Error:', error);
-                    alert('Error logging out. Please try again.');
-                });
-        };
-
-        // Auth state observer
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                window.location.href = '/';
-            }
-        });
+        // Make logout function globally available
+        window.logOut = logout;
 
         // Form submission handling
         document.getElementById('cameraForm').addEventListener('submit', function(e) {

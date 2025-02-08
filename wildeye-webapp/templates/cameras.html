@@ -79,17 +79,7 @@
     </style>
 </head>
 <body>
-    <header class="bg-gradient-to-l from-black to-gray-900 text-white p-4 flex justify-between items-center">
-        <h1 class="text-2xl font-bold">WildEye Camera View</h1>
-        <div>
-            <button onclick="window.location.href='/home'" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mr-2">
-                Back to Home
-            </button>
-            <button id="logout-btn" onclick="logOut()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
-                Logout
-            </button>
-        </div>
-    </header>
+    {% include 'includes/navbar.html' %}
 
     <div class="camera-grid">
         {% if error %}
@@ -168,40 +158,14 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-        import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+        import { initAuthStateObserver, logout } from '/static/js/firebase-auth.js';
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
-            authDomain: "wildeye-finalyear.firebaseapp.com",
-            projectId: "wildeye-finalyear",
-            storageBucket: "wildeye-finalyear.firebasestorage.app",
-            messagingSenderId: "836572506957",
-            appId: "1:836572506957:web:22eba4a18f00868032e504",
-            measurementId: "G-X4WDV45CXR"
-        };
+        // Initialize auth state observer
+        initAuthStateObserver();
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        window.logOut = function() {
-            signOut(auth)
-                .then(() => {
-                    window.location.href = '/';
-                })
-                .catch((error) => {
-                    console.error('Logout Error:', error);
-                    alert('Error logging out. Please try again.');
-                });
-        };
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                window.location.href = '/';
-            }
-        });
+        // Make logout function globally available
+        window.logOut = logout;
     </script>
-
     <script>
        function checkStreamStatus(cameraName) {
     const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);

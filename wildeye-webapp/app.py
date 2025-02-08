@@ -106,7 +106,7 @@ def cleanup_streams():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", current_page='index')
 
 @app.route("/reset_password", methods=["POST"])
 def reset_password():
@@ -155,26 +155,26 @@ def home():
             return redirect(url_for("cameras"))
         except Exception as e:
             print(f"Error adding camera: {e}")
-            return render_template("home.html", error="Failed to add camera")
+            return render_template("home.html", error="Failed to add camera", current_page='home')
 
     try:
         cameras_ref = db.collection("cameras")
         cameras = [doc.to_dict() for doc in cameras_ref.stream()]
-        return render_template("home.html", cameras=cameras)
+        return render_template("home.html", cameras=cameras, current_page='home')
     except:
-        return render_template("home.html", cameras=[], error="Failed to load cameras")
+        return render_template("home.html", cameras=[], error="Failed to load cameras", current_page='home')
 
 @app.route("/about")
 def about():
-    return render_template("about.html")
+    return render_template("about.html", current_page='about')
 
 @app.route("/contact")
 def contact():
-    return render_template("contact.html")
+    return render_template("contact.html", current_page='contact')
 
 @app.route("/faq")
 def faq():
-    return render_template("faq.html")
+    return render_template("faq.html", current_page='faq')
 
 @app.route("/cameras")
 def cameras():
@@ -189,10 +189,10 @@ def cameras():
             camera_data['id'] = doc.id
             cameras.append(camera_data)
         
-        return render_template("cameras.html", cameras=cameras)
+        return render_template("cameras.html", cameras=cameras, current_page='cameras')
     except Exception as e:
         print(f"Error fetching cameras: {e}")
-        return render_template("cameras.html", cameras=[], error=str(e))
+        return render_template("cameras.html", cameras=[], error=str(e), current_page='cameras')
     
 @app.route('/video_feed/<camera_name>')
 def video_feed(camera_name):
@@ -244,6 +244,18 @@ def video_feed(camera_name):
                 del active_streams[camera_name]
         
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/camera/<camera_name>/details')
+def camera_details(camera_name):
+    try:
+        camera_ref = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
+        if not camera_ref:
+            return jsonify({"error": "Camera not found"}), 404
+            
+        camera_data = camera_ref[0].to_dict()
+        return jsonify(camera_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/camera/<camera_name>/seek', methods=['POST'])
 def seek_video(camera_name):

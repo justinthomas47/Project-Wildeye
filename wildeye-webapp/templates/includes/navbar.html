@@ -1,0 +1,63 @@
+<header class="bg-gradient-to-l from-black to-gray-900 text-white py-4 px-6 flex justify-between items-center">
+    <div class="flex items-center">
+        <a href="{% if current_page == 'index' %}/{% else %}/home{% endif %}" 
+           class="text-2xl font-bold mr-4 hover:text-blue-400 transition-colors">
+            WildEye
+        </a>
+        <nav class="space-x-4">
+            {% if current_page != 'index' %}
+                <a href="/home" 
+                   class="text-white hover:text-blue-400 transition-colors {% if current_page == 'home' %}text-blue-400{% endif %}">
+                   Home
+                </a>
+                <a href="/cameras" 
+                   class="text-white hover:text-blue-400 transition-colors {% if current_page == 'cameras' %}text-blue-400{% endif %}">
+                   Cameras
+                </a>
+            {% endif %}
+            <a href="/about" 
+               class="text-white hover:text-blue-400 transition-colors {% if current_page == 'about' %}text-blue-400{% endif %}">
+               About
+            </a>
+            <a href="/contact" 
+               class="text-white hover:text-blue-400 transition-colors {% if current_page == 'contact' %}text-blue-400{% endif %}">
+               Contact
+            </a>
+            <a href="/faq" 
+               class="text-white hover:text-blue-400 transition-colors {% if current_page == 'faq' %}text-blue-400{% endif %}">
+               FAQ
+            </a>
+        </nav>
+    </div>
+    {% if current_page != 'index' %}
+        <button id="logout-btn" 
+                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-bold">
+            Logout
+        </button>
+    {% endif %}
+</header>
+
+{% if current_page != 'index' %}
+<script type="module">
+    import { logout, initAuthStateObserver } from '/static/js/firebase-auth.js';
+
+    // Initialize auth observer
+    initAuthStateObserver();
+
+    // Add logout event listener
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn.disabled = true;
+        logoutBtn.textContent = 'Logging out...';
+
+        try {
+            await logout();
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+            logoutBtn.disabled = false;
+            logoutBtn.textContent = 'Logout';
+        }
+    });
+</script>
+{% endif %}

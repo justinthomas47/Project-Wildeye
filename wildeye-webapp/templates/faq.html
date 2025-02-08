@@ -5,40 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WildEye - FAQ</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            min-height: 100vh;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold mb-4">Frequently Asked Questions</h1>
-        <div class="space-y-4">
-            <div>
-                <h2 class="font-semibold">What is WildEye?</h2>
-                <p>WildEye is an AI-powered system for detecting wild animals using CCTV and YOLOv8.</p>
+    {% include 'includes/navbar.html' %}
+
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-6">Frequently Asked Questions</h1>
+        <div class="space-y-6">
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-3">What is WildEye?</h2>
+                <p class="text-gray-700">WildEye is an AI-powered system for detecting wild animals using CCTV and YOLOv8.</p>
             </div>
+            <!-- Add more FAQ items here -->
         </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
-            authDomain: "wildeye-finalyear.firebaseapp.com",
-            projectId: "wildeye-finalyear",
-            storageBucket: "wildeye-finalyear.firebasestorage.app",
-            messagingSenderId: "836572506957",
-            appId: "1:836572506957:web:22eba4a18f00868032e504",
-            measurementId: "G-X4WDV45CXR"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user && window.location.pathname === '/faq') {
-                window.location.href = '/';
-            }
-        });
+        import { initAuthStateObserver } from '/static/js/firebase-auth.js';
+        
+        // Initialize auth state observer
+        initAuthStateObserver();
     </script>
 </body>
 </html>

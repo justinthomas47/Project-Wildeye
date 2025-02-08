@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WildEye - Login</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -21,19 +22,7 @@
             background: url("{{ url_for('static', filename='bg.jpg') }}") no-repeat;
             background-size: cover;
             background-position: center;
-        }
-
-        .logo-container {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-        }
-
-        .logo-container img {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
+            padding-top: 64px;
         }
 
         @keyframes blurAnimation {
@@ -82,6 +71,7 @@
             color: #fff;
             border-radius: 12px;
             padding: 30px 40px;
+            z-index: 1;
         }
 
         .input-box {
@@ -197,12 +187,29 @@
             width: 18px;
             height: 18px;
         }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
-    <div class="logo-container">
-        <img src="{{ url_for('static', filename='login_logo.png') }}" alt="WildEye Logo">
-    </div>
+    <header class="navbar bg-gradient-to-l from-black to-gray-900 text-white py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center">
+            <a href="/" class="text-2xl font-bold mr-4 hover:text-blue-400 transition-colors">
+                WildEye
+            </a>
+            <nav class="space-x-4">
+                <a href="/about" class="text-white hover:text-blue-400 transition-colors">About</a>
+                <a href="/contact" class="text-white hover:text-blue-400 transition-colors">Contact</a>
+                <a href="/faq" class="text-white hover:text-blue-400 transition-colors">FAQ</a>
+            </nav>
+        </div>
+    </header>
 
     <div class="wrapper" id="login-card">
         <h1 class="animated-title">
@@ -271,35 +278,33 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+        import { 
+            loginWithEmailAndPassword, 
+            registerWithEmailAndPassword, 
+            signInWithGoogle, 
+            resetPassword, 
+            initAuthStateObserver 
+        } from '/static/js/firebase-auth.js';
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
-            authDomain: "wildeye-finalyear.firebaseapp.com",
-            projectId: "wildeye-finalyear",
-            storageBucket: "wildeye-finalyear.firebasestorage.app",
-            messagingSenderId: "836572506957",
-            appId: "1:836572506957:web:22eba4a18f00868032e504",
-            measurementId: "G-X4WDV45CXR"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+        // Initialize auth state observer
+        initAuthStateObserver();
         
         // Google Sign In
-        const handleGoogleSignIn = async () => {
+        document.getElementById('google-signin').addEventListener('click', async () => {
             try {
-                const result = await signInWithPopup(auth, provider);
-                window.location.href = '/home';
+                await signInWithGoogle();
             } catch (error) {
-                alert('Google sign-in failed: ' + error.message);
+                alert(error.message);
             }
-        };
+        });
 
-        document.getElementById('google-signin').addEventListener('click', handleGoogleSignIn);
-        document.getElementById('google-signup').addEventListener('click', handleGoogleSignIn);
+        document.getElementById('google-signup').addEventListener('click', async () => {
+            try {
+                await signInWithGoogle();
+            } catch (error) {
+                alert(error.message);
+            }
+        });
         
         // Forgot password functionality
         document.querySelector('.remember-forgot a').addEventListener('click', async (e) => {
@@ -312,13 +317,14 @@
             }
 
             try {
-                await sendPasswordResetEmail(auth, email);
+                await resetPassword(email);
                 alert('Password reset email sent. Please check your inbox.');
             } catch (error) {
-                alert('Error: ' + error.message);
+                alert(error.message);
             }
         });
 
+        // Login/Signup card toggle
         const loginCard = document.getElementById('login-card');
         const signupCard = document.getElementById('signup-card');
         const toSignup = document.getElementById('to-signup');
@@ -336,44 +342,40 @@
             loginCard.classList.remove('hidden');
         });
 
+        // Login form handler
         const loginForm = document.getElementById('login-form');
-        loginForm.addEventListener('submit', (e) => {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    window.location.href = '/home';
-                })
-                .catch((error) => {
-                    alert('Invalid email or password.');
-                });
+            try {
+                await loginWithEmailAndPassword(email, password);
+            } catch (error) {
+                alert(error.message);
+            }
         });
 
+        // Signup form handler
         const signupForm = document.getElementById('signup-form');
-        signupForm.addEventListener('submit', (e) => {
+        signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
 
-            createUserWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
+            try {
+                const success = await registerWithEmailAndPassword(email, password);
+                if (success) {
                     alert('Account created successfully. Please log in.');
                     signupCard.classList.add('hidden');
                     loginCard.classList.remove('hidden');
-                })
-                .catch((error) => {
-                    alert('Error creating account: ' + error.message);
-                });
-        });
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.location.href = '/home';
+                }
+            } catch (error) {
+                alert(error.message);
             }
         });
 
+        // Password toggle functionality
         window.togglePassword = function(inputId, icon) {
             const input = document.getElementById(inputId);
             if (input.type === 'password') {
