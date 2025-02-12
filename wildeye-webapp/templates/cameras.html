@@ -15,9 +15,11 @@
 
         .camera-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 1.5rem;
             padding: 1.5rem;
+            max-width: 1440px;
+            margin: 0 auto;
         }
 
         .camera-card {
@@ -25,13 +27,16 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            transition: all 0.3s ease;
         }
 
         .video-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%;
+            height: 240px;
+            /* Fixed height */
             background: #f0f0f0;
+            cursor: pointer;
         }
 
         .video-container img {
@@ -43,13 +48,66 @@
             object-fit: cover;
         }
 
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 4px solid #3498db;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        /* Fullscreen styles */
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fullscreen .video-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Fullscreen icons */
+        .expand-icon,
+        .collapse-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .fullscreen .expand-icon {
+            display: none;
+        }
+
+        .fullscreen .collapse-icon {
+            display: inline;
+        }
+
+        :not(.fullscreen) .expand-icon {
+            display: inline;
+        }
+
+        :not(.fullscreen) .collapse-icon {
+            display: none;
         }
 
         @keyframes spin {
@@ -125,13 +183,23 @@
                 </div>
             </div>
 
-            <div class="video-container relative">
+            <div class="video-container" onclick="toggleFullscreen(this)">
                 <img src="{{ url_for('video_feed', camera_name=camera.camera_name) }}"
                     alt="{{ camera.camera_name }} feed" class="absolute top-0 left-0 w-full h-full object-cover"
                     onerror="handleStreamError('{{ camera.camera_name }}')"
                     id="feed-{{ camera.camera_name|lower|replace(' ', '-')|replace('.', '-') }}">
                 <div class="loading-spinner absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 </div>
+                <button class="fullscreen-btn" onclick="event.stopPropagation(); toggleFullscreen(this.parentElement)">
+                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                    </svg>
+                    <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 14h6v6M14 4h6v6M4 14l7-7M20 10l-7 7" />
+                    </svg>
+                    <span class="expand-text">Fullscreen</span>
+                    <span class="collapse-text" style="display: none;">Exit</span>
+                </button>
             </div>
 
             <div class="stream-status text-center p-2"></div>
@@ -182,74 +250,74 @@
         }
 
         function checkStreamStatus(cameraName) {
-    const sanitizedName = sanitizeCameraName(cameraName);
-    const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+            const sanitizedName = sanitizeCameraName(cameraName);
+            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
 
-    if (!cameraCard) {
-        console.error(`Camera card not found for: ${cameraName}`);
-        return;
-    }
+            if (!cameraCard) {
+                console.error(`Camera card not found for: ${cameraName}`);
+                return;
+            }
 
-    const img = cameraCard.querySelector('img');
-    const statusDiv = cameraCard.querySelector('.stream-status');
-    const spinner = cameraCard.querySelector('.loading-spinner');
+            const img = cameraCard.querySelector('img');
+            const statusDiv = cameraCard.querySelector('.stream-status');
+            const spinner = cameraCard.querySelector('.loading-spinner');
 
-    if (!img || !statusDiv || !spinner) {
-        console.error(`Required elements not found for camera: ${cameraName}`);
-        return;
-    }
+            if (!img || !statusDiv || !spinner) {
+                console.error(`Required elements not found for camera: ${cameraName}`);
+                return;
+            }
 
-    console.log(`Attempting to load stream for ${cameraName} from: ${img.src}`);
-    statusDiv.innerHTML = '<p class="text-blue-500">Connecting to stream...</p>';
+            console.log(`Attempting to load stream for ${cameraName} from: ${img.src}`);
+            statusDiv.innerHTML = '<p class="text-blue-500">Connecting to stream...</p>';
 
-    img.onload = function () {
-        console.log(`Stream loaded successfully for ${cameraName}`);
-        statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
-        spinner.classList.add('hidden');
-    };
+            img.onload = function () {
+                console.log(`Stream loaded successfully for ${cameraName}`);
+                statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
+                spinner.classList.add('hidden');
+            };
 
-    img.onerror = function () {
-        console.error(`Stream connection failed for ${cameraName}`);
-        statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
-        handleStreamError(cameraName);
-    };
-}
-
-function handleStreamError(cameraName) {
-    const sanitizedName = sanitizeCameraName(cameraName);
-    const cameraCard = document.getElementById(`camera-${sanitizedName}`);
-
-    if (!cameraCard) {
-        console.error(`Camera card not found for: ${cameraName}`);
-        return;
-    }
-
-    const img = cameraCard.querySelector('img');
-    const spinner = cameraCard.querySelector('.loading-spinner');
-
-    if (spinner) {
-        spinner.classList.add('hidden');
-    }
-
-    let retryBtn = cameraCard.querySelector('.retry-btn');
-    if (!retryBtn) {
-        retryBtn = document.createElement('button');
-        retryBtn.className = 'retry-btn bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded mx-auto block mt-2';
-        retryBtn.textContent = 'Reconnect Stream';
-        cameraCard.appendChild(retryBtn);
-    }
-
-    retryBtn.onclick = function () {
-        if (spinner) {
-            spinner.classList.remove('hidden');
+            img.onerror = function () {
+                console.error(`Stream connection failed for ${cameraName}`);
+                statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
+                handleStreamError(cameraName);
+            };
         }
-        const timestamp = new Date().getTime();
-        if (img) {
-            img.src = `/video_feed/${cameraName}?t=${timestamp}`;
+
+        function handleStreamError(cameraName) {
+            const sanitizedName = sanitizeCameraName(cameraName);
+            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+
+            if (!cameraCard) {
+                console.error(`Camera card not found for: ${cameraName}`);
+                return;
+            }
+
+            const img = cameraCard.querySelector('img');
+            const spinner = cameraCard.querySelector('.loading-spinner');
+
+            if (spinner) {
+                spinner.classList.add('hidden');
+            }
+
+            let retryBtn = cameraCard.querySelector('.retry-btn');
+            if (!retryBtn) {
+                retryBtn = document.createElement('button');
+                retryBtn.className = 'retry-btn bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded mx-auto block mt-2';
+                retryBtn.textContent = 'Reconnect Stream';
+                cameraCard.appendChild(retryBtn);
+            }
+
+            retryBtn.onclick = function () {
+                if (spinner) {
+                    spinner.classList.remove('hidden');
+                }
+                const timestamp = new Date().getTime();
+                if (img) {
+                    img.src = `/video_feed/${cameraName}?t=${timestamp}`;
+                }
+                checkStreamStatus(cameraName);
+            };
         }
-        checkStreamStatus(cameraName);
-    };
-}
 
         function seekVideo(cameraName, seconds) {
             const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
@@ -293,26 +361,26 @@ function handleStreamError(cameraName) {
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-    // Wait a bit longer for initial load
-    setTimeout(() => {
-        const cameras = document.querySelectorAll('.camera-card');
-        cameras.forEach(camera => {
-            const cameraId = camera.id.replace('camera-', '');
-            checkStreamStatus(cameraId);
-        });
-    }, 500);
+            // Wait a bit longer for initial load
+            setTimeout(() => {
+                const cameras = document.querySelectorAll('.camera-card');
+                cameras.forEach(camera => {
+                    const cameraId = camera.id.replace('camera-', '');
+                    checkStreamStatus(cameraId);
+                });
+            }, 500);
 
-    // Set up periodic checking with a longer interval
-    setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            const cameras = document.querySelectorAll('.camera-card');
-            cameras.forEach(camera => {
-                const cameraId = camera.id.replace('camera-', '');
-                checkStreamStatus(cameraId);
-            });
-        }
-    }, 1000000); // Check every 10 seconds instead of 5
-});
+            // Set up periodic checking with a longer interval
+            setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    const cameras = document.querySelectorAll('.camera-card');
+                    cameras.forEach(camera => {
+                        const cameraId = camera.id.replace('camera-', '');
+                        checkStreamStatus(cameraId);
+                    });
+                }
+            }, 1000000); // Check every 10 seconds instead of 5
+        });
 
         function showCameraDetails(cameraName) {
             const modal = document.getElementById('cameraDetailsModal');
@@ -367,29 +435,88 @@ function handleStreamError(cameraName) {
                 });
         }
 
+        function toggleFullscreen(container) {
+            container.classList.toggle('fullscreen');
+            const button = container.querySelector('.fullscreen-btn');
+            const expandText = button.querySelector('.expand-text');
+            const collapseText = button.querySelector('.collapse-text');
+
+            if (container.classList.contains('fullscreen')) {
+                expandText.style.display = 'none';
+                collapseText.style.display = 'inline';
+                document.body.style.overflow = 'hidden';
+            } else {
+                expandText.style.display = 'inline';
+                collapseText.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
         function closeModal() {
             document.getElementById('cameraDetailsModal').style.display = 'none';
         }
 
         function removeCamera(cameraName) {
             if (confirm('Are you sure you want to remove this camera?')) {
-                fetch(`/camera/${cameraName}/remove`, {
+                // Find and disable the camera feed first
+                const sanitizedName = cameraName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+                if (cameraCard) {
+                    // Disable all buttons in the camera card
+                    const buttons = cameraCard.querySelectorAll('button');
+                    buttons.forEach(btn => btn.disabled = true);
+
+                    // Add loading state
+                    cameraCard.style.opacity = '0.5';
+                    cameraCard.style.pointerEvents = 'none';
+                }
+
+                // Send removal request to backend
+                fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.success) {
-                            const cameraCard = document.querySelector(`#camera-${cameraName.replace(' ', '-')}`);
-                            cameraCard.remove();
-                            if (document.querySelector('.camera-grid').children.length === 0) {
-                                window.location.reload();
+                            // Remove the camera card with animation
+                            if (cameraCard) {
+                                cameraCard.style.transition = 'all 0.3s ease';
+                                cameraCard.style.transform = 'scale(0.8)';
+                                cameraCard.style.opacity = '0';
+
+                                setTimeout(() => {
+                                    cameraCard.remove();
+
+                                    // Check if there are any cameras left
+                                    const remainingCameras = document.querySelectorAll('.camera-card');
+                                    if (remainingCameras.length === 0) {
+                                        window.location.reload(); // Reload if no cameras left
+                                    }
+                                }, 300);
                             }
                         } else {
-                            alert('Failed to remove camera: ' + (data.error || 'Unknown error'));
+                            throw new Error(data.error || 'Failed to remove camera');
                         }
                     })
                     .catch(error => {
-                        alert('Error removing camera: ' + error);
+                        console.error('Error removing camera:', error);
+                        alert(`Error removing camera: ${error.message}`);
+
+                        // Restore the camera card if it exists
+                        if (cameraCard) {
+                            cameraCard.style.opacity = '1';
+                            cameraCard.style.pointerEvents = 'auto';
+                            const buttons = cameraCard.querySelectorAll('button');
+                            buttons.forEach(btn => btn.disabled = false);
+                        }
                     });
             }
         }
@@ -438,6 +565,15 @@ function handleStreamError(cameraName) {
                 modal.style.display = 'none';
             }
         };
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                const fullscreenContainer = document.querySelector('.fullscreen');
+                if (fullscreenContainer) {
+                    toggleFullscreen(fullscreenContainer);
+                }
+            }
+        });
     </script>
 </body>
 
