@@ -40,6 +40,8 @@ class VideoProcessor:
     def _frame_producer(self, cap: cv2.VideoCapture) -> None:
         frame_count = 0
         last_frame_time = time.time()
+        consecutive_failures = 0
+        max_failures = 5  # Maximum number of consecutive failures before breaking
 
         while not self.stop_flag.is_set():
             try:
@@ -51,14 +53,23 @@ class VideoProcessor:
 
                 ret, frame = cap.read()
                 if not ret:
-                    logger.warning("Failed to read frame")
-                    break
-
+                    consecutive_failures += 1
+                    logger.warning(f"Failed to read frame ({consecutive_failures}/{max_failures})")
+                    if consecutive_failures >= max_failures:
+                        logger.error("Too many consecutive frame reading failures")
+                        break
+                    time.sleep(0.1)
+                    continue
+                
+                consecutive_failures = 0  # Reset counter on successful frame read
                 frame_count += 1
-                if frame_count % 2 != 0:  # Process every other frame
+                
+                # Process every other frame to reduce load
+                if frame_count % 2 != 0:
                     continue
 
                 try:
+                    # Remove oldest frame if queue is full
                     if self.frame_queue.full():
                         try:
                             self.frame_queue.get_nowait()
@@ -78,6 +89,7 @@ class VideoProcessor:
     def _process_frame(self, worker_id: int, frame_data: tuple) -> tuple:
         frame, timestamp = frame_data
         try:
+            # Perform object detection
             results = self.models[worker_id].predict(
                 frame,
                 device='cuda' if torch.cuda.is_available() else 'cpu',
@@ -101,6 +113,7 @@ class VideoProcessor:
                         'label': label
                     })
 
+                    # Draw bounding box and label
                     cv2.rectangle(processed_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     text = f"{label} ({confidence:.2f})"
                     cv2.putText(processed_frame, text, (x1, y1 - 10),
@@ -132,12 +145,16 @@ class VideoProcessor:
                 logger.error(f"Worker {worker_id} error: {e}")
 
     def process_stream(self, input_type: str, input_value: str, seek_time: int = 0) -> Generator:
-        logger.info(f"Starting stream processing - Type: {input_type}, Seek: {seek_time}")
+        logger.info(f"Starting stream processing - Type: {input_type}, Value: {input_value}, Seek: {seek_time}")
         cap = None
 
         try:
-            stream_source = input_value
-            if input_type == "youtube_link":
+            # Handle different input types
+            if input_type == "manual":
+                # For local camera, input_value should be the camera index
+                stream_source = int(input_value)
+                logger.info(f"Opening local camera at index {stream_source}")
+            elif input_type == "youtube_link":
                 logger.info("Processing YouTube link")
                 ydl_opts = {
                     'format': 'best[ext=mp4]',
@@ -147,23 +164,34 @@ class VideoProcessor:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(input_value, download=False)
                     stream_source = info['url']
+            else:
+                # RTSP URL case
+                stream_source = input_value
 
-            logger.info(f"Opening stream: {stream_source}")
+            logger.info(f"Opening video stream from source: {stream_source}")
             cap = cv2.VideoCapture(stream_source)
-            if not cap.isOpened():
-                raise RuntimeError("Failed to open video stream")
+            
+            # Add buffer size for network streams
+            if isinstance(stream_source, str) and (stream_source.startswith('rtsp://') or stream_source.startswith('http://')):
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
 
-            # Get video FPS
+            if not cap.isOpened():
+                raise RuntimeError(f"Failed to open video stream from source: {stream_source}")
+
+            # Get and validate video FPS
             self.fps = cap.get(cv2.CAP_PROP_FPS)
             if self.fps <= 0 or self.fps > 60:  # Invalid or unreasonable FPS
                 self.fps = 30
             self.frame_time = 1/self.fps
             logger.info(f"Video FPS: {self.fps}")
 
-            # Handle seeking
-            if seek_time > 0:
+            # Handle seeking for video files
+            if seek_time > 0 and input_type != "manual":
                 frame_number = int(seek_time * self.fps)
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+
+            # Reset stop flag
+            self.stop_flag.clear()
 
             # Start frame producer
             producer_thread = threading.Thread(
@@ -176,6 +204,7 @@ class VideoProcessor:
             last_frame_time = time.time()
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_workers) as executor:
+                # Start worker threads
                 futures = [executor.submit(self._frame_processor_worker, worker_id)
                           for worker_id in range(self.num_workers)]
 
@@ -190,6 +219,7 @@ class VideoProcessor:
                             time.sleep(self.frame_time - elapsed)
 
                         if processed_frame is not None:
+                            # Encode frame as JPEG
                             _, buffer = cv2.imencode('.jpg', processed_frame)
                             frame = buffer.tobytes()
                             yield (b'--frame\r\n'
@@ -209,10 +239,14 @@ class VideoProcessor:
         finally:
             logger.info("Stopping stream processing")
             self.stop_flag.set()
+            
+            # Clean up threads
             if 'producer_thread' in locals():
                 producer_thread.join(timeout=5)
             if 'futures' in locals():
                 concurrent.futures.wait(futures, timeout=5)
+                
+            # Release camera/video capture
             if cap is not None:
                 cap.release()
 
@@ -220,7 +254,7 @@ class VideoProcessor:
         self.stop_flag.set()
 
 # Create global VideoProcessor instance
-MODEL_PATH = r"C:\Users\JUSTIN THOMAS\Desktop\Project Final code\runs\detect\wild_animal_detection_model8\weights\best.pt"
+MODEL_PATH = "best.pt"  # Update this to your model path
 video_processor = None
 
 def initialize_processor():
@@ -246,8 +280,37 @@ def process_stream(input_type: str, input_value: str, seek_time: int = 0) -> Gen
         logger.error(f"Stream processing failed: {e}")
         raise
 
+def get_connected_cameras():
+    """
+    Detect and return a list of connected cameras, excluding the built-in webcam
+    Returns: List of dicts containing camera information
+    """
+    available_cameras = []
+    max_cameras_to_check = 10  # Check first 10 indexes
+    
+    for i in range(max_cameras_to_check):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            # Read a test frame
+            ret, _ = cap.read()
+            if ret:
+                # Get camera details
+                backend = cap.getBackendName()
+                camera_name = f"External Camera {i}"
+                
+                # Skip built-in webcam (usually index 0)
+                if i != 0:
+                    available_cameras.append({
+                        "index": i,
+                        "name": camera_name,
+                        "backend": backend
+                    })
+            cap.release()
+    
+    return available_cameras
+
 # Initialize the processor when module is imported
 initialize_processor()
 
-# Export the process_stream function
-__all__ = ['process_stream']
+# Export the necessary functions
+__all__ = ['process_stream', 'get_connected_cameras']

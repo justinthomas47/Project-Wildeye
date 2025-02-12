@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,7 +28,8 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .form-container input, .form-container select {
+        .form-container input,
+        .form-container select {
             width: calc(100% - 2rem);
             margin: 0.5rem 1rem;
             padding: 0.75rem;
@@ -71,6 +73,7 @@
         }
     </style>
 </head>
+
 <body>
     {% include 'includes/navbar.html' %}
 
@@ -85,15 +88,15 @@
                     <option value="youtube_link">YouTube Link</option>
                     <option value="manual">Local Camera</option>
                 </select>
-                <input type="text" name="camera_name" placeholder="Camera Name" required 
-                       class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input type="text" name="camera_name" placeholder="Camera Name" required
+                    class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <input type="text" name="input_value" placeholder="Input Value (URL or details)" required
-                       class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <input type="text" name="google_maps_link" placeholder="Google Maps Link (optional)"
-                       class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <input type="text" name="mobile_number" placeholder="Mobile Number (optional)"
-                       pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number."
-                       class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input type="text" name="mobile_number" placeholder="Mobile Number (optional)" pattern="[0-9]{10}"
+                    title="Please enter a valid 10-digit mobile number."
+                    class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <button type="submit">Add Camera</button>
             </form>
         </div>
@@ -106,7 +109,55 @@
 
     <script type="module">
         import { initAuthStateObserver, logout } from '/static/js/firebase-auth.js';
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            const inputTypeSelect = document.querySelector('select[name="input_type"]');
+            const inputValueField = document.querySelector('input[name="input_value"]');
+            const cameraForm = document.getElementById('cameraForm');
+            const cameraList = document.createElement('select');
+            cameraList.name = 'input_value';
+            cameraList.className = 'focus:ring-2 focus:ring-blue-500 focus:outline-none hidden';
+            cameraList.required = true;
+            inputValueField.parentNode.insertBefore(cameraList, inputValueField.nextSibling);
 
+            inputTypeSelect.addEventListener('change', async function () {
+                if (this.value === 'manual') {
+                    inputValueField.classList.add('hidden');
+                    inputValueField.required = false;
+                    cameraList.classList.remove('hidden');
+                    cameraList.required = true;
+
+                    // Fetch available cameras
+                    try {
+                        const response = await fetch('/get_cameras');
+                        const cameras = await response.json();
+
+                        cameraList.innerHTML = '<option value="" disabled selected>Select Camera</option>';
+                        cameras.forEach(camera => {
+                            const option = document.createElement('option');
+                            option.value = camera.index;
+                            option.textContent = camera.name;
+                            cameraList.appendChild(option);
+                        });
+                    } catch (error) {
+                        console.error('Error fetching cameras:', error);
+                        cameraList.innerHTML = '<option value="" disabled selected>No cameras found</option>';
+                    }
+                } else {
+                    inputValueField.classList.remove('hidden');
+                    inputValueField.required = true;
+                    cameraList.classList.add('hidden');
+                    cameraList.required = false;
+
+                    // Update placeholder based on input type
+                    if (this.value === 'rtsp_url') {
+                        inputValueField.placeholder = 'Enter RTSP URL';
+                    } else if (this.value === 'youtube_link') {
+                        inputValueField.placeholder = 'Enter YouTube URL';
+                    }
+                }
+            });
+        });
         // Initialize auth state observer
         initAuthStateObserver();
 
@@ -114,11 +165,12 @@
         window.logOut = logout;
 
         // Form submission handling
-        document.getElementById('cameraForm').addEventListener('submit', function(e) {
+        document.getElementById('cameraForm').addEventListener('submit', function (e) {
             const submitButton = this.querySelector('button[type="submit"]');
             submitButton.disabled = true;
             submitButton.textContent = 'Adding Camera...';
         });
     </script>
 </body>
+
 </html>
