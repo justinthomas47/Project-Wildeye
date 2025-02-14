@@ -1,3 +1,4 @@
+#process_stream
 import cv2
 from ultralytics import YOLO
 import yt_dlp
@@ -280,35 +281,104 @@ def process_stream(input_type: str, input_value: str, seek_time: int = 0) -> Gen
         logger.error(f"Stream processing failed: {e}")
         raise
 
-def get_connected_cameras():
+def test_camera_connection(camera_index):
     """
-    Detect and return a list of connected cameras, excluding the built-in webcam
-    Returns: List of dicts containing camera information
+    Thoroughly test camera connection and provide detailed diagnostic information
+    Returns: Tuple (bool, dict) - (success status, diagnostic information)
+    """
+    diagnostics = {
+        "index": camera_index,
+        "can_open": False,
+        "backend": None,
+        "frame_read": False,
+        "resolution": None,
+        "fps": None,
+        "error": None,
+        "buffer_size": None
+    }
+    
+    try:
+        # Try to open the camera
+        cap = cv2.VideoCapture(camera_index)
+        
+        # Check if camera opened successfully
+        if not cap.isOpened():
+            diagnostics["error"] = "Failed to open camera"
+            return False, diagnostics
+            
+        diagnostics["can_open"] = True
+        diagnostics["backend"] = cap.getBackendName()
+        
+        # Get current buffer size
+        diagnostics["buffer_size"] = cap.get(cv2.CAP_PROP_BUFFERSIZE)
+        
+        # Try to set a larger buffer size
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
+        
+        # Try reading multiple frames to ensure stable connection
+        frames_read = 0
+        max_test_frames = 5
+        start_time = time.time()
+        
+        while frames_read < max_test_frames and (time.time() - start_time) < 2.0:
+            ret, frame = cap.read()
+            if ret and frame is not None:
+                frames_read += 1
+                
+                if frames_read == 1:
+                    # Get camera properties from first successful frame
+                    diagnostics["resolution"] = f"{int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))}"
+                    diagnostics["fps"] = int(cap.get(cv2.CAP_PROP_FPS))
+        
+        diagnostics["frame_read"] = frames_read > 0
+        
+        if frames_read < max_test_frames:
+            diagnostics["error"] = f"Only read {frames_read}/{max_test_frames} frames"
+            return False, diagnostics
+            
+        return True, diagnostics
+        
+    except Exception as e:
+        diagnostics["error"] = str(e)
+        return False, diagnostics
+        
+    finally:
+        if 'cap' in locals():
+            cap.release()
+
+def get_connected_cameras(verbose=True):
+    """
+    Detect and test all connected cameras with detailed diagnostics
+    Returns: List of dicts containing camera information and diagnostics
     """
     available_cameras = []
-    max_cameras_to_check = 10  # Check first 10 indexes
+    max_cameras_to_check = 10
     
     for i in range(max_cameras_to_check):
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
-            # Read a test frame
-            ret, _ = cap.read()
-            if ret:
-                # Get camera details
-                backend = cap.getBackendName()
-                camera_name = f"External Camera {i}"
-                
-                # Skip built-in webcam (usually index 0)
-                if i != 0:
-                    available_cameras.append({
-                        "index": i,
-                        "name": camera_name,
-                        "backend": backend
-                    })
-            cap.release()
+        success, diagnostics = test_camera_connection(i)
+        
+        if success or diagnostics["can_open"]:
+            camera_info = {
+                "index": i,
+                "name": "Default Webcam" if i == 0 else f"Camera {i}",
+                "status": "OK" if success else "ERROR",
+                **diagnostics
+            }
+            available_cameras.append(camera_info)
+            
+            if verbose:
+                print(f"\nTesting {camera_info['name']} (Index: {i}):")
+                print(f"  Status: {camera_info['status']}")
+                print(f"  Backend: {diagnostics['backend']}")
+                print(f"  Can Open: {diagnostics['can_open']}")
+                print(f"  Frame Read: {diagnostics['frame_read']}")
+                print(f"  Resolution: {diagnostics['resolution']}")
+                print(f"  FPS: {diagnostics['fps']}")
+                print(f"  Buffer Size: {diagnostics['buffer_size']}")
+                if diagnostics['error']:
+                    print(f"  Error: {diagnostics['error']}")
     
     return available_cameras
-
 # Initialize the processor when module is imported
 initialize_processor()
 
