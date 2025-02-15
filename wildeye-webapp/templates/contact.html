@@ -6,32 +6,147 @@
     <title>Contact WildEye</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
+            background: linear-gradient(-45deg, #1a1a1a, #2c2c2c, #3a3a3a, #1f1f1f);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
             min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .container {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .contact-icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+
+        input, textarea {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        nav {
+            background: #1a1a1a;
+            padding: 15px 20px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 20px;
+        }
+        nav .brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 20px;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 10px 15px;
+            transition: background 0.3s, color 0.3s;
+        }
+        nav ul li a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
         }
     </style>
 </head>
-<body>
-    {% include 'includes/navbar.html' %}
+<body class="flex items-center justify-center">
+    <nav>
+        <span class="brand">WildEye</span>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact">Contact</a></li>
+        </ul>
+    </nav>
 
-    <div class="container mx-auto p-8">
-        <h1 class="text-3xl font-bold mb-6">Contact Us</h1>
-        <div class="bg-white shadow-lg rounded-lg p-6">
-            <p class="text-lg mb-4">For inquiries, please email: contact@wildeye.com</p>
-            <!-- Add more contact information or a contact form here -->
+    <div class="container mx-auto p-8 max-w-md mt-20">
+        <h1 class="text-3xl font-bold mb-6 text-center text-white">Contact WildEye</h1>
+        
+        <form class="space-y-4">
+            <div>
+                <label for="name" class="block mb-1 font-medium text-gray-300">Name</label>
+                <input type="text" id="name" name="name" class="w-full px-3 py-2 border rounded-md" required>
+            </div>
+            <div>
+                <label for="email" class="block mb-1 font-medium text-gray-300">Email</label>
+                <input type="email" id="email" name="email" class="w-full px-3 py-2 border rounded-md" required>
+            </div>
+            <div>
+                <label for="message" class="block mb-1 font-medium text-gray-300">Message</label>
+                <textarea id="message" name="message" rows="4" class="w-full px-3 py-2 border rounded-md" required></textarea>
+            </div>
+            <button type="submit" class="w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-600 transition duration-300">Send Message</button>
+        </form>
+
+        <div class="mt-8 text-center text-gray-300">
+            <p class="mb-2"><span class="contact-icon">📧</span>Email: contact@wildeye.com</p>
+            <p class="mb-2"><span class="contact-icon">📞</span>Phone: +1 (123) 456-7890</p>
+            <p><span class="contact-icon">📍</span>Address: 123 WildEye Street, Nature City, 12345</p>
         </div>
     </div>
 
     <script type="module">
-        import { initAuthStateObserver } from '/static/js/firebase-auth.js';
-        
-        // Initialize auth state observer
-        initAuthStateObserver();
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
+            authDomain: "wildeye-finalyear.firebaseapp.com",
+            projectId: "wildeye-finalyear",
+            storageBucket: "wildeye-finalyear.firebasestorage.app",
+            messagingSenderId: "836572506957",
+            appId: "1:836572506957:web:22eba4a18f00868032e504",
+            measurementId: "G-X4WDV45CXR"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user && window.location.pathname === '/contact') {
+                window.location.href = '/';
+            }
+        });
     </script>
 </body>
 </html>
