@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,9 +15,11 @@
 
         .camera-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 1.5rem;
             padding: 1.5rem;
+            max-width: 1440px;
+            margin: 0 auto;
         }
 
         .camera-card {
@@ -24,13 +27,16 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            transition: all 0.3s ease;
         }
 
         .video-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%;
+            height: 240px;
+            /* Fixed height */
             background: #f0f0f0;
+            cursor: pointer;
         }
 
         .video-container img {
@@ -42,18 +48,76 @@
             object-fit: cover;
         }
 
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-radius: 50%;
-            border-top: 4px solid #3498db;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        /* Fullscreen styles */
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fullscreen .video-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Fullscreen icons */
+        .expand-icon,
+        .collapse-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .fullscreen .expand-icon {
+            display: none;
+        }
+
+        .fullscreen .collapse-icon {
+            display: inline;
+        }
+
+        :not(.fullscreen) .expand-icon {
+            display: inline;
+        }
+
+        :not(.fullscreen) .collapse-icon {
+            display: none;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .modal {
@@ -78,69 +142,82 @@
         }
     </style>
 </head>
+
 <body>
     {% include 'includes/navbar.html' %}
 
     <div class="camera-grid">
         {% if error %}
-            <div class="col-span-full text-center p-4 bg-red-100 text-red-700 rounded">
-                {{ error }}
-                <p class="mt-2">
-                    <button onclick="window.location.reload()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
-                        Retry
-                    </button>
-                </p>
-            </div>
+        <div class="col-span-full text-center p-4 bg-red-100 text-red-700 rounded">
+            {{ error }}
+            <p class="mt-2">
+                <button onclick="window.location.reload()"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+                    Retry
+                </button>
+            </p>
+        </div>
         {% elif not cameras %}
-            <div class="col-span-full text-center p-4 bg-yellow-100 text-yellow-700 rounded">
-                <p class="text-lg font-semibold mb-2">No cameras found</p>
-                <p class="mb-4">Please add a camera from the home page.</p>
-                <button onclick="window.location.href='/home'" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded">
-                    Add Camera
+        <div class="col-span-full text-center p-4 bg-yellow-100 text-yellow-700 rounded">
+            <p class="text-lg font-semibold mb-2">No cameras found</p>
+            <p class="mb-4">Please add a camera from the home page.</p>
+            <button onclick="window.location.href='/home'"
+                class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded">
+                Add Camera
+            </button>
+        </div>
+        {% else %}
+        {% for camera in cameras %}
+        <div class="camera-card" id="camera-{{ camera.camera_name|lower|replace(' ', '-')|replace('.', '-') }}">
+            <div class="p-3 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">{{ camera.camera_name }}</h3>
+                <div class="flex gap-2">
+                    <button onclick="showCameraDetails('{{ camera.camera_name }}')"
+                        class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                        Details
+                    </button>
+                    <button onclick="removeCamera('{{ camera.camera_name }}')"
+                        class="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                        Remove
+                    </button>
+                </div>
+            </div>
+
+            <div class="video-container" onclick="toggleFullscreen(this)">
+                <img src="{{ url_for('video_feed', camera_name=camera.camera_name) }}"
+                    alt="{{ camera.camera_name }} feed" class="absolute top-0 left-0 w-full h-full object-cover"
+                    onerror="handleStreamError('{{ camera.camera_name }}')"
+                    id="feed-{{ camera.camera_name|lower|replace(' ', '-')|replace('.', '-') }}">
+                <div class="loading-spinner absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                </div>
+                <button class="fullscreen-btn" onclick="event.stopPropagation(); toggleFullscreen(this.parentElement)">
+                    <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                    </svg>
+                    <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 14h6v6M14 4h6v6M4 14l7-7M20 10l-7 7" />
+                    </svg>
+                    <span class="expand-text">Fullscreen</span>
+                    <span class="collapse-text" style="display: none;">Exit</span>
                 </button>
             </div>
-        {% else %}
-            {% for camera in cameras %}
-            <div class="camera-card" id="camera-{{ camera.camera_name|replace(' ', '-') }}">
-                <div class="p-3 border-b flex justify-between items-center">
-                    <h3 class="text-lg font-semibold">{{ camera.camera_name }}</h3>
-                    <div class="flex gap-2">
-                        <button onclick="showCameraDetails('{{ camera.camera_name }}')" 
-                                class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
-                            Details
-                        </button>
-                        <button onclick="removeCamera('{{ camera.camera_name }}')" 
-                                class="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
-                            Remove
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="video-container relative">
-                    <img src="{{ url_for('video_feed', camera_name=camera.camera_name) }}" 
-                         alt="{{ camera.camera_name }} feed"
-                         class="absolute top-0 left-0 w-full h-full object-cover"
-                         onerror="handleStreamError('{{ camera.camera_name }}')"
-                         id="feed-{{ camera.camera_name|replace(' ', '-') }}">
-                    <div class="loading-spinner absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
-                </div>
-                
-                <div class="stream-status text-center p-2"></div>
-                
-                {% if camera.input_type == 'youtube_link' %}
-                <div class="video-controls flex justify-center gap-2 p-2 bg-gray-100">
-                    <button onclick="seekVideo('{{ camera.camera_name }}', -10)" 
-                            class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
-                        -10s
-                    </button>
-                    <button onclick="seekVideo('{{ camera.camera_name }}', 10)" 
-                            class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
-                        +10s
-                    </button>
-                </div>
-                {% endif %}
+
+            <div class="stream-status text-center p-2"></div>
+
+            {% if camera.input_type == 'youtube_link' %}
+            <div class="video-controls flex justify-center gap-2 p-2 bg-gray-100">
+                <button onclick="seekVideo('{{ camera.camera_name }}', -10)"
+                    class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                    -10s
+                </button>
+                <button onclick="seekVideo('{{ camera.camera_name }}', 10)"
+                    class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                    +10s
+                </button>
             </div>
-            {% endfor %}
+            {% endif %}
+        </div>
+        {% endfor %}
         {% endif %}
     </div>
 
@@ -167,109 +244,143 @@
         window.logOut = logout;
     </script>
     <script>
-       function checkStreamStatus(cameraName) {
-    const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
-    const img = cameraCard.querySelector('img');
-    const statusDiv = cameraCard.querySelector('.stream-status');
-    const spinner = cameraCard.querySelector('.loading-spinner');
-    
-    // Create a timeout to check if the image loads
-    let loadTimeout = setTimeout(() => {
-        statusDiv.innerHTML = '<p class="text-red-500">Stream connection timeout</p>';
-        handleStreamError(cameraName);
-    }, 5000); // Reduced to 5 second timeout
-
-    img.onload = function() {
-        clearTimeout(loadTimeout);
-        statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
-        spinner.classList.add('hidden');
-    };
-
-    img.onerror = function() {
-        clearTimeout(loadTimeout);
-        statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
-        handleStreamError(cameraName);
-    };
-}
-
-function handleStreamError(cameraName) {
-    const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
-    const img = cameraCard.querySelector('img');
-    const spinner = cameraCard.querySelector('.loading-spinner');
-    
-    spinner.classList.add('hidden');
-    
-    let retryBtn = cameraCard.querySelector('.retry-btn');
-    if (!retryBtn) {
-        retryBtn = document.createElement('button');
-        retryBtn.className = 'retry-btn bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded mx-auto block mt-2';
-        retryBtn.textContent = 'Reconnect Stream';
-        cameraCard.appendChild(retryBtn);
-    }
-
-    retryBtn.onclick = function() {
-        spinner.classList.remove('hidden');
-        const timestamp = new Date().getTime();
-        img.src = `/video_feed/${cameraName}?t=${timestamp}`;
-        setTimeout(() => checkStreamStatus(cameraName), 1000);
-    };
-}
-
-function seekVideo(cameraName, seconds) {
-    const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
-    const img = cameraCard.querySelector('img');
-    const spinner = cameraCard.querySelector('.loading-spinner');
-    const controlsDiv = cameraCard.querySelector('.video-controls');
-    
-    // Disable seek buttons during seek operation
-    const buttons = controlsDiv.querySelectorAll('button');
-    buttons.forEach(btn => btn.disabled = true);
-    
-    spinner.classList.remove('hidden');
-    
-    fetch(`/camera/${cameraName}/seek`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ seconds: seconds })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to seek video');
+        // Helper function to sanitize camera names for use in IDs
+        function sanitizeCameraName(name) {
+            return name.toLowerCase().replace(/[^a-z0-9]/g, '-');
         }
-        const timestamp = new Date().getTime();
-        img.src = `/video_feed/${cameraName}?t=${timestamp}`;
-        
-        // Re-enable seek buttons after a short delay
-        setTimeout(() => {
-            buttons.forEach(btn => btn.disabled = false);
-            spinner.classList.add('hidden');
-        }, 1000);
-    })
-    .catch(error => {
-        console.error('Error seeking video:', error);
-        alert('Error seeking video: ' + error);
-        buttons.forEach(btn => btn.disabled = false);
-        spinner.classList.add('hidden');
-    });
-}
 
-document.addEventListener('DOMContentLoaded', function() {
-    const cameras = document.querySelectorAll('.camera-card');
-    cameras.forEach(camera => {
-        const cameraName = camera.id.replace('camera-', '');
-        checkStreamStatus(cameraName);
-        
-        // Periodically check stream status when tab is visible
-        setInterval(() => {
-            if (document.visibilityState === 'visible') {
-                checkStreamStatus(cameraName);
+        function checkStreamStatus(cameraName) {
+            const sanitizedName = sanitizeCameraName(cameraName);
+            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+
+            if (!cameraCard) {
+                console.error(`Camera card not found for: ${cameraName}`);
+                return;
             }
-        }, 5000); // Check every 5 seconds
-    });
-});
+
+            const img = cameraCard.querySelector('img');
+            const statusDiv = cameraCard.querySelector('.stream-status');
+            const spinner = cameraCard.querySelector('.loading-spinner');
+
+            if (!img || !statusDiv || !spinner) {
+                console.error(`Required elements not found for camera: ${cameraName}`);
+                return;
+            }
+
+            console.log(`Attempting to load stream for ${cameraName} from: ${img.src}`);
+            statusDiv.innerHTML = '<p class="text-blue-500">Connecting to stream...</p>';
+
+            img.onload = function () {
+                console.log(`Stream loaded successfully for ${cameraName}`);
+                statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
+                spinner.classList.add('hidden');
+            };
+
+            img.onerror = function () {
+                console.error(`Stream connection failed for ${cameraName}`);
+                statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
+                handleStreamError(cameraName);
+            };
+        }
+
+        function handleStreamError(cameraName) {
+            const sanitizedName = sanitizeCameraName(cameraName);
+            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+
+            if (!cameraCard) {
+                console.error(`Camera card not found for: ${cameraName}`);
+                return;
+            }
+
+            const img = cameraCard.querySelector('img');
+            const spinner = cameraCard.querySelector('.loading-spinner');
+
+            if (spinner) {
+                spinner.classList.add('hidden');
+            }
+
+            let retryBtn = cameraCard.querySelector('.retry-btn');
+            if (!retryBtn) {
+                retryBtn = document.createElement('button');
+                retryBtn.className = 'retry-btn bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded mx-auto block mt-2';
+                retryBtn.textContent = 'Reconnect Stream';
+                cameraCard.appendChild(retryBtn);
+            }
+
+            retryBtn.onclick = function () {
+                if (spinner) {
+                    spinner.classList.remove('hidden');
+                }
+                const timestamp = new Date().getTime();
+                if (img) {
+                    img.src = `/video_feed/${cameraName}?t=${timestamp}`;
+                }
+                checkStreamStatus(cameraName);
+            };
+        }
+
+        function seekVideo(cameraName, seconds) {
+            const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
+            const img = cameraCard.querySelector('img');
+            const spinner = cameraCard.querySelector('.loading-spinner');
+            const controlsDiv = cameraCard.querySelector('.video-controls');
+
+            // Disable seek buttons during seek operation
+            const buttons = controlsDiv.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            spinner.classList.remove('hidden');
+
+            fetch(`/camera/${cameraName}/seek`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ seconds: seconds })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.error || 'Failed to seek video');
+                    }
+                    const timestamp = new Date().getTime();
+                    img.src = `/video_feed/${cameraName}?t=${timestamp}`;
+
+                    // Re-enable seek buttons after a short delay
+                    setTimeout(() => {
+                        buttons.forEach(btn => btn.disabled = false);
+                        spinner.classList.add('hidden');
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error('Error seeking video:', error);
+                    alert('Error seeking video: ' + error);
+                    buttons.forEach(btn => btn.disabled = false);
+                    spinner.classList.add('hidden');
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Wait a bit longer for initial load
+            setTimeout(() => {
+                const cameras = document.querySelectorAll('.camera-card');
+                cameras.forEach(camera => {
+                    const cameraId = camera.id.replace('camera-', '');
+                    checkStreamStatus(cameraId);
+                });
+            }, 500);
+
+            // Set up periodic checking with a longer interval
+            setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    const cameras = document.querySelectorAll('.camera-card');
+                    cameras.forEach(camera => {
+                        const cameraId = camera.id.replace('camera-', '');
+                        checkStreamStatus(cameraId);
+                    });
+                }
+            }, 1000000); // Check every 10 seconds instead of 5
+        });
 
         function showCameraDetails(cameraName) {
             const modal = document.getElementById('cameraDetailsModal');
@@ -324,30 +435,89 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         }
 
+        function toggleFullscreen(container) {
+            container.classList.toggle('fullscreen');
+            const button = container.querySelector('.fullscreen-btn');
+            const expandText = button.querySelector('.expand-text');
+            const collapseText = button.querySelector('.collapse-text');
+
+            if (container.classList.contains('fullscreen')) {
+                expandText.style.display = 'none';
+                collapseText.style.display = 'inline';
+                document.body.style.overflow = 'hidden';
+            } else {
+                expandText.style.display = 'inline';
+                collapseText.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
         function closeModal() {
             document.getElementById('cameraDetailsModal').style.display = 'none';
         }
 
         function removeCamera(cameraName) {
             if (confirm('Are you sure you want to remove this camera?')) {
-                fetch(`/camera/${cameraName}/remove`, {
+                // Find and disable the camera feed first
+                const sanitizedName = cameraName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+                if (cameraCard) {
+                    // Disable all buttons in the camera card
+                    const buttons = cameraCard.querySelectorAll('button');
+                    buttons.forEach(btn => btn.disabled = true);
+
+                    // Add loading state
+                    cameraCard.style.opacity = '0.5';
+                    cameraCard.style.pointerEvents = 'none';
+                }
+
+                // Send removal request to backend
+                fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const cameraCard = document.querySelector(`#camera-${cameraName.replace(' ', '-')}`);
-                        cameraCard.remove();
-                        if (document.querySelector('.camera-grid').children.length === 0) {
-                            window.location.reload();
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
                         }
-                    } else {
-                        alert('Failed to remove camera: ' + (data.error || 'Unknown error'));
-                    }
-                })
-                .catch(error => {
-                    alert('Error removing camera: ' + error);
-                });
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the camera card with animation
+                            if (cameraCard) {
+                                cameraCard.style.transition = 'all 0.3s ease';
+                                cameraCard.style.transform = 'scale(0.8)';
+                                cameraCard.style.opacity = '0';
+
+                                setTimeout(() => {
+                                    cameraCard.remove();
+
+                                    // Check if there are any cameras left
+                                    const remainingCameras = document.querySelectorAll('.camera-card');
+                                    if (remainingCameras.length === 0) {
+                                        window.location.reload(); // Reload if no cameras left
+                                    }
+                                }, 300);
+                            }
+                        } else {
+                            throw new Error(data.error || 'Failed to remove camera');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error removing camera:', error);
+                        alert(`Error removing camera: ${error.message}`);
+
+                        // Restore the camera card if it exists
+                        if (cameraCard) {
+                            cameraCard.style.opacity = '1';
+                            cameraCard.style.pointerEvents = 'auto';
+                            const buttons = cameraCard.querySelectorAll('button');
+                            buttons.forEach(btn => btn.disabled = false);
+                        }
+                    });
             }
         }
 
@@ -355,9 +525,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const cameraCard = document.querySelector(`#camera-${cameraName.replace(' ', '-')}`);
             const imgElement = cameraCard.querySelector('img');
             const spinner = cameraCard.querySelector('.loading-spinner');
-            
+
             spinner.classList.remove('hidden');
-            
+
             fetch(`/camera/${cameraName}/seek`, {
                 method: 'POST',
                 headers: {
@@ -365,22 +535,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ seconds: seconds })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    throw new Error(data.error || 'Failed to seek video');
-                }
-                imgElement.src = `/video_feed/${cameraName}?t=${Date.now()}`;
-            })
-            .catch(error => {
-                alert('Error seeking video: ' + error);
-            })
-            .finally(() => {
-                spinner.classList.add('hidden');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error(data.error || 'Failed to seek video');
+                    }
+                    imgElement.src = `/video_feed/${cameraName}?t=${Date.now()}`;
+                })
+                .catch(error => {
+                    alert('Error seeking video: ' + error);
+                })
+                .finally(() => {
+                    spinner.classList.add('hidden');
+                });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const cameras = document.querySelectorAll('.camera-card');
             cameras.forEach(camera => {
                 const cameraName = camera.id.replace('camera-', '');
@@ -389,12 +559,22 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const modal = document.getElementById('cameraDetailsModal');
             if (event.target === modal) {
                 modal.style.display = 'none';
             }
         };
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                const fullscreenContainer = document.querySelector('.fullscreen');
+                if (fullscreenContainer) {
+                    toggleFullscreen(fullscreenContainer);
+                }
+            }
+        });
     </script>
 </body>
+
 </html>

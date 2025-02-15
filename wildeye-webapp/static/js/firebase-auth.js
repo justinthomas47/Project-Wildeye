@@ -1,16 +1,15 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-import { 
-    getAuth, 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, 
-    signOut, 
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
     onAuthStateChanged,
     sendPasswordResetEmail,
     GoogleAuthProvider,
     signInWithPopup
-} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
-// Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
     authDomain: "wildeye-finalyear.firebaseapp.com",
@@ -21,47 +20,61 @@ const firebaseConfig = {
     measurementId: "G-X4WDV45CXR"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 // Auth state observer
 export function initAuthStateObserver() {
+    const publicPages = ['/', '/about', '/contact', '/faq'];
+    const currentPath = window.location.pathname;
+    
     onAuthStateChanged(auth, (user) => {
-        if (!user && window.location.pathname !== '/') {
-            window.location.href = '/';
+        if (user) {
+            if (currentPath === '/') {
+                window.location.href = '/home';
+            }
+        } else {
+            if (!publicPages.includes(currentPath)) {
+                window.location.href = '/';
+            }
         }
     });
 }
 
-// Login function
+// Sign in with email/password
 export async function loginWithEmailAndPassword(email, password) {
     try {
         await signInWithEmailAndPassword(auth, email, password);
         window.location.href = '/home';
     } catch (error) {
+        console.error('Login error:', error);
         throw new Error('Invalid email or password.');
     }
 }
 
-// Register function
+// Register with email/password
 export async function registerWithEmailAndPassword(email, password) {
     try {
         await createUserWithEmailAndPassword(auth, email, password);
         return true;
     } catch (error) {
-        throw new Error('Error creating account: ' + error.message);
+        console.error('Registration error:', error);
+        throw new Error(error.message);
     }
 }
 
 // Google sign in
 export async function signInWithGoogle() {
     try {
+        provider.setCustomParameters({
+            prompt: 'select_account'
+        });
         await signInWithPopup(auth, provider);
         window.location.href = '/home';
     } catch (error) {
-        throw new Error('Google sign-in failed: ' + error.message);
+        console.error('Google sign-in error:', error);
+        throw error;
     }
 }
 
@@ -71,16 +84,18 @@ export async function resetPassword(email) {
         await sendPasswordResetEmail(auth, email);
         return true;
     } catch (error) {
-        throw new Error('Error: ' + error.message);
+        console.error('Password reset error:', error);
+        throw new Error('Failed to send password reset email: ' + error.message);
     }
 }
 
-// Logout function
+// Handle sign out
 export async function logout() {
     try {
         await signOut(auth);
         window.location.href = '/';
     } catch (error) {
-        throw new Error('Error logging out. Please try again.');
+        console.error('Logout error:', error);
+        throw new Error('Failed to log out. Please try again.');
     }
 }

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Detection History{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <div class="p-8">
+        <h1 class="text-2xl font-bold mb-6">Detection History</h1>
+        
+        {% if error %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+        
+        <div class="grid gap-4">
+            {% if logs %}
+                {% for log in logs %}
+                <div class="bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow duration-200">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-gray-800">{{ log.animal }}</h3>
+                            <p class="text-gray-600 text-sm">{{ log.timestamp }}</p>
+                            <div class="mt-2 space-y-1">
+                                <p class="text-gray-700"><span class="font-medium">Camera:</span> {{ log.camera }}</p>
+                                <p class="text-gray-700"><span class="font-medium">Confidence:</span> {{ "%.1f"|format(log.confidence) }}%</p>
+                                {% if log.location %}
+                                <p class="text-gray-700"><span class="font-medium">Location:</span> {{ log.location }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if log.image_url %}
+                        <div class="ml-4">
+                            <img src="{{ log.image_url }}" 
+                                 alt="Detection of {{ log.animal }}" 
+                                 class="w-32 h-32 object-cover rounded shadow"
+                                 loading="lazy">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="bg-white rounded-lg shadow p-6 text-center">
+                    <p class="text-gray-600">No detection logs found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
