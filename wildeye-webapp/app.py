@@ -294,7 +294,31 @@ def home():
     except Exception as e:
         logger.error(f"Error loading cameras: {e}")
         return render_template("home.html", cameras=[], error="Failed to load cameras", current_page='home')
+    
+@app.route("/detection-history")
+def detection_history():
+    if db is None:
+        return render_template("detection_history.html", error="Firebase not initialized"), 500
 
+    try:
+        logs_ref = db.collection("detection_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(50)
+        logs = [doc.to_dict() for doc in logs_ref.stream()]
+        return render_template("detection_history.html", logs=logs)
+    except Exception as e:
+        return render_template("detection_history.html", error=str(e))
+
+@app.route("/warnings")
+def warnings():
+    if db is None:
+        return render_template("warnings.html", error="Firebase not initialized"), 500
+
+    try:
+        warnings_ref = db.collection("warnings").where("active", "==", True).order_by("timestamp", direction=firestore.Query.DESCENDING)
+        warnings = [doc.to_dict() for doc in warnings_ref.stream()]
+        return render_template("warnings.html", warnings=warnings)
+    except Exception as e:
+        return render_template("warnings.html", error=str(e))
+    
 @app.route("/about")
 def about():
     return render_template("about.html", current_page='about')

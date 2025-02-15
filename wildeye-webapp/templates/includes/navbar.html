@@ -1,18 +1,34 @@
-<header class="bg-gradient-to-l from-black to-gray-900 text-white py-4 px-6 flex justify-between items-center">
+<header class="bg-gradient-to-l from-black to-gray-900 text-white py-4 px-6 flex justify-between items-center relative z-50">
     <div class="flex items-center">
+        <!-- Menu Toggle Button -->
+        {% if current_page != 'index' %}
+        <button 
+            id="sidebarToggle"
+            class="relative z-50 p-2 hover:bg-gray-700 rounded-md transition-colors focus:outline-none">
+            <svg id="menuIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            <svg id="closeIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        {% endif %}
+
+        <!-- Logo -->
         <a href="{% if current_page == 'index' %}/{% else %}/home{% endif %}" 
-           class="text-2xl font-bold mr-4 hover:text-blue-400 transition-colors">
+           class="text-2xl font-bold ml-4 relative z-50 hover:text-blue-400 transition-colors">
             WildEye
         </a>
-        <nav class="space-x-4">
+
+        <!-- Navigation Links -->
+        <nav class="ml-8 space-x-4 relative z-50">
             {% if current_page != 'index' %}
                 <a href="/home" 
                    class="text-white hover:text-blue-400 transition-colors {% if current_page == 'home' %}text-blue-400{% endif %}">
                    Home
-                </a>
-                <a href="/cameras" 
-                   class="text-white hover:text-blue-400 transition-colors {% if current_page == 'cameras' %}text-blue-400{% endif %}">
-                   Cameras
                 </a>
             {% endif %}
             <a href="/about" 
@@ -29,15 +45,99 @@
             </a>
         </nav>
     </div>
+
+    <!-- Logout Button -->
     {% if current_page != 'index' %}
         <button id="logout-btn" 
-                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-bold">
+                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-bold relative z-50">
             Logout
         </button>
     {% endif %}
 </header>
 
+<!-- Sidebar Menu -->
 {% if current_page != 'index' %}
+<div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-gray-900 text-white transform -translate-x-full transition-transform duration-200 ease-in-out z-40 pt-20">
+    <div class="p-4 space-y-4">
+        <!-- Cameras Button -->
+        <a href="{{ url_for('cameras') }}"
+           class="w-full flex items-center p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+            <svg class="mr-3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span class="font-medium">Cameras</span>
+        </a>
+
+        <!-- Detection History Button -->
+        <a href="{{ url_for('detection_history') }}" 
+           class="w-full flex items-center p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+            <svg class="mr-3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span class="font-medium">Detection History</span>
+        </a>
+
+        <!-- Warning System Button -->
+        <a href="{{ url_for('warnings') }}"
+           class="w-full flex items-center p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+            <svg class="mr-3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="font-medium">Warning System</span>
+        </a>
+    </div>
+</div>
+
+<!-- Scripts remain the same -->
+<script>
+    // Sidebar functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        const menuIcon = document.getElementById('menuIcon');
+        const closeIcon = document.getElementById('closeIcon');
+
+        function toggleSidebar() {
+            if (sidebar.classList.contains('-translate-x-full')) {
+                // Open sidebar
+                sidebar.classList.remove('-translate-x-full');
+                menuIcon.classList.add('hidden');
+                closeIcon.classList.remove('hidden');
+            } else {
+                // Close sidebar
+                sidebar.classList.add('-translate-x-full');
+                menuIcon.classList.remove('hidden');
+                closeIcon.classList.add('hidden');
+            }
+        }
+
+        // Add click event listener to toggle button
+        sidebarToggle.addEventListener('click', function(event) {
+            event.stopPropagation();
+            toggleSidebar();
+        });
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!sidebar.contains(event.target) && 
+                !sidebarToggle.contains(event.target) && 
+                !sidebar.classList.contains('-translate-x-full')) {
+                toggleSidebar();
+            }
+        });
+
+        // Close sidebar when clicking a menu item
+        sidebar.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function() {
+                toggleSidebar();
+            });
+        });
+    });
+</script>
+
 <script type="module">
     import { logout, initAuthStateObserver } from '/static/js/firebase-auth.js';
 
