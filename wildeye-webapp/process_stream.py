@@ -11,6 +11,8 @@ import time
 import logging
 import traceback
 import torch
+from datetime import datetime  
+from database.models import add_detection  
 
 # Configure logging
 logging.basicConfig(
@@ -27,6 +29,8 @@ class VideoProcessor:
         self.stop_flag = threading.Event()
         self.fps = 30  # Default FPS
         self.frame_time = 1/self.fps  # Time per frame
+        self.camera_id = None  # Add this line to store camera_id
+        self.db = None  # Add this line to store database instance
 
         try:
             logger.info(f"Loading YOLO model from {model_path}")
@@ -103,22 +107,42 @@ class VideoProcessor:
 
             for result in results:
                 for box in result.boxes:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
                     confidence = box.conf.item()
                     class_id = int(box.cls.item())
                     label = self.models[worker_id].names[class_id]
 
-                    detections.append({
-                        'bbox': (x1, y1, x2, y2),
-                        'confidence': confidence,
-                        'label': label
-                    })
+                    # Only process if confidence is high enough
+                    if confidence > 0.5:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        detections.append({
+                            'detection_label': label,
+                            'confidence': confidence
+                        })
 
-                    # Draw bounding box and label
-                    cv2.rectangle(processed_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    text = f"{label} ({confidence:.2f})"
-                    cv2.putText(processed_frame, text, (x1, y1 - 10),
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        # Draw bounding box and label
+                        cv2.rectangle(processed_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        text = f"{label} ({confidence:.2f})"
+                        cv2.putText(processed_frame, text, (x1, y1 - 10),
+                                  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            # If there are detections and we have camera_id and db, save to database
+            if detections and self.camera_id and self.db:
+                try:
+                    # Convert the processed frame to JPEG format
+                    _, buffer = cv2.imencode('.jpg', processed_frame)
+                    screenshot = buffer.tobytes()
+
+                    # Save each detection
+                    for detection in detections:
+                        detection_data = {
+                            'camera_id': self.camera_id,
+                            'detection_label': detection['detection_label'],
+                            'timestamp': datetime.now()
+                        }
+                        
+                        add_detection(self.db, detection_data, screenshot)
+                except Exception as e:
+                    logger.error(f"Failed to save detection to database: {e}")
 
             return processed_frame, detections, timestamp
         except Exception as e:
@@ -145,7 +169,9 @@ class VideoProcessor:
             except Exception as e:
                 logger.error(f"Worker {worker_id} error: {e}")
 
-    def process_stream(self, input_type: str, input_value: str, seek_time: int = 0) -> Generator:
+    def process_stream(self, input_type: str, input_value: str, seek_time: int = 0, camera_id: str = None, db = None) -> Generator:
+        self.camera_id = camera_id  # Store camera_id
+        self.db = db  # Store database instance
         logger.info(f"Starting stream processing - Type: {input_type}, Value: {input_value}, Seek: {seek_time}")
         cap = None
 
@@ -267,8 +293,7 @@ def initialize_processor():
     except Exception as e:
         logger.error(f"Failed to initialize VideoProcessor: {e}")
         raise
-
-def process_stream(input_type: str, input_value: str, seek_time: int = 0) -> Generator:
+def process_stream(input_type: str, input_value: str, seek_time: int = 0, camera_id: str = None, db = None) -> Generator:
     """Process a video stream and yield processed frames"""
     global video_processor
     if video_processor is None:
@@ -276,7 +301,7 @@ def process_stream(input_type: str, input_value: str, seek_time: int = 0) -> Gen
 
     logger.info(f"Processing stream request - Type: {input_type}, Value: {input_value}")
     try:
-        yield from video_processor.process_stream(input_type, input_value, seek_time)
+        yield from video_processor.process_stream(input_type, input_value, seek_time, camera_id, db)
     except Exception as e:
         logger.error(f"Stream processing failed: {e}")
         raise
@@ -379,6 +404,72 @@ def get_connected_cameras(verbose=True):
                     print(f"  Error: {diagnostics['error']}")
     
     return available_cameras
+
+# In the _process_frame method of VideoProcessor class:
+def _process_frame(self, worker_id: int, frame_data: tuple) -> tuple:
+    frame, timestamp = frame_data
+    try:
+        # Perform object detection
+        results = self.models[worker_id].predict(
+            frame,
+            device='cuda' if torch.cuda.is_available() else 'cpu',
+            stream=True,
+            conf=0.5
+        )
+
+        processed_frame = frame.copy()
+        detections = []
+
+        for result in results:
+            for box in result.boxes:
+                confidence = box.conf.item()
+                class_id = int(box.cls.item())
+                label = self.models[worker_id].names[class_id]
+
+                # Only process if confidence is high enough
+                if confidence > 0.5:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    detections.append({
+                        'detection_label': label,
+                        'confidence': confidence
+                    })
+
+                    # Draw bounding box and label
+                    cv2.rectangle(processed_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    text = f"{label} ({confidence:.2f})"
+                    cv2.putText(processed_frame, text, (x1, y1 - 10),
+                              cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        # If there are detections, save to database with screenshot
+        if detections and hasattr(self, 'camera_id'):
+            try:
+                # Convert the processed frame to JPEG format
+                _, buffer = cv2.imencode('.jpg', processed_frame)
+                screenshot = buffer.tobytes()
+
+                # Save each detection (now with deduplication)
+                for detection in detections:
+                    detection_data = {
+                        'camera_id': self.camera_id,
+                        'detection_label': detection['detection_label'],
+                        'timestamp': datetime.now()
+                    }
+                    
+                    # add_detection will now return None if it's a duplicate
+                    detection_id = add_detection(self.db, detection_data, screenshot)
+                    if detection_id:
+                        logger.info(f"Saved new detection: {detection['detection_label']}")
+                    else:
+                        logger.info(f"Skipped duplicate detection: {detection['detection_label']}")
+                        
+            except Exception as e:
+                logger.error(f"Failed to save detection: {e}")
+
+        return processed_frame, detections, timestamp
+    except Exception as e:
+        logger.error(f"Frame processing error: {traceback.format_exc()}")
+        return frame, [], timestamp
+    
 # Initialize the processor when module is imported
 initialize_processor()
 

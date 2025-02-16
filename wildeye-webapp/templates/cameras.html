@@ -457,69 +457,123 @@
         }
 
         function removeCamera(cameraName) {
-            if (confirm('Are you sure you want to remove this camera?')) {
-                // Find and disable the camera feed first
-                const sanitizedName = cameraName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                const cameraCard = document.getElementById(`camera-${sanitizedName}`);
-                if (cameraCard) {
-                    // Disable all buttons in the camera card
-                    const buttons = cameraCard.querySelectorAll('button');
-                    buttons.forEach(btn => btn.disabled = true);
-
-                    // Add loading state
-                    cameraCard.style.opacity = '0.5';
-                    cameraCard.style.pointerEvents = 'none';
-                }
-
-                // Send removal request to backend
-                fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            // Remove the camera card with animation
-                            if (cameraCard) {
-                                cameraCard.style.transition = 'all 0.3s ease';
-                                cameraCard.style.transform = 'scale(0.8)';
-                                cameraCard.style.opacity = '0';
-
-                                setTimeout(() => {
-                                    cameraCard.remove();
-
-                                    // Check if there are any cameras left
-                                    const remainingCameras = document.querySelectorAll('.camera-card');
-                                    if (remainingCameras.length === 0) {
-                                        window.location.reload(); // Reload if no cameras left
-                                    }
-                                }, 300);
-                            }
-                        } else {
-                            throw new Error(data.error || 'Failed to remove camera');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error removing camera:', error);
-                        alert(`Error removing camera: ${error.message}`);
-
-                        // Restore the camera card if it exists
-                        if (cameraCard) {
-                            cameraCard.style.opacity = '1';
-                            cameraCard.style.pointerEvents = 'auto';
-                            const buttons = cameraCard.querySelectorAll('button');
-                            buttons.forEach(btn => btn.disabled = false);
-                        }
-                    });
+            // Prevent multiple removal attempts
+            if (window.isRemovingCamera) {
+                return;
             }
+
+            if (!confirm('Are you sure you want to remove this camera?')) {
+                return;
+            }
+
+            window.isRemovingCamera = true;
+
+            // Find the camera card
+            const sanitizedName = cameraName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+
+            if (!cameraCard) {
+                window.isRemovingCamera = false;
+                alert('Camera element not found');
+                return;
+            }
+
+            // Check if already removing
+            if (cameraCard.querySelector('.removal-overlay')) {
+                window.isRemovingCamera = false;
+                return;
+            }
+
+            // Add loading state
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'removal-overlay absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            loadingOverlay.innerHTML = `
+        <div class="text-white text-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+            <p>Removing camera...</p>
+        </div>
+    `;
+            cameraCard.style.position = 'relative';
+            cameraCard.appendChild(loadingOverlay);
+
+            // Disable all buttons in the camera card
+            const buttons = cameraCard.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            // Set a timeout for the request
+            const timeoutDuration = 30000; // 30 seconds
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Request timed out')), timeoutDuration);
+            });
+
+            // Make the removal request
+            const fetchPromise = fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            // Race between timeout and fetch
+            Promise.race([fetchPromise, timeoutPromise])
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Remove the camera card with animation
+                        cameraCard.style.transition = 'all 0.3s ease';
+                        cameraCard.style.transform = 'scale(0.8)';
+                        cameraCard.style.opacity = '0';
+
+                        setTimeout(() => {
+                            cameraCard.remove();
+
+                            // Check if there are any cameras left
+                            const remainingCameras = document.querySelectorAll('.camera-card:not(.removing)');
+                            if (remainingCameras.length === 0) {
+                                // Instead of reloading, redirect to prevent form resubmission
+                                window.location.href = window.location.pathname;
+                            }
+                        }, 300);
+                    } else {
+                        throw new Error(data.error || 'Failed to remove camera');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error removing camera:', error);
+
+                    // Remove loading overlay
+                    const overlay = cameraCard.querySelector('.removal-overlay');
+                    if (overlay) {
+                        overlay.remove();
+                    }
+
+                    // Re-enable buttons
+                    buttons.forEach(btn => btn.disabled = false);
+
+                    // Show error message
+                    alert(`Error removing camera: ${error.message}`);
+
+                    // If it was a timeout error, suggest refreshing
+                    if (error.message === 'Request timed out') {
+                        if (confirm('The request timed out. Would you like to refresh the page?')) {
+                            window.location.href = window.location.pathname;
+                        }
+                    }
+                })
+                .finally(() => {
+                    window.isRemovingCamera = false;
+                });
         }
+
+        // Add cleanup for page unload
+        window.addEventListener('beforeunload', () => {
+            window.isRemovingCamera = false;
+        });
 
         function seekVideo(cameraName, seconds) {
             const cameraCard = document.querySelector(`#camera-${cameraName.replace(' ', '-')}`);

@@ -11,15 +11,15 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCQJKf9jhxlmGXLVTV_DYlFaVxbzj8EjDk",
-    authDomain: "wildeye-finalyear.firebaseapp.com",
-    projectId: "wildeye-finalyear",
-    storageBucket: "wildeye-finalyear.firebasestorage.app",
-    messagingSenderId: "836572506957",
-    appId: "1:836572506957:web:22eba4a18f00868032e504",
-    measurementId: "G-X4WDV45CXR"
-};
-
+    apiKey: "AIzaSyBYBrD5zAmCM1Pe6qkhz1A92Z19XVuG37g",
+    authDomain: "wildeye-a88ed.firebaseapp.com",
+    projectId: "wildeye-a88ed",
+    storageBucket: "wildeye-a88ed.firebasestorage.app",
+    messagingSenderId: "531184300421",
+    appId: "1:531184300421:web:2ed34cdf6e3ffeee2154ec",
+    measurementId: "G-Y0MVR47XMD"
+  };
+  
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
