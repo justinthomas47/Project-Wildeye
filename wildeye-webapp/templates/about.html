@@ -3,152 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Our Team</title>
+    <title>About WildEye</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         body {
-            margin: 0;
             font-family: Arial, sans-serif;
-            background-color: #111111;
-            color: white;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
             min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        .container {
-            max-width: 1400px;
-            margin: auto;
-            padding: 40px;
-            position: relative;
-            z-index: 1;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .team-grid {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 20px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-        .team-member {
-            background: rgba(64, 64, 64, 0.5);
-            padding: 35px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s, box-shadow 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            width: 320px;
-            white-space: nowrap;
-        }
-        .team-member:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(255, 223, 0, 0.8);
-        }
-        .team-member img {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            object-fit: cover;
-            display: block;
-            margin: 0 auto;
-        }
-        .text-primary { color: #fbbf24; font-size: 2rem; white-space: nowrap; }
-        canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
         }
     </style>
 </head>
 <body>
     {% include 'includes/navbar.html' %}
-    
-    <canvas id="backgroundCanvas"></canvas>
-    
-    <div class="container">
-        <h1 class="text-primary">About Our Team</h1>
-        <div class="team-grid" id="teamContainer"></div>
+
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-6">About WildEye</h1>
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <p class="text-lg leading-relaxed mb-4">
+                WildEye is an innovative solution to detect wild animals using CCTV feeds and YOLOv8.
+            </p>
+            <!-- Add more content about your project here -->
+        </div>
     </div>
-    
-    <script>
-        const canvas = document.getElementById("backgroundCanvas");
-        const ctx = canvas.getContext("2d");
-        let particles = [];
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        
-        function createParticles(count) {
-            particles = [];
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: Math.random() * 5 + 1,
-                    speedX: Math.random() * 3 - 1.5,
-                    speedY: Math.random() * 3 - 1.5,
-                });
-            }
-        }
-        
-        function updateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#111111";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#444444";
-            particles.forEach(particle => {
-                particle.x += particle.speedX;
-                particle.y += particle.speedY;
-                if (particle.x > canvas.width) particle.x = 0;
-                if (particle.x < 0) particle.x = canvas.width;
-                if (particle.y > canvas.height) particle.y = 0;
-                if (particle.y < 0) particle.y = canvas.height;
-                ctx.beginPath();
-                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-                ctx.fill();
-            });
-            requestAnimationFrame(updateParticles);
-        }
+    <script type="module">
+        import { initAuthStateObserver } from '/static/js/firebase-auth.js';
 
-        resizeCanvas();
-        createParticles(50);
-        updateParticles();
-        window.addEventListener("resize", resizeCanvas);
-    </script>
-    
-    <script>
-        const teamContainer = document.getElementById("teamContainer");
-        const team = [
-            { name: "Justin Thomas", role: "CEO & Founder", imageUrl: "https://via.placeholder.com/140" },
-            { name: "Robin Jo Varghese", role: "CTO", imageUrl: "static/robin.jpeg" },
-            { name: "Roshan Jacob", role: "Head of Design", imageUrl: "https://via.placeholder.com/140" },
-            { name: "Tilin Chacko", role: "Lead Developer", imageUrl: "https://via.placeholder.com/140" }
-        ];
-        
-        team.forEach(person => {
-            const memberDiv = document.createElement("div");
-            memberDiv.className = "team-member";
-            memberDiv.innerHTML = `
-                <img src="${person.imageUrl}" alt="${person.name}">
-                <h2 class="text-primary">${person.name}</h2>
-                <p>${person.role}</p>
-            `;
-            teamContainer.appendChild(memberDiv);
-        });
+        // Initialize auth state observer
+        initAuthStateObserver();
     </script>
 </body>
 </html>
