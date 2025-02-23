@@ -1,0 +1,268 @@
+:root {
+    --primary-dark: #0a0b14;
+    --primary-blue: #3eb8ff;
+    --glow-color: rgba(62, 184, 255, 0.4);
+}
+
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0a0b14 0%, #121624 25%, #141b2d 50%, #121624 75%, #0a0b14 100%);
+    background-attachment: fixed;
+    color: #ffffff;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Camera Grid Layout */
+.camera-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1440px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* Camera Card */
+.camera-card {
+    background: linear-gradient(145deg, #0d0f16, #151822);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+
+.camera-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(62, 184, 255, 0.2);
+}
+
+/* Video Container */
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 240px;
+    background: #0d0f16;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Video Controls */
+.video-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: rgba(13, 15, 22, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-button {
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 70px;
+}
+
+.control-button:hover {
+    background: rgba(37, 99, 235, 0.9);
+    box-shadow: 0 0 15px var(--glow-color);
+}
+
+.control-button:disabled {
+    background: rgba(74, 85, 104, 0.9);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Fullscreen Mode */
+.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+}
+
+.fullscreen .video-container {
+    flex: 1;
+    height: auto;
+}
+
+.fullscreen img {
+    object-fit: contain;
+    max-height: calc(100vh - 80px); /* Account for controls height */
+}
+
+.fullscreen .video-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(13, 15, 22, 0.95);
+    padding: 1rem;
+    z-index: 10000;
+}
+
+/* Exit Fullscreen Button */
+.exit-fullscreen {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    z-index: 10000;
+    font-weight: 500;
+    display: none;
+    transition: background-color 0.2s ease;
+}
+
+.exit-fullscreen:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.fullscreen .exit-fullscreen {
+    display: block;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 2;
+}
+
+@keyframes spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Stream Status */
+.stream-status {
+    padding: 0.75rem;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.stream-status p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+/* Text Colors */
+.text-red-500 { color: #ef4444; }
+.text-green-500 { color: #22c55e; }
+.text-blue-500 { color: var(--primary-blue); }
+
+/* Error State */
+.col-span-full {
+    grid-column: 1 / -1;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1f2e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #3182ce;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-blue);
+}
+
+/* Hide Browser Media Controls */
+::-webkit-media-controls,
+::-webkit-media-controls-panel,
+::-webkit-media-controls-overlay-play-button,
+::-webkit-media-controls-fullscreen-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+}
+
+/* Performance Optimizations */
+.video-container * {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .camera-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+
+    .video-container {
+        height: 200px;
+    }
+
+    .control-button {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Modal Styles - Hidden in Fullscreen */
+.fullscreen .modal,
+.fullscreen .camera-card > *:not(.video-container):not(.video-controls) {
+    display: none !important;
+}
