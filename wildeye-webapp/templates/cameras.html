@@ -1,4 +1,3 @@
-<!-- cameras.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,30 +8,9 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #0a0b14 0%, #121624 25%, #141b2d 50%, #121624 75%, #0a0b14 100%);
-            background-attachment: fixed;
             font-family: Arial, sans-serif;
-            color: #ffffff;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(
-                circle at var(--x, 50%) var(--y, 50%),
-                rgba(62, 184, 255, 0.08),
-                transparent 40%
-            );
-            pointer-events: none;
-            z-index: 0;
-            transition: opacity 0.3s ease;
+            background-color: #f4f4f9;
+            color: #333;
         }
 
         .camera-grid {
@@ -45,27 +23,28 @@
         }
 
         .camera-card {
-            background: linear-gradient(145deg, #0d0f16, #151822);
+            background: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .video-container {
             position: relative;
             width: 100%;
             height: 240px;
-            background: #0d0f16;
+            background: #f0f0f0;
             cursor: pointer;
         }
 
-        .modal-content {
-            background: linear-gradient(145deg, #0d0f16, #151822);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+        .video-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .fullscreen {
@@ -86,7 +65,6 @@
             height: 100%;
         }
 
-        /* Fullscreen Button */
         .fullscreen-btn {
             position: absolute;
             bottom: 10px;
@@ -101,14 +79,12 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            transition: background 0.3s ease;
         }
 
         .fullscreen-btn:hover {
             background: rgba(0, 0, 0, 0.7);
         }
 
-        /* Fullscreen Icons */
         .expand-icon,
         .collapse-icon {
             width: 16px;
@@ -131,23 +107,16 @@
             display: none;
         }
 
-        /* Loading Spinner */
-        .loading-spinner {
-            animation: spin 1s linear infinite;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: var(--primary-blue);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-        }
-
         @keyframes spin {
-            to {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
                 transform: rotate(360deg);
             }
         }
 
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -162,171 +131,11 @@
         }
 
         .modal-content {
-            background: linear-gradient(145deg, #0d0f16, #151822);
-            color: #ffffff;
+            background: white;
             padding: 2rem;
-            border-radius: 12px;
+            border-radius: 8px;
             max-width: 500px;
             width: 90%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Form Styles */
-        .form-container {
-            max-width: 400px;
-            margin: 2rem auto;
-            padding: 1.5rem;
-            border-radius: 12px;
-            background: linear-gradient(145deg, #0d0f16, #151822);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            position: relative;
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .form-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at var(--x, 25%) var(--y, 25%),
-                    rgba(62, 184, 255, 0.03),
-                    transparent 40%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .form-container:hover::before {
-            opacity: 1;
-        }
-
-        /* Form Inputs */
-        .form-container input,
-        .form-container select {
-            width: calc(100% - 2rem);
-            margin: 0.5rem 1rem;
-            padding: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            background: linear-gradient(145deg, #0f1117, #151822);
-            color: #ffffff;
-            transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Form Select Styles */
-        .form-container select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
-            padding-right: 2.5rem;
-        }
-
-        /* Form Input/Select Hover & Focus States */
-        .form-container select:hover,
-        .form-container input:hover,
-        .form-container select:focus,
-        .form-container input:focus {
-            border-color: rgba(62, 184, 255, 0.3);
-            box-shadow: 0 0 15px rgba(62, 184, 255, 0.1);
-            background: linear-gradient(145deg, #131720, #1a1f2d);
-            outline: none;
-        }
-
-        /* Button Styles */
-        .form-container button,
-        .show-cameras-btn {
-            width: calc(100% - 2rem);
-            margin: 0.5rem 1rem;
-            padding: 0.75rem;
-            background-color: #1a56db;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .form-container button:hover,
-        .show-cameras-btn:hover {
-            background-color: #1e40af;
-            box-shadow: 0 0 15px var(--glow-color);
-        }
-
-        .form-container button:disabled {
-            background-color: #4a5568;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        /* Stream Status */
-        .stream-status {
-            padding: 0.5rem;
-        }
-
-        .stream-status p {
-            margin: 0;
-            padding: 8px;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        /* Utility Classes */
-        .text-red-500 {
-            color: #ef4444;
-        }
-
-        .text-green-500 {
-            color: #22c55e;
-        }
-
-        .text-blue-500 {
-            color: var(--primary-blue);
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #1a1f2e;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #3182ce;
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-blue);
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 640px) {
-            .camera-grid {
-                grid-template-columns: 1fr;
-                padding: 1rem;
-            }
-
-            .modal-content {
-                width: 95%;
-                margin: 1rem;
-                padding: 1rem;
-            }
         }
     </style>
 </head>
@@ -431,8 +240,8 @@
         // Make logout function globally available
         window.logOut = logout;
     </script>
+
     <script>
-        // Helper function to sanitize camera names for use in IDs
         function sanitizeCameraName(name) {
             return name.toLowerCase().replace(/[^a-z0-9]/g, '-');
         }
@@ -443,6 +252,10 @@
 
             if (!cameraCard) {
                 console.error(`Camera card not found for: ${cameraName}`);
+                return;
+            }
+
+            if (cameraCard.style.opacity === '0.5') {
                 return;
             }
 
@@ -513,7 +326,6 @@
             const spinner = cameraCard.querySelector('.loading-spinner');
             const controlsDiv = cameraCard.querySelector('.video-controls');
 
-            // Disable seek buttons during seek operation
             const buttons = controlsDiv.querySelectorAll('button');
             buttons.forEach(btn => btn.disabled = true);
 
@@ -534,7 +346,6 @@
                     const timestamp = new Date().getTime();
                     img.src = `/video_feed/${cameraName}?t=${timestamp}`;
 
-                    // Re-enable seek buttons after a short delay
                     setTimeout(() => {
                         buttons.forEach(btn => btn.disabled = false);
                         spinner.classList.add('hidden');
@@ -542,33 +353,11 @@
                 })
                 .catch(error => {
                     console.error('Error seeking video:', error);
-                    alert('Error seeking video: ' + error);
+                    alert(`Error seeking video: ${error}`);
                     buttons.forEach(btn => btn.disabled = false);
                     spinner.classList.add('hidden');
                 });
         }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Wait a bit longer for initial load
-            setTimeout(() => {
-                const cameras = document.querySelectorAll('.camera-card');
-                cameras.forEach(camera => {
-                    const cameraId = camera.id.replace('camera-', '');
-                    checkStreamStatus(cameraId);
-                });
-            }, 500);
-
-            // Set up periodic checking with a longer interval
-            setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    const cameras = document.querySelectorAll('.camera-card');
-                    cameras.forEach(camera => {
-                        const cameraId = camera.id.replace('camera-', '');
-                        checkStreamStatus(cameraId);
-                    });
-                }
-            }, 1000000); // Check every 10 seconds instead of 5
-        });
 
         function showCameraDetails(cameraName) {
             const modal = document.getElementById('cameraDetailsModal');
@@ -645,160 +434,196 @@
         }
 
         function removeCamera(cameraName) {
-            // Prevent multiple removal attempts
-            if (window.isRemovingCamera) {
-                return;
-            }
+            if (confirm('Are you sure you want to remove this camera?')) {
+                const sanitizedName = cameraName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const cameraCard = document.getElementById(`camera-${sanitizedName}`);
 
-            if (!confirm('Are you sure you want to remove this camera?')) {
-                return;
-            }
+                if (cameraCard) {
+                    // Disable the card immediately
+                    cameraCard.style.opacity = '0.5';
+                    cameraCard.style.pointerEvents = 'none';
 
-            window.isRemovingCamera = true;
-
-            // Find the camera card
-            const sanitizedName = cameraName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
-
-            if (!cameraCard) {
-                window.isRemovingCamera = false;
-                alert('Camera element not found');
-                return;
-            }
-
-            // Check if already removing
-            if (cameraCard.querySelector('.removal-overlay')) {
-                window.isRemovingCamera = false;
-                return;
-            }
-
-            // Add loading state
-            const loadingOverlay = document.createElement('div');
-            loadingOverlay.className = 'removal-overlay absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            loadingOverlay.innerHTML = `
-        <div class="text-white text-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-            <p>Removing camera...</p>
-        </div>
-    `;
-            cameraCard.style.position = 'relative';
-            cameraCard.appendChild(loadingOverlay);
-
-            // Disable all buttons in the camera card
-            const buttons = cameraCard.querySelectorAll('button');
-            buttons.forEach(btn => btn.disabled = true);
-
-            // Set a timeout for the request
-            const timeoutDuration = 30000; // 30 seconds
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Request timed out')), timeoutDuration);
-            });
-
-            // Make the removal request
-            const fetchPromise = fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            // Race between timeout and fetch
-            Promise.race([fetchPromise, timeoutPromise])
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                    // Clear any existing intervals for this camera
+                    if (window.cameraIntervals && window.cameraIntervals[cameraName]) {
+                        clearInterval(window.cameraIntervals[cameraName]);
+                        delete window.cameraIntervals[cameraName];
                     }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        // Remove the camera card with animation
-                        cameraCard.style.transition = 'all 0.3s ease';
-                        cameraCard.style.transform = 'scale(0.8)';
-                        cameraCard.style.opacity = '0';
 
-                        setTimeout(() => {
-                            cameraCard.remove();
+                    // Stop the video feed
+                    const img = cameraCard.querySelector('img');
+                    if (img) {
+                        img.src = '';
+                    }
 
-                            // Check if there are any cameras left
-                            const remainingCameras = document.querySelectorAll('.camera-card:not(.removing)');
-                            if (remainingCameras.length === 0) {
-                                // Instead of reloading, redirect to prevent form resubmission
-                                window.location.href = window.location.pathname;
+                    // Send removal request
+                    fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'same-origin'
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
                             }
-                        }, 300);
-                    } else {
-                        throw new Error(data.error || 'Failed to remove camera');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Remove the camera card with animation
+                                cameraCard.style.transition = 'all 0.3s ease';
+                                cameraCard.style.transform = 'scale(0.8)';
+                                cameraCard.style.opacity = '0';
+
+                                // Wait for animation to complete before removing
+                                setTimeout(() => {
+                                    cameraCard.remove();
+
+                                    // Check remaining cameras
+                                    const remainingCameras = document.querySelectorAll('.camera-card');
+                                    if (remainingCameras.length === 0) {
+                                        // Only reload if no cameras left
+                                        window.location.reload();
+                                    }
+                                }, 300);
+                            } else {
+                                throw new Error(data.error || 'Failed to remove camera');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error removing camera:', error);
+                            alert(`Error removing camera: ${error.message}`);
+
+                            // Restore the camera card
+                            cameraCard.style.opacity = '1';
+                            cameraCard.style.pointerEvents = 'auto';
+                        });
+                }
+            }
+        }
+        function removeCamera(cameraName) {
+            if (confirm('Are you sure you want to remove this camera?')) {
+                const sanitizedName = cameraName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+
+                if (cameraCard) {
+                    // Disable the card immediately
+                    cameraCard.style.opacity = '0.5';
+                    cameraCard.style.pointerEvents = 'none';
+
+                    // Clear any existing intervals for this camera
+                    if (window.cameraIntervals && window.cameraIntervals[cameraName]) {
+                        clearInterval(window.cameraIntervals[cameraName]);
+                        delete window.cameraIntervals[cameraName];
                     }
-                })
-                .catch(error => {
-                    console.error('Error removing camera:', error);
 
-                    // Remove loading overlay
-                    const overlay = cameraCard.querySelector('.removal-overlay');
-                    if (overlay) {
-                        overlay.remove();
+                    // Stop the video feed
+                    const img = cameraCard.querySelector('img');
+                    if (img) {
+                        img.src = '';
                     }
 
-                    // Re-enable buttons
-                    buttons.forEach(btn => btn.disabled = false);
+                    // Send removal request
+                    fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'same-origin'
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Remove the camera card with animation
+                                cameraCard.style.transition = 'all 0.3s ease';
+                                cameraCard.style.transform = 'scale(0.8)';
+                                cameraCard.style.opacity = '0';
 
-                    // Show error message
-                    alert(`Error removing camera: ${error.message}`);
+                                // Wait for animation to complete before removing
+                                setTimeout(() => {
+                                    cameraCard.remove();
 
-                    // If it was a timeout error, suggest refreshing
-                    if (error.message === 'Request timed out') {
-                        if (confirm('The request timed out. Would you like to refresh the page?')) {
-                            window.location.href = window.location.pathname;
-                        }
-                    }
-                })
-                .finally(() => {
-                    window.isRemovingCamera = false;
-                });
+                                    // Check remaining cameras
+                                    const remainingCameras = document.querySelectorAll('.camera-card');
+                                    if (remainingCameras.length === 0) {
+                                        // Only reload if no cameras left
+                                        window.location.reload();
+                                    }
+                                }, 300);
+                            } else {
+                                throw new Error(data.error || 'Failed to remove camera');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error removing camera:', error);
+                            alert(`Error removing camera: ${error.message}`);
+
+                            // Restore the camera card
+                            cameraCard.style.opacity = '1';
+                            cameraCard.style.pointerEvents = 'auto';
+                        });
+                }
+            }
         }
 
-        // Add cleanup for page unload
-        window.addEventListener('beforeunload', () => {
-            window.isRemovingCamera = false;
-        });
-
-        function seekVideo(cameraName, seconds) {
-            const cameraCard = document.querySelector(`#camera-${cameraName.replace(' ', '-')}`);
-            const imgElement = cameraCard.querySelector('img');
-            const spinner = cameraCard.querySelector('.loading-spinner');
-
-            spinner.classList.remove('hidden');
-
-            fetch(`/camera/${cameraName}/seek`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ seconds: seconds })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.success) {
-                        throw new Error(data.error || 'Failed to seek video');
-                    }
-                    imgElement.src = `/video_feed/${cameraName}?t=${Date.now()}`;
-                })
-                .catch(error => {
-                    alert('Error seeking video: ' + error);
-                })
-                .finally(() => {
-                    spinner.classList.add('hidden');
-                });
-        }
+        // Store intervals in a global object
+        window.cameraIntervals = {};
 
         document.addEventListener('DOMContentLoaded', function () {
             const cameras = document.querySelectorAll('.camera-card');
             cameras.forEach(camera => {
                 const cameraName = camera.id.replace('camera-', '');
                 checkStreamStatus(cameraName);
-                setInterval(() => checkStreamStatus(cameraName), 5000);
+
+                // Store interval reference
+                window.cameraIntervals[cameraName] = setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        checkStreamStatus(cameraName);
+                    }
+                }, 5000);
             });
+        });
+        // Store intervals in a global object
+        window.cameraIntervals = {};
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const cameras = document.querySelectorAll('.camera-card');
+            cameras.forEach(camera => {
+                const cameraName = camera.id.replace('camera-', '');
+                checkStreamStatus(cameraName);
+
+                // Store interval reference
+                window.cameraIntervals[cameraName] = setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        checkStreamStatus(cameraName);
+                    }
+                }, 5000);
+            });
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(() => {
+                const cameras = document.querySelectorAll('.camera-card');
+                cameras.forEach(camera => {
+                    const cameraId = camera.id.replace('camera-', '');
+                    checkStreamStatus(cameraId);
+                });
+            }, 500);
+
+            setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    const cameras = document.querySelectorAll('.camera-card');
+                    cameras.forEach(camera => {
+                        const cameraId = camera.id.replace('camera-', '');
+                        checkStreamStatus(cameraId);
+                    });
+                }
+            }, 10000);
         });
 
         window.onclick = function (event) {

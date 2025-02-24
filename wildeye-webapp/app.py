@@ -659,47 +659,55 @@ def remove_camera(camera_name):
     logger.info(f"Starting camera removal process for: {camera_name}")
     
     try:
-        # 1. Find the camera document first
+        # 1. Find and verify camera exists
         camera_ref = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
         camera_docs = list(camera_ref)
         
         if not camera_docs:
-            return jsonify({"success": False, "error": "Camera not found in database"}), 404
+            logger.warning(f"Camera {camera_name} not found in database")
+            return jsonify({"success": False, "error": "Camera not found"}), 404
             
         camera_doc = camera_docs[0]
         camera_id = camera_doc.id
         
-        # 2. Stop and clean up the video stream
+        # 2. Stop stream first
         with stream_lock:
             if camera_name in active_streams:
+                logger.info(f"Stopping stream for {camera_name}")
                 try:
                     active_streams[camera_name].force_stop()
                     del active_streams[camera_name]
                 except Exception as e:
                     logger.error(f"Error stopping stream: {e}")
-                    # Continue with deletion even if stream cleanup fails
         
-        # 3. Delete associated detections
-        batch = db.batch()
-        detections_ref = db.collection("detections").where("camera_id", "==", camera_id).limit(500).stream()
-        deletion_count = 0
+        # 3. Delete from Firestore with transaction
+        transaction = db.transaction()
         
-        for detection in detections_ref:
-            batch.delete(detection.reference)
-            deletion_count += 1
-            if deletion_count >= 500:  # Commit batch when it reaches maximum size
+        @firestore.transactional
+        def delete_in_transaction(transaction, camera_doc):
+            # Delete the camera document
+            transaction.delete(camera_doc.reference)
+            
+            # Delete associated detections
+            batch = db.batch()
+            deletion_count = 0
+            
+            detections_ref = db.collection("detections").where("camera_id", "==", camera_id).limit(500).stream()
+            for detection in detections_ref:
+                batch.delete(detection.reference)
+                deletion_count += 1
+                if deletion_count >= 500:
+                    batch.commit()
+                    batch = db.batch()
+                    deletion_count = 0
+            
+            if deletion_count > 0:
                 batch.commit()
-                batch = db.batch()
-                deletion_count = 0
-                
-        # 4. Delete the camera document
-        batch.delete(camera_doc.reference)
         
-        # 5. Commit any remaining deletions
-        if deletion_count > 0:
-            batch.commit()
+        # Execute transaction
+        delete_in_transaction(transaction, camera_doc)
         
-        # 6. Final cleanup
+        # 4. Final cleanup
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
