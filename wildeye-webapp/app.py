@@ -4,27 +4,15 @@ import threading
 import webbrowser
 import time
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
-from datetime import datetime, timedelta
+from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from process_stream import process_stream
 from werkzeug.serving import is_running_from_reloader
 import logging
 import cv2
-from functools import wraps
-import traceback
-from queue import Empty  # For queue operations
-import torch  # For PyTorch operations
 import gc
-from database.models import (
-    init_db,
-    add_camera,
-    update_camera,
-    get_camera,
-    add_detection,
-    get_detections_by_camera,
-    get_detections_by_timerange
-)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -35,38 +23,12 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Firebase Admin SDK Initialization
-# Firebase initialization
-db = None
 try:
-    # Check if credential file exists
-    if not os.path.exists("firebase_admin_key.json"):
-        raise FileNotFoundError("firebase_admin_key.json not found")
-        
-    # Read credentials to verify file content
-    with open("firebase_admin_key.json", "r") as f:
-        cred_content = f.read()
-        logger.info("Successfully read credentials file")
-    
-    # Initialize Firebase
-    if not firebase_admin._apps:
-        cred = credentials.Certificate("firebase_admin_key.json")
-        firebase_admin.initialize_app(cred)
-        logger.info("Firebase Admin SDK initialized")
-    
-    # Get Firestore client
+    cred = credentials.Certificate("firebase_admin_key.json")
+    firebase_admin.initialize_app(cred)
     db = firestore.client()
-    
-    # Test connection
-    test_query = db.collection('cameras').limit(1).get()
-    logger.info("Firebase connection test successful")
-    
-except FileNotFoundError as e:
-    logger.error(f"Credential file error: {e}")
-    logger.error(f"Current directory: {os.getcwd()}")
-    db = None
 except Exception as e:
     logger.error(f"Firebase initialization error: {e}")
-    logger.error(f"Traceback: {traceback.format_exc()}")
     db = None
 
 # Store active camera streams with thread-safe dictionary
@@ -252,62 +214,7 @@ def get_connected_cameras():
             logger.error(f"Error testing camera {i}: {str(e)}")
     
     return camera_info
-def cleanup_camera_stream(camera_name):
-    """Thoroughly clean up all resources associated with a camera stream"""
-    logger.info(f"Starting thorough cleanup for camera: {camera_name}")
-    try:
-        with stream_lock:
-            if camera_name in active_streams:
-                stream = active_streams[camera_name]
-                
-                # 1. Stop all frame processing
-                stream.stop_flag.set()
-                
-                # 2. Clear frame and result queues
-                while not stream.frame_queue.empty():
-                    try:
-                        stream.frame_queue.get_nowait()
-                    except Empty:
-                        break
-                        
-                while not stream.result_queue.empty():
-                    try:
-                        stream.result_queue.get_nowait()
-                    except Empty:
-                        break
-                
-                # 3. Release VideoCapture resources
-                if stream.video_capture:
-                    stream.video_capture.release()
-                
-                # 4. Clean up YOLO model resources
-                if hasattr(stream.stream_generator, 'video_processor'):
-                    processor = stream.stream_generator.video_processor
-                    if hasattr(processor, 'models'):
-                        for model in processor.models:
-                            try:
-                                model.cpu()  # Move to CPU first
-                                del model
-                            except:
-                                pass
-                        processor.models = []
-                    
-                # 5. Stop all threads
-                stream.force_stop()
-                
-                # 6. Remove from active streams
-                del active_streams[camera_name]
-                
-                # 7. Force garbage collection
-                gc.collect()
-                torch.cuda.empty_cache()  # Clear CUDA cache if available
-                
-                logger.info(f"Successfully cleaned up stream resources for {camera_name}")
-                return True
-    except Exception as e:
-        logger.error(f"Error during stream cleanup for {camera_name}: {e}")
-        return False
-    
+
 @app.route("/")
 def index():
     return render_template("index.html", current_page='index')
@@ -348,66 +255,55 @@ def reset_password():
 @app.route("/home", methods=["GET", "POST"])
 def home():
     if db is None:
-        logger.error("Firebase database not initialized")
         return "Firebase not initialized", 500
 
     if request.method == "POST":
         try:
-            # Extract form data with validation
-            input_type = request.form.get("input_type")
-            camera_name = request.form.get("camera_name")
-            input_value = request.form.get("input_value")
-            
-            # Validate required fields
-            if not all([input_type, camera_name, input_value]):
-                logger.error("Missing required camera fields")
-                return render_template("home.html", 
-                                    error="All required fields must be filled", 
-                                    current_page='home')
+            input_type = request.form["input_type"]
+            camera_name = request.form["camera_name"]
+            input_value = request.form["input_value"]
+            google_maps_link = request.form.get("google_maps_link", "")
+            mobile_number = request.form.get("mobile_number", "")
 
-            # Check if camera name already exists
-            existing_camera = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
-            if len(list(existing_camera)) > 0:
-                logger.warning(f"Camera name {camera_name} already exists")
-                return render_template("home.html", 
-                                    error="Camera name already exists", 
-                                    current_page='home')
-
-            # Prepare camera data with only essential fields
             camera_data = {
                 "input_type": input_type,
                 "camera_name": camera_name,
                 "input_value": input_value,
-                "google_maps_link": request.form.get("google_maps_link", ""),
-                "mobile_number": request.form.get("mobile_number", "")
+                "google_maps_link": google_maps_link,
+                "mobile_number": mobile_number,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
+            
+            db.collection("cameras").add(camera_data)
 
-            # Add to database
-            doc_ref = db.collection("cameras").add(camera_data)
-            logger.info(f"Added new camera: {camera_name} with ID: {doc_ref[1].id}")
+            with stream_lock:
+                if camera_name not in active_streams:
+                    stream = CameraStream(input_type, input_value)
+                    stream.start()
+                    active_streams[camera_name] = stream
 
             return redirect(url_for("cameras"))
-
         except Exception as e:
-            logger.error(f"Error adding camera: {str(e)}")
-            return render_template("home.html", 
-                                error=f"Failed to add camera: {str(e)}", 
-                                current_page='home')
-    
-    # Add this return for GET method
-    return render_template("home.html", current_page='home')
+            logger.error(f"Error adding camera: {e}")
+            return render_template("home.html", error="Failed to add camera", current_page='home')
 
+    try:
+        cameras_ref = db.collection("cameras")
+        cameras = [doc.to_dict() for doc in cameras_ref.stream()]
+        return render_template("home.html", cameras=cameras, current_page='home')
+    except Exception as e:
+        logger.error(f"Error loading cameras: {e}")
+        return render_template("home.html", cameras=[], error="Failed to load cameras", current_page='home')
+    
 @app.route("/detection-history")
 def detection_history():
     if db is None:
         return render_template("detection_history.html", error="Firebase not initialized"), 500
 
     try:
-        # Get detections for the last 24 hours
-        end_time = datetime.now()
-        start_time = end_time - timedelta(days=1)
-        detections = get_detections_by_timerange(db, start_time, end_time)
-        return render_template("detection_history.html", detections=detections)
+        logs_ref = db.collection("detection_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(50)
+        logs = [doc.to_dict() for doc in logs_ref.stream()]
+        return render_template("detection_history.html", logs=logs)
     except Exception as e:
         return render_template("detection_history.html", error=str(e))
 
@@ -477,11 +373,9 @@ def video_feed(camera_name):
                         active_streams[camera_name].force_stop()  # Use force_stop instead of stop
                         del active_streams[camera_name]
                     
-                    # Create new stream with database instance
+                    # Create new stream
                     logger.info(f"Creating stream with type: {camera['input_type']}, value: {camera['input_value']}")
                     stream = CameraStream(camera["input_type"], camera["input_value"])
-                    stream.camera_id = camera_doc.id  # Set camera_id
-                    stream.db = db  # Pass database instance
                     stream.start()
                     active_streams[camera_name] = stream
                     logger.info(f"Stream started for {camera_name}")
@@ -544,7 +438,7 @@ def video_feed(camera_name):
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
-
+    
 @app.route('/camera/<camera_name>/details')
 def camera_details(camera_name):
     try:
@@ -654,69 +548,59 @@ def cleanup_camera_stream(camera_name):
 @app.route('/camera/<camera_name>/remove', methods=['POST'])
 def remove_camera(camera_name):
     if db is None:
-        return jsonify({"success": False, "error": "Firebase not initialized"}), 500
-        
+        return jsonify({"error": "Firebase not initialized"}), 500
+
     logger.info(f"Starting camera removal process for: {camera_name}")
-    
+
     try:
-        # 1. Find and verify camera exists
-        camera_ref = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
-        camera_docs = list(camera_ref)
-        
-        if not camera_docs:
-            logger.warning(f"Camera {camera_name} not found in database")
-            return jsonify({"success": False, "error": "Camera not found"}), 404
-            
-        camera_doc = camera_docs[0]
-        camera_id = camera_doc.id
-        
-        # 2. Stop stream first
+        # 1. Stop the video feed first to prevent new connections
         with stream_lock:
             if camera_name in active_streams:
-                logger.info(f"Stopping stream for {camera_name}")
-                try:
-                    active_streams[camera_name].force_stop()
-                    del active_streams[camera_name]
-                except Exception as e:
-                    logger.error(f"Error stopping stream: {e}")
+                logger.info(f"Stopping stream for camera: {camera_name}")
+                stream = active_streams[camera_name]
+                # Force stop all processing
+                stream.force_stop()
+                # Remove from active streams
+                del active_streams[camera_name]
+
+        # 2. Then remove from database
+        camera_ref = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
+        camera_doc = None
         
-        # 3. Delete from Firestore with transaction
-        transaction = db.transaction()
-        
-        @firestore.transactional
-        def delete_in_transaction(transaction, camera_doc):
-            # Delete the camera document
-            transaction.delete(camera_doc.reference)
+        for doc in camera_ref:
+            camera_doc = doc
+            break
             
-            # Delete associated detections
-            batch = db.batch()
-            deletion_count = 0
-            
-            detections_ref = db.collection("detections").where("camera_id", "==", camera_id).limit(500).stream()
-            for detection in detections_ref:
-                batch.delete(detection.reference)
-                deletion_count += 1
-                if deletion_count >= 500:
-                    batch.commit()
-                    batch = db.batch()
-                    deletion_count = 0
-            
-            if deletion_count > 0:
-                batch.commit()
-        
-        # Execute transaction
-        delete_in_transaction(transaction, camera_doc)
-        
-        # 4. Final cleanup
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        if camera_doc:
+            camera_doc.reference.delete()
+            logger.info(f"Deleted camera {camera_name} from database")
+        else:
+            logger.warning(f"Camera {camera_name} not found in database")
+
+        # 3. Force garbage collection multiple times
+        import gc
+        for _ in range(3):
+            gc.collect()
         
         logger.info(f"Successfully removed camera {camera_name}")
-        return jsonify({"success": True})
         
+        # 4. Add a small delay to ensure cleanup is complete
+        time.sleep(0.5)
+        
+        return jsonify({"success": True})
+
     except Exception as e:
-        logger.error(f"Error removing camera {camera_name}: {str(e)}")
+        logger.error(f"Error removing camera {camera_name}: {e}")
+        # Emergency cleanup
+        try:
+            if camera_name in active_streams:
+                stream = active_streams[camera_name]
+                stream.force_stop()
+                del active_streams[camera_name]
+                gc.collect()
+        except Exception as cleanup_error:
+            logger.error(f"Emergency cleanup failed: {cleanup_error}")
+        
         return jsonify({"success": False, "error": str(e)}), 500
 if __name__ == "__main__":
     if not is_running_from_reloader():
