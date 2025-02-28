@@ -1,4 +1,3 @@
-#process_stream
 import cv2
 from ultralytics import YOLO
 import yt_dlp
@@ -27,11 +26,13 @@ class VideoProcessor:
         self.frame_queue = Queue(maxsize=queue_size)
         self.result_queue = Queue(maxsize=queue_size)
         self.stop_flag = threading.Event()
+        self.pause_flag = threading.Event()  # Flag to pause processing
         self.fps = 30  # Default FPS
         self.frame_time = 1/self.fps  # Time per frame
-        self.camera_id = None  # Add this line to store camera_id
-        self.db = None  # Add this line to store database instance
-
+        self.camera_id = None  # Store camera_id
+        self.db = None  # Store database instance
+        self.last_processed_frame = None  # Keep the last frame for paused state
+        
         try:
             logger.info(f"Loading YOLO model from {model_path}")
             # Check for CUDA availability
@@ -42,15 +43,59 @@ class VideoProcessor:
             logger.error(f"Failed to load YOLO model: {e}")
             raise
 
+    def pause_processing(self):
+        """Pause the processing but keep the stream alive"""
+        logger.info("Pausing video processing")
+        self.pause_flag.set()
+
+    def resume_processing(self):
+        """Resume the processing"""
+        logger.info("Resuming video processing")
+        self.pause_flag.clear()
+
     def _frame_producer(self, cap: cv2.VideoCapture) -> None:
         frame_count = 0
         last_frame_time = time.time()
         consecutive_failures = 0
         max_failures = 5  # Maximum number of consecutive failures before breaking
+        last_frame = None  # Store the last successfully read frame
 
         while not self.stop_flag.is_set():
             try:
-                # Maintain proper timing
+                # If processing is paused and we have a last frame, reuse it at reduced rate
+                if self.pause_flag.is_set() and last_frame is not None:
+                    # Sleep longer when paused to reduce CPU/GPU load
+                    time.sleep(0.5)  
+                    
+                    # Create a copy of the last frame with a "PAUSED" overlay
+                    paused_frame = last_frame.copy()
+                    cv2.putText(
+                        paused_frame,
+                        "STREAM PAUSED",
+                        (int(paused_frame.shape[1]/2) - 100, int(paused_frame.shape[0]/2)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (0, 0, 255),
+                        2
+                    )
+                    
+                    try:
+                        # Only put frames if not paused for too long
+                        if time.time() - last_frame_time < 10:  # 10 seconds max of paused state
+                            # Remove oldest frame if queue is full
+                            if self.frame_queue.full():
+                                try:
+                                    self.frame_queue.get_nowait()
+                                except Empty:
+                                    pass
+                                    
+                            self.frame_queue.put((paused_frame, time.time()), timeout=1)
+                    except Exception as queue_error:
+                        logger.error(f"Queue error (paused): {queue_error}")
+                    
+                    continue
+
+                # Maintain proper timing for normal operation
                 current_time = time.time()
                 time_diff = current_time - last_frame_time
                 if time_diff < self.frame_time:
@@ -66,7 +111,10 @@ class VideoProcessor:
                     time.sleep(0.1)
                     continue
                 
+                # Store the last successful frame
+                last_frame = frame.copy()
                 consecutive_failures = 0  # Reset counter on successful frame read
+                last_frame_time = time.time()
                 frame_count += 1
                 
                 # Process every other frame to reduce load
@@ -82,7 +130,6 @@ class VideoProcessor:
                             pass
 
                     self.frame_queue.put((frame, time.time()), timeout=1)
-                    last_frame_time = time.time()
                 except Exception as queue_error:
                     logger.error(f"Queue error: {queue_error}")
                     continue
@@ -94,6 +141,10 @@ class VideoProcessor:
     def _process_frame(self, worker_id: int, frame_data: tuple) -> tuple:
         frame, timestamp = frame_data
         try:
+            # If processing is paused, skip detection and just return the frame
+            if self.pause_flag.is_set():
+                return frame, [], timestamp
+
             # Perform object detection
             results = self.models[worker_id].predict(
                 frame,
@@ -125,8 +176,11 @@ class VideoProcessor:
                         cv2.putText(processed_frame, text, (x1, y1 - 10),
                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
+            # Store the last processed frame
+            self.last_processed_frame = processed_frame.copy()
+
             # If there are detections and we have camera_id and db, save to database
-            if detections and self.camera_id and self.db:
+            if detections and self.camera_id and self.db and not self.pause_flag.is_set():
                 try:
                     # Convert the processed frame to JPEG format
                     _, buffer = cv2.imencode('.jpg', processed_frame)
@@ -140,7 +194,12 @@ class VideoProcessor:
                             'timestamp': datetime.now()
                         }
                         
-                        add_detection(self.db, detection_data, screenshot)
+                        detection_id = add_detection(self.db, detection_data, screenshot)
+                        if detection_id:
+                            logger.info(f"Saved new detection: {detection['detection_label']}")
+                        else:
+                            logger.info(f"Skipped duplicate detection: {detection['detection_label']}")
+                            
                 except Exception as e:
                     logger.error(f"Failed to save detection to database: {e}")
 
@@ -169,9 +228,18 @@ class VideoProcessor:
             except Exception as e:
                 logger.error(f"Worker {worker_id} error: {e}")
 
-    def process_stream(self, input_type: str, input_value: str, seek_time: int = 0, camera_id: str = None, db = None) -> Generator:
+    def process_stream(self, input_type: str, input_value: str, seek_time: int = 0, camera_id: str = None, db = None, is_visible: bool = False) -> Generator:
         self.camera_id = camera_id  # Store camera_id
         self.db = db  # Store database instance
+        
+        # Set initial pause state based on visibility
+        if not is_visible:
+            logger.info(f"Starting stream in paused state (not visible): {input_value}")
+            self.pause_flag.set()
+        else:
+            logger.info(f"Starting stream in active state (visible): {input_value}")
+            self.pause_flag.clear()
+            
         logger.info(f"Starting stream processing - Type: {input_type}, Value: {input_value}, Seek: {seek_time}")
         cap = None
 
@@ -279,6 +347,12 @@ class VideoProcessor:
 
     def __del__(self):
         self.stop_flag.set()
+        # Clean up CUDA cache if using GPU
+        try:
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except:
+            pass
 
 # Create global VideoProcessor instance
 MODEL_PATH = "best.pt"  # Update this to your model path
@@ -293,18 +367,37 @@ def initialize_processor():
     except Exception as e:
         logger.error(f"Failed to initialize VideoProcessor: {e}")
         raise
-def process_stream(input_type: str, input_value: str, seek_time: int = 0, camera_id: str = None, db = None) -> Generator:
+
+def process_stream(input_type: str, input_value: str, seek_time: int = 0, camera_id: str = None, db = None, is_visible: bool = False) -> Generator:
     """Process a video stream and yield processed frames"""
     global video_processor
     if video_processor is None:
         initialize_processor()
 
-    logger.info(f"Processing stream request - Type: {input_type}, Value: {input_value}")
+    logger.info(f"Processing stream request - Type: {input_type}, Value: {input_value}, Visible: {is_visible}")
     try:
-        yield from video_processor.process_stream(input_type, input_value, seek_time, camera_id, db)
+        yield from video_processor.process_stream(input_type, input_value, seek_time, camera_id, db, is_visible)
     except Exception as e:
         logger.error(f"Stream processing failed: {e}")
         raise
+
+def pause_stream(camera_id: str):
+    """Pause processing for a specific camera"""
+    global video_processor
+    if video_processor is not None:
+        logger.info(f"Pausing stream for camera: {camera_id}")
+        video_processor.pause_processing()
+        return True
+    return False
+
+def resume_stream(camera_id: str):
+    """Resume processing for a specific camera"""
+    global video_processor
+    if video_processor is not None:
+        logger.info(f"Resuming stream for camera: {camera_id}")
+        video_processor.resume_processing()
+        return True
+    return False
 
 def test_camera_connection(camera_index):
     """
@@ -405,73 +498,8 @@ def get_connected_cameras(verbose=True):
     
     return available_cameras
 
-# In the _process_frame method of VideoProcessor class:
-def _process_frame(self, worker_id: int, frame_data: tuple) -> tuple:
-    frame, timestamp = frame_data
-    try:
-        # Perform object detection
-        results = self.models[worker_id].predict(
-            frame,
-            device='cuda' if torch.cuda.is_available() else 'cpu',
-            stream=True,
-            conf=0.5
-        )
-
-        processed_frame = frame.copy()
-        detections = []
-
-        for result in results:
-            for box in result.boxes:
-                confidence = box.conf.item()
-                class_id = int(box.cls.item())
-                label = self.models[worker_id].names[class_id]
-
-                # Only process if confidence is high enough
-                if confidence > 0.5:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    detections.append({
-                        'detection_label': label,
-                        'confidence': confidence
-                    })
-
-                    # Draw bounding box and label
-                    cv2.rectangle(processed_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    text = f"{label} ({confidence:.2f})"
-                    cv2.putText(processed_frame, text, (x1, y1 - 10),
-                              cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-        # If there are detections, save to database with screenshot
-        if detections and hasattr(self, 'camera_id'):
-            try:
-                # Convert the processed frame to JPEG format
-                _, buffer = cv2.imencode('.jpg', processed_frame)
-                screenshot = buffer.tobytes()
-
-                # Save each detection (now with deduplication)
-                for detection in detections:
-                    detection_data = {
-                        'camera_id': self.camera_id,
-                        'detection_label': detection['detection_label'],
-                        'timestamp': datetime.now()
-                    }
-                    
-                    # add_detection will now return None if it's a duplicate
-                    detection_id = add_detection(self.db, detection_data, screenshot)
-                    if detection_id:
-                        logger.info(f"Saved new detection: {detection['detection_label']}")
-                    else:
-                        logger.info(f"Skipped duplicate detection: {detection['detection_label']}")
-                        
-            except Exception as e:
-                logger.error(f"Failed to save detection: {e}")
-
-        return processed_frame, detections, timestamp
-    except Exception as e:
-        logger.error(f"Frame processing error: {traceback.format_exc()}")
-        return frame, [], timestamp
-    
 # Initialize the processor when module is imported
 initialize_processor()
 
 # Export the necessary functions
-__all__ = ['process_stream', 'get_connected_cameras']
+__all__ = ['process_stream', 'get_connected_cameras', 'pause_stream', 'resume_stream']

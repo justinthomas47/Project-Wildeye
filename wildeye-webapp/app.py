@@ -1,4 +1,3 @@
-#app.py
 import os
 import threading
 import webbrowser
@@ -7,11 +6,12 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, R
 from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
-from process_stream import process_stream
+from process_stream import process_stream, pause_stream, resume_stream
 from werkzeug.serving import is_running_from_reloader
 import logging
 import cv2
 import gc
+import numpy as np
 
 # Configure logging
 logging.basicConfig(
@@ -36,13 +36,14 @@ active_streams = {}
 stream_lock = threading.Lock()
 
 class CameraStream:
-    def __init__(self, input_type, input_value, seek_time=0):
+    def __init__(self, input_type, input_value, seek_time=0, visible=False):
         self.input_type = input_type
         self.input_value = input_value
         self.seek_time = seek_time
         self.thread = None
         self.frame = None
         self.running = threading.Event()
+        self.is_visible = visible  # Track if stream is visible in UI
         self.frame_lock = threading.Lock()
         self.stream_generator = None
         self.last_frame_time = time.time()
@@ -51,6 +52,43 @@ class CameraStream:
         self.reconnect_attempts = 0
         self.max_reconnect_attempts = 3
         self.video_capture = None
+        self.static_frame = self._create_static_frame()
+
+    def _create_static_frame(self):
+        """Create a static frame for when the stream is paused"""
+        try:
+            # Create a black frame with text
+            frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(
+                frame, 
+                "Stream inactive - Click to activate", 
+                (120, 240), 
+                cv2.FONT_HERSHEY_SIMPLEX, 
+                0.7, 
+                (255, 255, 255), 
+                2
+            )
+            
+            # Convert to JPEG bytes
+            _, buffer = cv2.imencode('.jpg', frame)
+            return b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n'
+        except Exception as e:
+            logger.error(f"Error creating static frame: {e}")
+            return None
+
+    def set_visibility(self, visible):
+        """Update the visibility status of the stream"""
+        if self.is_visible == visible:
+            return  # No change needed
+            
+        logger.info(f"Setting visibility for {self.input_value} to {visible}")
+        self.is_visible = visible
+        
+        # Pause or resume the backend processing based on visibility
+        if visible:
+            resume_stream(self.input_value)
+        else:
+            pause_stream(self.input_value)
 
     def start(self):
         if not self.running.is_set():
@@ -63,11 +101,14 @@ class CameraStream:
     def _update_frame(self):
         while self.running.is_set() and self.reconnect_attempts < self.max_reconnect_attempts:
             try:
-                logger.info(f"Starting stream generator for {self.input_value}")
+                logger.info(f"Starting stream generator for {self.input_value} (visible={self.is_visible})")
                 self.stream_generator = process_stream(
                     self.input_type, 
                     self.input_value, 
-                    seek_time=self.seek_time
+                    seek_time=self.seek_time,
+                    camera_id=self.input_value,
+                    db=db,
+                    is_visible=self.is_visible
                 )
                 
                 # Store VideoCapture object if available
@@ -103,6 +144,10 @@ class CameraStream:
                 break
 
     def get_frame(self):
+        # If not visible and we have a static frame, return that instead
+        if not self.is_visible and self.static_frame is not None:
+            return self.static_frame
+            
         with self.frame_lock:
             if not self.running.is_set():
                 return None
@@ -278,7 +323,8 @@ def home():
 
             with stream_lock:
                 if camera_name not in active_streams:
-                    stream = CameraStream(input_type, input_value)
+                    # Initialize stream but don't start processing (visible=False)
+                    stream = CameraStream(input_type, input_value, visible=False)
                     stream.start()
                     active_streams[camera_name] = stream
 
@@ -349,11 +395,46 @@ def cameras():
         logger.error(f"Error fetching cameras: {e}")
         return render_template("cameras.html", cameras=[], error=str(e), current_page='cameras')
 
+@app.route('/camera/<camera_name>/pause', methods=['POST'])
+def pause_camera_stream(camera_name):
+    """Pause processing for a camera when not visible in the UI"""
+    try:
+        with stream_lock:
+            if camera_name in active_streams:
+                logger.info(f"Pausing stream for camera: {camera_name}")
+                active_streams[camera_name].set_visibility(False)
+                return jsonify({"success": True})
+            else:
+                logger.warning(f"Attempted to pause non-existent stream: {camera_name}")
+                return jsonify({"success": False, "error": "Stream not found"}), 404
+    except Exception as e:
+        logger.error(f"Error pausing camera {camera_name}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/camera/<camera_name>/resume', methods=['POST'])
+def resume_camera_stream(camera_name):
+    """Resume processing for a camera when visible in the UI"""
+    try:
+        with stream_lock:
+            if camera_name in active_streams:
+                logger.info(f"Resuming stream for camera: {camera_name}")
+                active_streams[camera_name].set_visibility(True)
+                return jsonify({"success": True})
+            else:
+                logger.warning(f"Attempted to resume non-existent stream: {camera_name}")
+                return jsonify({"success": False, "error": "Stream not found"}), 404
+    except Exception as e:
+        logger.error(f"Error resuming camera {camera_name}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route('/video_feed/<camera_name>')
 def video_feed(camera_name):
+    # Check if the stream should be visible (parameter sent by frontend)
+    is_visible = request.args.get('visible', 'false').lower() == 'true'
+    
     def generate():
         try:
-            logger.info(f"Starting video feed for {camera_name}")
+            logger.info(f"Starting video feed for {camera_name} (visible={is_visible})")
             with stream_lock:
                 if camera_name not in active_streams:
                     logger.info(f"Creating new stream for {camera_name}")
@@ -370,15 +451,21 @@ def video_feed(camera_name):
                     # Stop existing stream if any
                     if camera_name in active_streams:
                         logger.info(f"Stopping existing stream for {camera_name}")
-                        active_streams[camera_name].force_stop()  # Use force_stop instead of stop
+                        active_streams[camera_name].force_stop()
                         del active_streams[camera_name]
                     
-                    # Create new stream
+                    # Create new stream with visibility flag
                     logger.info(f"Creating stream with type: {camera['input_type']}, value: {camera['input_value']}")
-                    stream = CameraStream(camera["input_type"], camera["input_value"])
+                    stream = CameraStream(camera["input_type"], camera["input_value"], visible=is_visible)
                     stream.start()
                     active_streams[camera_name] = stream
                     logger.info(f"Stream started for {camera_name}")
+                else:
+                    # If stream exists but visibility changed, update it
+                    current_stream = active_streams[camera_name]
+                    if current_stream.is_visible != is_visible:
+                        logger.info(f"Updating stream visibility for {camera_name} to {is_visible}")
+                        current_stream.set_visibility(is_visible)
 
             frame_count = 0
             start_time = time.time()
@@ -423,15 +510,10 @@ def video_feed(camera_name):
         except Exception as e:
             logger.error(f"Video feed error for {camera_name}: {e}")
         finally:
-            # Cleanup in finally block
-            try:
-                if camera_name in active_streams:
-                    active_streams[camera_name].force_stop()
-                    del active_streams[camera_name]
-                    gc.collect()
-            except Exception as cleanup_error:
-                logger.error(f"Error in final cleanup: {cleanup_error}")
-            logger.info(f"Stream ended for {camera_name}")
+            # Don't automatically clean up when connection closes
+            # We'll keep the stream alive but paused if it's no longer visible
+            # Only write a log message about client disconnection
+            logger.info(f"Client disconnected from stream {camera_name}")
     
     response = Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -446,7 +528,7 @@ def camera_details(camera_name):
         if not camera_ref:
             return jsonify({"error": "Camera not found"}), 404
             
-        camera_data = camera_ref[0].to_dict()
+        camera_data = list(camera_ref)[0].to_dict()
         return jsonify(camera_data)
     except Exception as e:
         logger.error(f"Error getting camera details: {e}")
@@ -466,9 +548,12 @@ def seek_video(camera_name):
                 if not camera_ref:
                     return jsonify({"success": False, "error": "Camera not found"})
                 
-                camera = camera_ref[0].to_dict()
+                camera = list(camera_ref)[0].to_dict()
                 
-                stream = CameraStream(camera["input_type"], camera["input_value"], seek_time=seconds)
+                # Check if the stream was visible before seeking
+                was_visible = active_streams[camera_name].is_visible
+                
+                stream = CameraStream(camera["input_type"], camera["input_value"], seek_time=seconds, visible=was_visible)
                 stream.start()
                 active_streams[camera_name] = stream
                 
@@ -476,74 +561,6 @@ def seek_video(camera_name):
     except Exception as e:
         logger.error(f"Error seeking video: {e}")
         return jsonify({"success": False, "error": str(e)})
-
-def cleanup_streams():
-    """Clean up all active camera streams when the application shuts down"""
-    logger.info("Starting global cleanup of all camera streams")
-    try:
-        with stream_lock:
-            camera_names = list(active_streams.keys())
-            
-            for camera_name in camera_names:
-                try:
-                    logger.info(f"Force cleaning up stream for camera: {camera_name}")
-                    cleanup_camera_stream(camera_name)
-                except Exception as e:
-                    logger.error(f"Error cleaning up stream for {camera_name}: {e}")
-            
-            # Clear all streams
-            active_streams.clear()
-            
-            # Force Python garbage collection
-            import gc
-            gc.collect()
-            
-        logger.info("Global cleanup completed successfully")
-    except Exception as e:
-        logger.error(f"Error during global cleanup: {e}")
-        # Emergency cleanup
-        try:
-            active_streams.clear()
-            gc.collect()
-        except:
-            pass
-
-def cleanup_camera_stream(camera_name):
-    """Helper function to clean up camera stream resources"""
-    try:
-        if camera_name in active_streams:
-            logger.info(f"Starting force cleanup for camera: {camera_name}")
-            stream = active_streams[camera_name]
-            
-            # Force stop all processing
-            stream.force_stop()
-            
-            # Stop the generator from process_stream module
-            if hasattr(stream, 'stream_generator'):
-                try:
-                    # Try to access and cleanup VideoProcessor
-                    if hasattr(stream.stream_generator, 'video_processor'):
-                        try:
-                            del stream.stream_generator.video_processor.models
-                            del stream.stream_generator.video_processor
-                        except:
-                            pass
-                except:
-                    pass
-            
-            # Remove from active streams
-            del active_streams[camera_name]
-            
-            # Force Python garbage collection multiple times
-            import gc
-            for _ in range(3):
-                gc.collect()
-            
-            logger.info(f"Successfully cleaned up stream for camera: {camera_name}")
-            return True
-    except Exception as e:
-        logger.error(f"Error during stream cleanup for {camera_name}: {e}")
-        return False
 
 @app.route('/camera/<camera_name>/remove', methods=['POST'])
 def remove_camera(camera_name):
@@ -578,7 +595,6 @@ def remove_camera(camera_name):
             logger.warning(f"Camera {camera_name} not found in database")
 
         # 3. Force garbage collection multiple times
-        import gc
         for _ in range(3):
             gc.collect()
         
@@ -602,6 +618,40 @@ def remove_camera(camera_name):
             logger.error(f"Emergency cleanup failed: {cleanup_error}")
         
         return jsonify({"success": False, "error": str(e)}), 500
+
+def cleanup_streams():
+    """Clean up all active camera streams when the application shuts down"""
+    logger.info("Starting global cleanup of all camera streams")
+    try:
+        with stream_lock:
+            camera_names = list(active_streams.keys())
+            
+            for camera_name in camera_names:
+                try:
+                    logger.info(f"Force cleaning up stream for camera: {camera_name}")
+                    if camera_name in active_streams:
+                        stream = active_streams[camera_name]
+                        stream.force_stop()
+                
+                except Exception as e:
+                    logger.error(f"Error cleaning up stream for {camera_name}: {e}")
+            
+            # Clear all streams
+            active_streams.clear()
+            
+            # Force Python garbage collection
+            gc.collect()
+            
+        logger.info("Global cleanup completed successfully")
+    except Exception as e:
+        logger.error(f"Error during global cleanup: {e}")
+        # Emergency cleanup
+        try:
+            active_streams.clear()
+            gc.collect()
+        except:
+            pass
+
 if __name__ == "__main__":
     if not is_running_from_reloader():
         webbrowser.open("http://127.0.0.1:5000")
