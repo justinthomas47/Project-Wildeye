@@ -857,3 +857,148 @@ ValueError: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
 2025-03-02 22:48:19,701 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
 2025-03-02 22:48:19,702 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
 2025-03-02 22:48:19,702 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:53:12,065 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:53:12,169 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:53:12,896 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:53:12,896 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-02 22:53:17,859 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:53:19,336 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:53:19,337 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:53:19,778 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:53:19,779 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:53:19,779 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:53:19,779 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-02 22:53:20,087 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:53:20,087 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-02 22:53:20,087 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:53:20,194 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:53:21,799 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:53:21,813 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:53:21,898 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:53:23,644 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:53:23,645 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:53:23,645 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:55:21,168 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:55:21,271 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:55:22,053 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:55:22,054 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-02 22:55:26,895 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:55:28,244 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:55:28,245 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:55:28,629 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:55:28,629 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:55:28,629 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:55:28,629 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-02 22:55:28,861 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:55:28,862 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-02 22:55:28,862 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:55:28,924 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:55:30,228 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:55:30,238 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:55:38,420 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:55:38,516 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:55:49,975 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:55:49,975 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-02 22:55:55,060 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:55:56,321 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:55:56,321 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:55:56,683 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:55:56,683 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:55:56,683 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:55:56,683 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-02 22:55:56,903 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:55:56,904 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-02 22:55:56,904 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:55:56,966 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:55:58,184 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:55:58,406 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:55:58,406 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-02 22:56:03,251 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:56:04,526 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:56:04,527 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:56:05,016 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:56:05,016 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:56:05,018 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:56:05,018 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-02 22:56:05,335 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:56:05,335 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-02 22:56:05,335 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:56:05,447 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:56:07,085 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:56:07,097 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:56:13,230 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 22:56:13,231 - __main__ - INFO - Creating new stream for cam2
+2025-03-02 22:56:13,533 - __main__ - INFO - Found camera config: {'google_maps_link': '', 'mobile_number': '6238745312', 'input_type': 'youtube_link', 'input_value': 'https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos', 'camera_id': 'cam2_97fa8196', 'camera_name': 'cam2', 'timestamp': '2025-03-02 22:15:46'}
+2025-03-02 22:56:13,534 - __main__ - INFO - Creating stream with type: youtube_link, value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, id: cam2_97fa8196
+2025-03-02 22:56:13,539 - __main__ - INFO - Starting stream generator for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos (visible=True)
+2025-03-02 22:56:13,539 - __main__ - INFO - Started camera stream thread for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:56:13,539 - process_stream - INFO - Processing stream request - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Visible: True
+2025-03-02 22:56:13,539 - __main__ - INFO - Stream started for cam2
+2025-03-02 22:56:13,540 - process_stream - INFO - Starting stream in active state (visible): https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:56:13,540 - process_stream - INFO - Starting stream processing - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Seek: 0
+2025-03-02 22:56:13,542 - process_stream - INFO - Processing YouTube link
+2025-03-02 22:56:17,295 - process_stream - INFO - Opening video stream from source: https://rr1---sn-3xg5a5-jv3l.googlevideo.com/videoplayback?expire=1740957998&ei=zpTEZ7irINbd3LUPrrWU8AI&ip=103.160.233.255&id=o-ANWUCF64nLblE9dO8klbGbfNPDQHJCvnMpMgIC2cKadC&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1740936398%2C&mh=rM&mm=31%2C29&mn=sn-3xg5a5-jv3l%2Csn-h557sns7&ms=au%2Crdu&mv=m&mvi=1&pl=24&rms=au%2Cau&initcwndbps=1893750&bui=AUWDL3z_UMUZ8Ehe2Y5jKhjnwZgC-e8gxzFNIvYWp-dRAGI0HbDk9sM5NprNSBV1933xgmuMNBWEY3kF&spc=RjZbSakKc-X0wPk15T_g_7dVwGJmza6d9jYe57kJa-KEgC9gWDZXjo6mrMohdC3hm1JdT_1v&vprv=1&svpuc=1&mime=video%2Fmp4&ns=szgXMCpWmLLINzXmyH0cUccQ&rqh=1&cnr=14&ratebypass=yes&dur=158.151&lmt=1699430473321524&mt=1740936065&fvip=2&lmw=1&fexp=51326932&c=TVHTML5&sefc=1&txp=5318224&n=Q_3agfTIk62kUQ&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRgIhAP-TFCwjLQuVMM_2l3LJK6wg16r9AqkYQrdTHm_kWhkzAiEAvP_gPh3FGW_yfXSs8NjcwZ_ogSQZNkwND0SwhrsCgbE%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=AFVRHeAwRQIgIIEUD_A2q-EuRUFWjsgGXY3S8a4NisKvLNf0g6qFbTwCIQCtqyQH_khDrQJLVcM3ZA6lAPDB0W0xRZSMOX8oZBmMfg%3D%3D
+2025-03-02 22:56:17,683 - process_stream - INFO - Video FPS: 30.0
+2025-03-02 22:56:17,686 - process_stream - INFO - Starting worker 0
+2025-03-02 22:56:17,687 - process_stream - INFO - Starting worker 1
+2025-03-02 22:56:17,687 - process_stream - INFO - Starting worker 2
+2025-03-02 22:56:17,688 - process_stream - INFO - Starting worker 3
+2025-03-02 22:56:17,845 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:56:17,845 - __main__ - INFO - Force cleaning up stream for camera: cam2
+2025-03-02 22:56:17,845 - __main__ - INFO - Force stopping stream for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:56:17,846 - __main__ - ERROR - Error closing generator: generator already executing
+2025-03-02 22:56:19,556 - __main__ - WARNING - No frames received for cam2
+2025-03-02 22:56:19,556 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 22:56:20,540 - __main__ - INFO - Stream stopped for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:56:20,858 - __main__ - WARNING - Thread didn't terminate for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:56:20,858 - __main__ - INFO - Force stop completed for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:56:20,989 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:56:38,711 - process_stream - INFO - Camera cam2_97fa8196: 1 detections processed in the last 30 seconds
+2025-03-02 22:56:38,776 - detection_handler - INFO - Skipped duplicates for camera cam2_97fa8196: elephant: 1
+2025-03-02 22:56:44,678 - detection_handler - INFO - Added new detection: elephant from cam2
+2025-03-02 22:56:44,679 - process_stream - INFO - New detection: elephant with 71.6% confidence
+2025-03-02 22:57:08,737 - process_stream - INFO - Camera cam2_97fa8196: 411 detections processed in the last 30 seconds
+2025-03-02 22:57:08,804 - detection_handler - INFO - Skipped duplicates for camera cam2_97fa8196: elephant: 411
+2025-03-02 22:57:39,044 - process_stream - INFO - Camera cam2_97fa8196: 382 detections processed in the last 30 seconds
+2025-03-02 22:57:39,045 - detection_handler - INFO - Skipped duplicates for camera cam2_97fa8196: elephant: 381
+2025-03-02 22:58:02,523 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:58:02,525 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-02 22:58:07,527 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:58:08,817 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:58:08,818 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:58:09,229 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:58:09,229 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:58:09,230 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:58:09,230 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-02 22:58:09,450 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:58:09,450 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-02 22:58:09,450 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:58:09,512 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:58:10,729 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:58:10,955 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:58:10,955 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-02 22:58:15,671 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:58:16,900 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:58:16,901 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:58:17,331 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:58:17,332 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:58:17,332 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:58:17,332 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-02 22:58:17,574 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:58:17,574 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-02 22:58:17,574 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:58:17,681 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:58:19,365 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:58:19,379 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:58:38,990 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:58:39,292 - __main__ - INFO - Found detection log: Htgs5DdhJ2OsZxLyzyGK
+2025-03-02 22:58:39,293 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:58:39,294 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:58:39,295 - __main__ - INFO - Found 3 detection logs to display
+2025-03-02 22:59:23,821 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:59:24,120 - __main__ - INFO - Found detection log: Htgs5DdhJ2OsZxLyzyGK
+2025-03-02 22:59:24,121 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:59:24,121 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:59:24,122 - __main__ - INFO - Found 3 detection logs to display
+2025-03-02 22:59:33,707 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:59:33,848 - __main__ - INFO - Global cleanup completed successfully

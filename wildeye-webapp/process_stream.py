@@ -211,7 +211,7 @@ class VideoProcessor:
                     frame,
                     device='cuda' if torch.cuda.is_available() else 'cpu',
                     stream=True,
-                    conf=0.5,
+                    conf=0.7,
                     verbose=False  # Disable verbose output
                 )
 
@@ -225,7 +225,7 @@ class VideoProcessor:
                     label = self.models[worker_id].names[class_id]
 
                     # Only process if confidence is high enough
-                    if confidence > 0.5:
+                    if confidence > 0.7:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         detections.append({
                             'detection_label': label,
