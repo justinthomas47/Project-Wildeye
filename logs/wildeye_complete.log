@@ -758,3 +758,102 @@ ValueError: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
 2025-03-02 22:27:44,177 - __main__ - INFO - Found 2 detection logs to display
 2025-03-02 22:28:32,253 - __main__ - INFO - Starting global cleanup of all camera streams
 2025-03-02 22:28:32,348 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:28:33,021 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:28:33,021 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-02 22:28:37,864 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:28:39,183 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:28:39,184 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:28:39,558 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:28:39,558 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:28:39,559 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:28:39,559 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-02 22:28:39,878 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:28:39,879 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-02 22:28:39,879 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:28:39,985 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:28:41,609 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:28:41,622 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:29:33,353 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:29:35,039 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:29:35,039 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:29:35,039 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:31:47,644 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:31:47,955 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:31:47,960 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:31:47,961 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:32:58,988 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:32:59,325 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:32:59,326 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:32:59,326 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:35:22,067 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:35:22,388 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:35:22,389 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:35:22,390 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:35:51,554 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:35:51,854 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:35:51,855 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:35:51,855 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:36:28,495 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:36:28,813 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:36:28,814 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:36:28,814 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:36:49,749 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:36:50,041 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:36:50,041 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:36:50,048 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:38:47,531 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:38:47,837 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:38:47,837 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:38:47,837 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:38:52,447 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:38:52,748 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:38:52,748 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:38:52,748 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:38:53,086 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:38:53,920 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:38:53,920 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:38:53,920 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:38:55,428 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:38:55,726 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:38:55,738 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:38:55,739 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:38:56,837 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:38:57,143 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:38:57,143 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:38:57,143 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:38:59,587 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:38:59,892 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:38:59,892 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:38:59,892 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:43:24,009 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:43:24,425 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:43:24,425 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:43:24,425 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:45:40,321 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:45:40,630 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:45:40,642 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:45:40,642 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:47:00,186 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:47:00,506 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:47:00,508 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:47:00,509 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:47:01,796 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:47:02,129 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:47:02,130 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:47:02,131 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:47:27,340 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:47:27,675 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:47:27,682 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:47:27,682 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:47:40,126 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:47:40,560 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:47:40,561 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:47:40,562 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:47:49,865 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:47:50,162 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:47:50,173 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:47:50,173 - __main__ - INFO - Found 2 detection logs to display
+2025-03-02 22:48:19,401 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:48:19,701 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:48:19,702 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:48:19,702 - __main__ - INFO - Found 2 detection logs to display
