@@ -1,0 +1,400 @@
+2025-03-02 18:32:52,572 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 18:32:57,480 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 18:32:58,689 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 18:32:58,690 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 18:32:58,695 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 18:32:58,698 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 18:32:59,111 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 18:32:59,112 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 18:32:59,335 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 18:32:59,398 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 18:33:00,434 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 18:33:00,435 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 18:33:00,435 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 18:33:00,662 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 18:33:05,526 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 18:33:06,492 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 18:33:06,494 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 18:33:06,494 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 18:33:06,497 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 18:33:06,905 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 18:33:06,906 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 18:33:07,130 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 18:33:07,191 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 18:33:08,552 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 18:33:08,552 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 18:33:08,554 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 18:33:08,570 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 18:33:15,546 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 18:33:15,546 - __main__ - INFO - Creating new stream for cam2
+2025-03-02 18:33:15,877 - __main__ - INFO - Found camera config: {'input_type': 'youtube_link', 'mobile_number': '', 'google_maps_link': '', 'camera_name': 'cam2', 'input_value': 'https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos'}
+2025-03-02 18:33:15,877 - __main__ - INFO - Creating stream with type: youtube_link, value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:33:15,883 - __main__ - INFO - Starting stream generator for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos (visible=True)
+2025-03-02 18:33:15,883 - __main__ - INFO - Started camera stream thread for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:33:15,883 - process_stream - INFO - Processing stream request - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Visible: True
+2025-03-02 18:33:15,884 - __main__ - INFO - Stream started for cam2
+2025-03-02 18:33:15,884 - process_stream - INFO - Starting stream in active state (visible): https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:33:15,885 - process_stream - INFO - Starting stream processing - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Seek: 0
+2025-03-02 18:33:15,885 - process_stream - INFO - Processing YouTube link
+2025-03-02 18:33:19,810 - process_stream - INFO - Opening video stream from source: https://rr1---sn-3xg5a5-jv3l.googlevideo.com/videoplayback?expire=1740942220&ei=LFfEZ-rkL8LL9fwP1uHG8AE&ip=103.160.233.255&id=o-AFdf9DKFtE8o4S_h3yme35Npo6sBj3PP_ijKcbER75Kd&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1740920620%2C&mh=rM&mm=31%2C29&mn=sn-3xg5a5-jv3l%2Csn-h5576nsl&ms=au%2Crdu&mv=m&mvi=1&pl=24&rms=au%2Cau&initcwndbps=2021250&bui=AUWDL3xq94PvpOXRPptUu0aIfspx1-G3tlrm2gGImgErkKCU3OXuVoxv8OILLLSZXcvmox5QGfXMJiSU&spc=RjZbSRTvlA1CDU7WFlglQJ9750d3wJyjgySEIpIEFzeJgc-GYAhx5og4VaNSOI2BvsyCezkB&vprv=1&svpuc=1&mime=video%2Fmp4&ns=Z4ldP2WeX7gHFytNe4fP6A4Q&rqh=1&cnr=14&ratebypass=yes&dur=158.151&lmt=1699430473321524&mt=1740920236&fvip=4&lmw=1&fexp=51326932&c=TVHTML5&sefc=1&txp=5318224&n=y8YuxvX0tNnX0A&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRAIgDUs1Zo7AcWEdgTTWVyoJeFWAYoie7qqds2PFwbD0qUkCIA6KuNp7U5J0nHMuKJU6LXxTU7Qh9VQCdSBvquMAuZ8p&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=AFVRHeAwRgIhAIG3_TGgbKvGZLAIMnn7mFO6qADKZRhSVgYMXX2G6dRGAiEA0Zo-tBjvTHYfMBI53-pWI8uFZB0_nSJBDzllVdaSnD8%3D
+2025-03-02 18:33:19,962 - process_stream - INFO - Video FPS: 30.0
+2025-03-02 18:33:19,965 - process_stream - INFO - Starting worker 0
+2025-03-02 18:33:19,966 - process_stream - INFO - Starting worker 1
+2025-03-02 18:33:19,966 - process_stream - INFO - Starting worker 2
+2025-03-02 18:33:19,967 - process_stream - INFO - Starting worker 3
+2025-03-02 18:33:21,819 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:33:21,821 - __main__ - WARNING - No frames received for cam2
+2025-03-02 18:33:21,821 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 18:33:23,895 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 30 frames, 3.74 fps
+2025-03-02 18:33:25,111 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 60 frames, 6.50 fps
+2025-03-02 18:33:26,520 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 90 frames, 8.46 fps
+2025-03-02 18:33:28,572 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 120 frames, 9.45 fps
+2025-03-02 18:33:30,624 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 150 frames, 10.17 fps
+2025-03-02 18:33:32,674 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 180 frames, 10.72 fps
+2025-03-02 18:33:34,719 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 210 frames, 11.15 fps
+2025-03-02 18:33:36,754 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 240 frames, 11.50 fps
+2025-03-02 18:33:38,812 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 270 frames, 11.77 fps
+2025-03-02 18:33:40,384 - process_stream - INFO - Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1 detections processed in the last 30 seconds
+2025-03-02 18:33:40,384 - detection_handler - ERROR - Error getting camera: A document must have an even number of path elements
+2025-03-02 18:33:40,385 - detection_handler - ERROR - Error adding detection: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
+2025-03-02 18:33:40,385 - detection_handler - ERROR - Traceback (most recent call last):
+  File "c:\Users\JUSTIN THOMAS\Desktop\Project web app\wildeye-webapp\detection_handler.py", line 219, in add_detection
+    raise ValueError(f"Camera {detection_data['camera_id']} not found")
+ValueError: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
+
+2025-03-02 18:33:40,855 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 300 frames, 12.01 fps
+2025-03-02 18:33:42,905 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 330 frames, 12.21 fps
+2025-03-02 18:33:44,949 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 360 frames, 12.38 fps
+2025-03-02 18:33:46,999 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 390 frames, 12.53 fps
+2025-03-02 18:33:49,045 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 420 frames, 12.66 fps
+2025-03-02 18:33:51,086 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 450 frames, 12.78 fps
+2025-03-02 18:33:53,129 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 480 frames, 12.89 fps
+2025-03-02 18:33:55,172 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 510 frames, 12.98 fps
+2025-03-02 18:33:57,220 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 540 frames, 13.06 fps
+2025-03-02 18:33:59,257 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 570 frames, 13.14 fps
+2025-03-02 18:34:01,301 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 600 frames, 13.21 fps
+2025-03-02 18:34:03,347 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 630 frames, 13.27 fps
+2025-03-02 18:34:05,390 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 660 frames, 13.33 fps
+2025-03-02 18:34:07,428 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 690 frames, 13.38 fps
+2025-03-02 18:34:09,471 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 720 frames, 13.43 fps
+2025-03-02 18:34:10,419 - process_stream - INFO - Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 436 detections processed in the last 30 seconds
+2025-03-02 18:34:11,521 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 750 frames, 13.48 fps
+2025-03-02 18:34:13,553 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 780 frames, 13.52 fps
+2025-03-02 18:34:15,601 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 810 frames, 13.56 fps
+2025-03-02 18:34:17,642 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 840 frames, 13.60 fps
+2025-03-02 18:34:19,664 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 870 frames, 13.64 fps
+2025-03-02 18:34:21,709 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 900 frames, 13.67 fps
+2025-03-02 18:34:21,824 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 18:34:23,757 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 930 frames, 13.70 fps
+2025-03-02 18:34:25,812 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 960 frames, 13.73 fps
+2025-03-02 18:34:27,859 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 990 frames, 13.75 fps
+2025-03-02 18:34:29,906 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1020 frames, 13.78 fps
+2025-03-02 18:34:31,952 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1050 frames, 13.80 fps
+2025-03-02 18:34:34,003 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1080 frames, 13.82 fps
+2025-03-02 18:34:36,054 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1110 frames, 13.84 fps
+2025-03-02 18:34:38,094 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1140 frames, 13.87 fps
+2025-03-02 18:34:38,301 - detection_handler - ERROR - Error getting camera: A document must have an even number of path elements
+2025-03-02 18:34:38,302 - detection_handler - ERROR - Error adding detection: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
+2025-03-02 18:34:38,303 - detection_handler - ERROR - Traceback (most recent call last):
+  File "c:\Users\JUSTIN THOMAS\Desktop\Project web app\wildeye-webapp\detection_handler.py", line 219, in add_detection
+    raise ValueError(f"Camera {detection_data['camera_id']} not found")
+ValueError: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
+
+2025-03-02 18:34:40,150 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1170 frames, 13.88 fps
+2025-03-02 18:34:40,696 - process_stream - INFO - Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 417 detections processed in the last 30 seconds
+2025-03-02 18:34:42,190 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1200 frames, 13.90 fps
+2025-03-02 18:34:44,241 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1230 frames, 13.92 fps
+2025-03-02 18:34:46,278 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1260 frames, 13.94 fps
+2025-03-02 18:34:48,333 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1290 frames, 13.95 fps
+2025-03-02 18:34:50,364 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1320 frames, 13.97 fps
+2025-03-02 18:34:52,410 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1350 frames, 13.98 fps
+2025-03-02 18:34:54,459 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1380 frames, 14.00 fps
+2025-03-02 18:34:56,512 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1410 frames, 14.01 fps
+2025-03-02 18:34:58,556 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1440 frames, 14.02 fps
+2025-03-02 18:35:00,603 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1470 frames, 14.04 fps
+2025-03-02 18:35:02,646 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1500 frames, 14.05 fps
+2025-03-02 18:35:04,698 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1530 frames, 14.06 fps
+2025-03-02 18:35:06,748 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1560 frames, 14.07 fps
+2025-03-02 18:35:08,792 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1590 frames, 14.08 fps
+2025-03-02 18:35:10,844 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1620 frames, 14.09 fps
+2025-03-02 18:35:12,889 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1650 frames, 14.10 fps
+2025-03-02 18:35:14,942 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1680 frames, 14.11 fps
+2025-03-02 18:35:16,982 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1710 frames, 14.12 fps
+2025-03-02 18:35:19,028 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1740 frames, 14.13 fps
+2025-03-02 18:35:19,924 - process_stream - INFO - Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 292 detections processed in the last 30 seconds
+2025-03-02 18:35:21,077 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1770 frames, 14.14 fps
+2025-03-02 18:35:23,127 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1800 frames, 14.15 fps
+2025-03-02 18:35:25,172 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1830 frames, 14.15 fps
+2025-03-02 18:35:27,216 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1860 frames, 14.16 fps
+2025-03-02 18:35:29,261 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1890 frames, 14.17 fps
+2025-03-02 18:35:31,314 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1920 frames, 14.18 fps
+2025-03-02 18:35:33,360 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1950 frames, 14.18 fps
+2025-03-02 18:35:35,407 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1980 frames, 14.19 fps
+2025-03-02 18:35:37,454 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2010 frames, 14.20 fps
+2025-03-02 18:35:39,509 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2040 frames, 14.20 fps
+2025-03-02 18:35:41,549 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2070 frames, 14.21 fps
+2025-03-02 18:35:43,592 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2100 frames, 14.22 fps
+2025-03-02 18:35:45,639 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2130 frames, 14.22 fps
+2025-03-02 18:35:47,686 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2160 frames, 14.23 fps
+2025-03-02 18:35:49,734 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2190 frames, 14.23 fps
+2025-03-02 18:35:51,779 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2220 frames, 14.24 fps
+2025-03-02 18:35:53,820 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2250 frames, 14.25 fps
+2025-03-02 18:35:55,869 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2280 frames, 14.25 fps
+2025-03-02 18:35:57,914 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2310 frames, 14.26 fps
+2025-03-02 18:35:59,959 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2340 frames, 14.26 fps
+2025-03-02 18:36:01,771 - process_stream - WARNING - Failed to read frame (1/5)
+2025-03-02 18:36:01,872 - process_stream - WARNING - Failed to read frame (2/5)
+2025-03-02 18:36:01,972 - process_stream - WARNING - Failed to read frame (3/5)
+2025-03-02 18:36:02,073 - process_stream - WARNING - Failed to read frame (4/5)
+2025-03-02 18:36:02,174 - process_stream - WARNING - Failed to read frame (5/5)
+2025-03-02 18:36:02,174 - process_stream - ERROR - Too many consecutive frame reading failures
+2025-03-02 18:36:06,977 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:07,374 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:07,764 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:08,160 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:08,557 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:08,954 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:09,347 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:09,741 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:10,137 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:10,530 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:10,922 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:11,308 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:11,701 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:36:11,702 - __main__ - WARNING - No frames received for cam2
+2025-03-02 18:36:11,702 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 18:58:01,914 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 18:58:01,914 - __main__ - INFO - Force cleaning up stream for camera: cam2
+2025-03-02 18:58:01,914 - __main__ - INFO - Force stopping stream for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:58:01,915 - __main__ - ERROR - Error closing generator: generator already executing
+2025-03-02 18:58:04,928 - __main__ - WARNING - Thread didn't terminate for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:58:04,928 - __main__ - INFO - Force stop completed for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 18:58:05,064 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 19:04:50,610 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 19:04:55,987 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:04:57,140 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 19:04:57,140 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 19:04:57,141 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 19:04:57,143 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 19:04:57,547 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 19:04:57,548 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 19:04:57,772 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 19:04:57,835 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:04:58,839 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 19:04:58,839 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 19:04:58,839 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 19:04:59,073 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 19:05:03,998 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:05:05,001 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 19:05:05,001 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 19:05:05,001 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 19:05:05,004 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 19:05:05,405 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 19:05:05,406 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 19:05:05,636 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 19:05:05,699 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:05:07,062 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 19:05:07,063 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 19:05:07,063 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 19:05:07,080 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 19:05:07,163 - __main__ - WARNING - Attempted to pause non-existent stream: cam2
+2025-03-02 19:05:30,069 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 19:05:30,069 - __main__ - INFO - Creating new stream for cam2
+2025-03-02 19:05:30,376 - __main__ - INFO - Found camera config: {'input_type': 'youtube_link', 'mobile_number': '', 'google_maps_link': '', 'camera_name': 'cam2', 'input_value': 'https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos'}
+2025-03-02 19:05:30,377 - __main__ - INFO - Creating stream with type: youtube_link, value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, id: 3DH0qnXXSXV1xjwSsjLo
+2025-03-02 19:05:30,382 - __main__ - INFO - Starting stream generator for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos (visible=True)
+2025-03-02 19:05:30,382 - __main__ - INFO - Started camera stream thread for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:05:30,382 - process_stream - INFO - Processing stream request - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Visible: True
+2025-03-02 19:05:30,383 - __main__ - INFO - Stream started for cam2
+2025-03-02 19:05:30,383 - process_stream - INFO - Starting stream in active state (visible): https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:05:30,384 - process_stream - INFO - Starting stream processing - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Seek: 0
+2025-03-02 19:05:30,384 - process_stream - INFO - Processing YouTube link
+2025-03-02 19:05:33,481 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 19:05:33,497 - __main__ - INFO - Force cleaning up stream for camera: cam2
+2025-03-02 19:05:33,527 - __main__ - INFO - Force stopping stream for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:05:33,558 - __main__ - ERROR - Error closing generator: generator already executing
+2025-03-02 19:05:34,370 - process_stream - INFO - Opening video stream from source: https://rr1---sn-3xg5a5-jv3l.googlevideo.com/videoplayback?expire=1740944155&ei=u17EZ9f-FZHS3LUP5dWlqAg&ip=103.160.233.255&id=o-ABbuANsHy9Dx-rbNR_8YJL_8OZNY7ZKnafFZGlaXpfOl&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1740922555%2C&mh=rM&mm=31%2C29&mn=sn-3xg5a5-jv3l%2Csn-h557sns7&ms=au%2Crdu&mv=m&mvi=1&pcm2cms=yes&pl=24&rms=au%2Cau&initcwndbps=2017500&bui=AUWDL3xO6rv_c3wl5GU3sD71JLSvgdfJZt-JknClpbUrp17ulI_EaL8As00i3EnaFBKHfu-pWBjEQ9ri&spc=RjZbSQ7vmZph--O2UbUBaySh6qkH9rphS_wFgM8kmNp3Y0wJereJz1khxt7znbZp9oa0YE9X&vprv=1&svpuc=1&mime=video%2Fmp4&ns=ImWUgCoMvvp4_ALXPKbd2kYQ&rqh=1&cnr=14&ratebypass=yes&dur=158.151&lmt=1699430473321524&mt=1740922147&fvip=2&lmw=1&fexp=51326932&c=TVHTML5&sefc=1&txp=5318224&n=gZYf-aX95TjrLA&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRgIhAPf3dIIDonxCY1CzzS58kB0YdJw4H_T0tkzSTnawsfxIAiEA1FItww38hgl6SEDjdV_U9BSdS7QpN6F-hyMSq-ESuoA%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpcm2cms%2Cpl%2Crms%2Cinitcwndbps&lsig=AFVRHeAwRQIhAIi38YGOQRY-W86uwcEtlMZdzaypwPvt-UsnvSRMOLy8AiB8D9qFR2gLc-ZrOZ_uFvL8UvfMbc3VkwIE8mcJQp7PtA%3D%3D
+2025-03-02 19:05:34,639 - process_stream - INFO - Video FPS: 30.0
+2025-03-02 19:05:34,641 - process_stream - INFO - Starting worker 0
+2025-03-02 19:05:34,642 - process_stream - INFO - Starting worker 1
+2025-03-02 19:05:34,642 - process_stream - INFO - Starting worker 2
+2025-03-02 19:05:34,643 - process_stream - INFO - Starting worker 3
+2025-03-02 19:05:36,333 - __main__ - WARNING - No frames received for cam2
+2025-03-02 19:05:36,333 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 19:05:36,596 - __main__ - WARNING - Thread didn't terminate for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:05:36,596 - __main__ - INFO - Force stop completed for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:05:36,731 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 19:05:37,536 - __main__ - INFO - Stream stopped for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:05:55,133 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 1 detections processed in the last 30 seconds
+2025-03-02 19:05:55,489 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:05:56,474 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 19:05:56,474 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 19:05:56,475 - detection_handler - ERROR - Error uploading to Google Drive: Drive service not initialized
+2025-03-02 19:05:57,936 - process_stream - INFO - New detection: elephant with 60.1% confidence
+2025-03-02 19:06:25,141 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 435 detections processed in the last 30 seconds
+2025-03-02 19:06:53,453 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:06:54,915 - googleapiclient.http - WARNING - Encountered 403 Forbidden with reason "accessNotConfigured"
+2025-03-02 19:06:54,915 - detection_handler - ERROR - Drive initialization error: <HttpError 403 when requesting https://www.googleapis.com/drive/v3/files?q=name%3D%27Wildeye+Snapshots%27+and+mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+trashed%3Dfalse&spaces=drive&alt=json returned "Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.". Details: "[{'message': 'Google Drive API has not been used in project 348517330415 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=348517330415 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.', 'domain': 'usageLimits', 'reason': 'accessNotConfigured', 'extendedHelp': 'https://console.developers.google.com'}]">
+2025-03-02 19:06:54,916 - detection_handler - ERROR - Error uploading to Google Drive: Drive service not initialized
+2025-03-02 19:06:55,527 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 418 detections processed in the last 30 seconds
+2025-03-02 19:06:56,386 - process_stream - INFO - New detection: lion with 51.9% confidence
+2025-03-02 19:07:34,757 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 292 detections processed in the last 30 seconds
+2025-03-02 19:08:16,545 - process_stream - WARNING - Failed to read frame (1/5)
+2025-03-02 19:08:16,646 - process_stream - WARNING - Failed to read frame (2/5)
+2025-03-02 19:08:16,747 - process_stream - WARNING - Failed to read frame (3/5)
+2025-03-02 19:08:16,848 - process_stream - WARNING - Failed to read frame (4/5)
+2025-03-02 19:08:16,949 - process_stream - WARNING - Failed to read frame (5/5)
+2025-03-02 19:08:16,949 - process_stream - ERROR - Too many consecutive frame reading failures
+2025-03-02 19:33:21,839 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 19:33:27,538 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:33:29,382 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 19:33:29,383 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 19:33:29,885 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 19:33:29,886 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 19:33:30,244 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 19:33:30,351 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:33:32,006 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 19:33:32,289 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 19:33:37,459 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:33:38,685 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 19:33:38,685 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 19:33:39,243 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 19:33:39,243 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 19:33:39,587 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 19:33:39,698 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 19:33:41,283 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 19:33:41,297 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 19:39:34,330 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 19:39:34,331 - __main__ - INFO - Creating new stream for cam2
+2025-03-02 19:39:34,693 - __main__ - INFO - Found camera config: {'input_type': 'youtube_link', 'mobile_number': '', 'google_maps_link': '', 'camera_name': 'cam2', 'input_value': 'https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos'}
+2025-03-02 19:39:34,693 - __main__ - INFO - Creating stream with type: youtube_link, value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, id: 3DH0qnXXSXV1xjwSsjLo
+2025-03-02 19:39:34,698 - __main__ - INFO - Starting stream generator for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos (visible=True)
+2025-03-02 19:39:34,698 - __main__ - INFO - Started camera stream thread for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:39:34,699 - process_stream - INFO - Processing stream request - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Visible: True
+2025-03-02 19:39:34,699 - __main__ - INFO - Stream started for cam2
+2025-03-02 19:39:34,699 - process_stream - INFO - Starting stream in active state (visible): https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:39:34,701 - process_stream - INFO - Starting stream processing - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Seek: 0
+2025-03-02 19:39:34,701 - process_stream - INFO - Processing YouTube link
+2025-03-02 19:39:38,921 - process_stream - INFO - Opening video stream from source: https://rr1---sn-3xg5a5-jv3l.googlevideo.com/videoplayback?expire=1740946199&ei=t2bEZ4DxN42EssUPpc7vsAk&ip=103.160.233.255&id=o-AKWnk2nnlwq_eOf2CuzPT1Yh_TKLMKojLH5ayB8asuoW&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1740924599%2C&mh=rM&mm=31%2C29&mn=sn-3xg5a5-jv3l%2Csn-h557sns7&ms=au%2Crdu&mv=m&mvi=1&pl=24&rms=au%2Cau&initcwndbps=2043750&bui=AUWDL3wT4Z2gEiInA-5k-KeYH-eA-yP59xneBIbtUVZEjgOTJWHL_uby9DS3HbPdzvf20xRmjvfqwjLy&spc=RjZbSVPhaJwcoZto9R2RMdpcDctKJVV_EV55v8RCTsiEgWWk037KnHDBxcAU26eiaBv-1Q&vprv=1&svpuc=1&mime=video%2Fmp4&ns=6fuda4rO1xXJvOphb0e7EXQQ&rqh=1&cnr=14&ratebypass=yes&dur=158.151&lmt=1699430473321524&mt=1740924076&fvip=2&lmw=1&fexp=51326932&c=TVHTML5&sefc=1&txp=5318224&n=bJdez66z_kFF3g&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRQIgEjCLF9CHX_cmN4_PpJRAaOEeRIa6FDHEaiY_Tcc-DfkCIQDIVeCvrZPc5z46qHCoDWs1UO7pyEMhgsCDtWNYfsPjjw%3D%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=AFVRHeAwRgIhANE_a_YKk5JeV1bIhLArQ9Lq2b7_8psZrmrAtc1m6zHpAiEAyKMcxGe1rrSHBPKtkgn_RCcmoXEe6Pz6b_U4BNTTLkk%3D
+2025-03-02 19:39:39,351 - process_stream - INFO - Video FPS: 30.0
+2025-03-02 19:39:39,354 - process_stream - INFO - Starting worker 0
+2025-03-02 19:39:39,355 - process_stream - INFO - Starting worker 1
+2025-03-02 19:39:39,355 - process_stream - INFO - Starting worker 2
+2025-03-02 19:39:39,356 - process_stream - INFO - Starting worker 3
+2025-03-02 19:39:39,738 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:39:39,739 - __main__ - WARNING - No frames received for cam2
+2025-03-02 19:39:39,739 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 19:39:43,206 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 30 frames, 3.52 fps
+2025-03-02 19:39:44,341 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 60 frames, 6.22 fps
+2025-03-02 19:39:45,941 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 90 frames, 8.00 fps
+2025-03-02 19:39:47,980 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 120 frames, 9.03 fps
+2025-03-02 19:39:50,023 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 150 frames, 9.79 fps
+2025-03-02 19:39:52,077 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 180 frames, 10.35 fps
+2025-03-02 19:39:54,115 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 210 frames, 10.81 fps
+2025-03-02 19:39:55,115 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 19:39:56,156 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 240 frames, 11.18 fps
+2025-03-02 19:39:58,206 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 270 frames, 11.48 fps
+2025-03-02 19:39:59,752 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 1 detections processed in the last 30 seconds
+2025-03-02 19:40:00,321 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 300 frames, 11.71 fps
+2025-03-02 19:40:02,373 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 330 frames, 11.92 fps
+2025-03-02 19:40:04,418 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 360 frames, 12.11 fps
+2025-03-02 19:40:05,918 - process_stream - INFO - New detection: elephant with 60.1% confidence
+2025-03-02 19:40:06,395 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 390 frames, 12.30 fps
+2025-03-02 19:40:08,439 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 420 frames, 12.45 fps
+2025-03-02 19:40:10,479 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 450 frames, 12.58 fps
+2025-03-02 19:40:12,525 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 480 frames, 12.69 fps
+2025-03-02 19:40:14,567 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 510 frames, 12.79 fps
+2025-03-02 19:40:16,610 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 540 frames, 12.88 fps
+2025-03-02 19:40:18,647 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 570 frames, 12.97 fps
+2025-03-02 19:40:20,700 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 600 frames, 13.04 fps
+2025-03-02 19:40:22,730 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 630 frames, 13.12 fps
+2025-03-02 19:40:24,769 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 660 frames, 13.18 fps
+2025-03-02 19:40:26,802 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 690 frames, 13.24 fps
+2025-03-02 19:40:28,842 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 720 frames, 13.30 fps
+2025-03-02 19:40:29,799 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 436 detections processed in the last 30 seconds
+2025-03-02 19:40:30,891 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 750 frames, 13.35 fps
+2025-03-02 19:40:32,936 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 780 frames, 13.39 fps
+2025-03-02 19:40:34,978 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 810 frames, 13.44 fps
+2025-03-02 19:40:37,018 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 840 frames, 13.48 fps
+2025-03-02 19:40:39,063 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 870 frames, 13.52 fps
+2025-03-02 19:40:41,108 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 900 frames, 13.55 fps
+2025-03-02 19:40:43,157 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 930 frames, 13.58 fps
+2025-03-02 19:40:45,201 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 960 frames, 13.62 fps
+2025-03-02 19:40:47,243 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 990 frames, 13.65 fps
+2025-03-02 19:40:49,290 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1020 frames, 13.67 fps
+2025-03-02 19:40:51,333 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1050 frames, 13.70 fps
+2025-03-02 19:40:53,379 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1080 frames, 13.73 fps
+2025-03-02 19:40:55,424 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1110 frames, 13.75 fps
+2025-03-02 19:40:57,461 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1140 frames, 13.77 fps
+2025-03-02 19:40:59,575 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1170 frames, 13.78 fps
+2025-03-02 19:41:00,053 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 417 detections processed in the last 30 seconds
+2025-03-02 19:41:01,640 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1200 frames, 13.80 fps
+2025-03-02 19:41:02,080 - process_stream - INFO - New detection: lion with 51.9% confidence
+2025-03-02 19:41:03,590 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1230 frames, 13.84 fps
+2025-03-02 19:41:05,628 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1260 frames, 13.86 fps
+2025-03-02 19:41:07,678 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1290 frames, 13.87 fps
+2025-03-02 19:41:09,722 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1320 frames, 13.89 fps
+2025-03-02 19:41:11,764 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1350 frames, 13.91 fps
+2025-03-02 19:41:13,806 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1380 frames, 13.92 fps
+2025-03-02 19:41:15,846 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1410 frames, 13.94 fps
+2025-03-02 19:41:17,882 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1440 frames, 13.96 fps
+2025-03-02 19:41:19,923 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1470 frames, 13.97 fps
+2025-03-02 19:41:21,963 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1500 frames, 13.98 fps
+2025-03-02 19:41:24,011 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1530 frames, 14.00 fps
+2025-03-02 19:41:26,058 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1560 frames, 14.01 fps
+2025-03-02 19:41:28,104 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1590 frames, 14.02 fps
+2025-03-02 19:41:30,150 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1620 frames, 14.03 fps
+2025-03-02 19:41:32,194 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1650 frames, 14.04 fps
+2025-03-02 19:41:34,244 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1680 frames, 14.05 fps
+2025-03-02 19:41:36,291 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1710 frames, 14.06 fps
+2025-03-02 19:41:38,337 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1740 frames, 14.07 fps
+2025-03-02 19:41:39,230 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 292 detections processed in the last 30 seconds
+2025-03-02 19:41:40,391 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1770 frames, 14.08 fps
+2025-03-02 19:41:42,433 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1800 frames, 14.09 fps
+2025-03-02 19:41:44,480 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1830 frames, 14.10 fps
+2025-03-02 19:41:46,535 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1860 frames, 14.11 fps
+2025-03-02 19:41:48,577 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1890 frames, 14.12 fps
+2025-03-02 19:41:50,630 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1920 frames, 14.12 fps
+2025-03-02 19:41:52,677 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1950 frames, 14.13 fps
+2025-03-02 19:41:54,725 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1980 frames, 14.14 fps
+2025-03-02 19:41:56,771 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2010 frames, 14.15 fps
+2025-03-02 19:41:58,818 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2040 frames, 14.15 fps
+2025-03-02 19:42:00,867 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2070 frames, 14.16 fps
+2025-03-02 19:42:02,912 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2100 frames, 14.17 fps
+2025-03-02 19:42:04,959 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2130 frames, 14.18 fps
+2025-03-02 19:42:07,006 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2160 frames, 14.18 fps
+2025-03-02 19:42:09,049 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2190 frames, 14.19 fps
+2025-03-02 19:42:11,090 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2220 frames, 14.19 fps
+2025-03-02 19:42:13,138 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2250 frames, 14.20 fps
+2025-03-02 19:42:15,183 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2280 frames, 14.21 fps
+2025-03-02 19:42:17,232 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2310 frames, 14.21 fps
+2025-03-02 19:42:19,283 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 2340 frames, 14.22 fps
+2025-03-02 19:42:21,091 - process_stream - WARNING - Failed to read frame (1/5)
+2025-03-02 19:42:21,192 - process_stream - WARNING - Failed to read frame (2/5)
+2025-03-02 19:42:21,293 - process_stream - WARNING - Failed to read frame (3/5)
+2025-03-02 19:42:21,394 - process_stream - WARNING - Failed to read frame (4/5)
+2025-03-02 19:42:21,495 - process_stream - WARNING - Failed to read frame (5/5)
+2025-03-02 19:42:21,495 - process_stream - ERROR - Too many consecutive frame reading failures
+2025-03-02 19:42:26,116 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:26,496 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:26,877 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:27,278 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:27,663 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:28,045 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:28,430 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:28,842 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:29,235 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:29,629 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:30,016 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:30,401 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:30,791 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:31,178 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 19:42:31,180 - __main__ - WARNING - No frames received for cam2
+2025-03-02 19:42:31,180 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 20:01:50,925 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 20:01:50,925 - __main__ - INFO - Force cleaning up stream for camera: cam2
+2025-03-02 20:01:50,926 - __main__ - INFO - Force stopping stream for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 20:01:50,926 - __main__ - ERROR - Error closing generator: generator already executing
+2025-03-02 20:01:53,926 - __main__ - WARNING - Thread didn't terminate for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 20:01:53,926 - __main__ - INFO - Force stop completed for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 20:01:54,050 - __main__ - INFO - Global cleanup completed successfully

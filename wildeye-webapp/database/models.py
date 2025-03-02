@@ -217,11 +217,27 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             'camera_name': camera['camera_name'],
             'google_maps_link': camera.get('google_maps_link', ''),
             'detection_label': detection_data['detection_label'],
+            'confidence': detection_data.get('confidence', 100.0),  # Add confidence value
             'timestamp': current_time,
             'screenshot_url': screenshot_url
         }
 
+        # Add to detections collection
         detection_ref.set(detection_record)
+        
+        # Also add to detection_logs collection for history display
+        log_ref = db.collection('detection_logs').document()
+        log_data = {
+            'id': log_ref.id,
+            'animal': detection_data['detection_label'],
+            'camera': camera['camera_name'],
+            'location': camera.get('google_maps_link', ''),
+            'timestamp': current_time,
+            'confidence': detection_data.get('confidence', 100.0),
+            'image_url': screenshot_url
+        }
+        log_ref.set(log_data)
+        
         return detection_id
     except Exception as e:
         logger.error(f"Error adding detection: {e}")

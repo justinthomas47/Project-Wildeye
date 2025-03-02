@@ -1,23 +1,29 @@
+# Add this import at the top of app.py
+from logging_config import configure_logging
+
+# Configure logging - call this before any other logging operations
+configure_logging()
+
 import os
 import threading
 import webbrowser
 import time
+import uuid
+import re
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from process_stream import process_stream, pause_stream, resume_stream
 from werkzeug.serving import is_running_from_reloader
+from detection_handler import init_drive_service as init_detection_drive
 import logging
 import cv2
 import gc
 import numpy as np
+import traceback
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Set up logger for this module
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -31,12 +37,20 @@ except Exception as e:
     logger.error(f"Firebase initialization error: {e}")
     db = None
 
+# Add this after Firebase initialization
+try:
+    # Initialize detection handler
+    init_detection_drive()
+    logger.info("Detection handler initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize detection handler: {e}")
+
 # Store active camera streams with thread-safe dictionary
 active_streams = {}
 stream_lock = threading.Lock()
 
 class CameraStream:
-    def __init__(self, input_type, input_value, seek_time=0, visible=False):
+    def __init__(self, input_type, input_value, seek_time=0, visible=False, camera_id=None):
         self.input_type = input_type
         self.input_value = input_value
         self.seek_time = seek_time
@@ -53,6 +67,7 @@ class CameraStream:
         self.max_reconnect_attempts = 3
         self.video_capture = None
         self.static_frame = self._create_static_frame()
+        self.camera_id = camera_id  # Store the unique camera ID
 
     def _create_static_frame(self):
         """Create a static frame for when the stream is paused"""
@@ -106,7 +121,7 @@ class CameraStream:
                     self.input_type, 
                     self.input_value, 
                     seek_time=self.seek_time,
-                    camera_id=self.input_value,
+                    camera_id=self.camera_id,  # Pass camera_id instead of input_value
                     db=db,
                     is_visible=self.is_visible
                 )
@@ -310,7 +325,14 @@ def home():
             google_maps_link = request.form.get("google_maps_link", "")
             mobile_number = request.form.get("mobile_number", "")
 
+            # Generate a unique ID for the camera based on name with random suffix
+            # Clean the camera name (remove special chars, convert to lowercase)
+            clean_name = re.sub(r'[^a-zA-Z0-9]', '', camera_name.lower())
+            # Add random suffix
+            camera_id = f"{clean_name}_{str(uuid.uuid4())[:8]}"
+
             camera_data = {
+                "camera_id": camera_id,  # Store the generated ID
                 "input_type": input_type,
                 "camera_name": camera_name,
                 "input_value": input_value,
@@ -319,12 +341,14 @@ def home():
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
             
-            db.collection("cameras").add(camera_data)
+            # Save to Firestore with the generated ID as document ID
+            db.collection("cameras").document(camera_id).set(camera_data)
 
             with stream_lock:
                 if camera_name not in active_streams:
                     # Initialize stream but don't start processing (visible=False)
-                    stream = CameraStream(input_type, input_value, visible=False)
+                    # Pass the camera_id instead of input_value as the camera identifier
+                    stream = CameraStream(input_type, input_value, camera_id=camera_id, visible=False)
                     stream.start()
                     active_streams[camera_name] = stream
 
@@ -347,11 +371,40 @@ def detection_history():
         return render_template("detection_history.html", error="Firebase not initialized"), 500
 
     try:
+        # Query the detection_logs collection
         logs_ref = db.collection("detection_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(50)
-        logs = [doc.to_dict() for doc in logs_ref.stream()]
-        return render_template("detection_history.html", logs=logs)
+        logs = []
+        
+        for doc in logs_ref.stream():
+            log_data = doc.to_dict()
+            
+            # Format the timestamp for display
+            if 'timestamp' in log_data and isinstance(log_data['timestamp'], datetime):
+                log_data['timestamp'] = log_data['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
+                
+            # Ensure confidence is a number
+            if 'confidence' in log_data:
+                if isinstance(log_data['confidence'], str):
+                    try:
+                        log_data['confidence'] = float(log_data['confidence'])
+                    except ValueError:
+                        log_data['confidence'] = 95.0  # Default if parsing fails
+            else:
+                log_data['confidence'] = 95.0  # Default confidence if not present
+                
+            logs.append(log_data)
+        
+        # Also check the detections collection to ensure it has data
+        detection_count = sum(1 for _ in db.collection("detections").limit(1).stream())
+        logger.info(f"Found {detection_count} records in detections collection")
+            
+        return render_template("detection_history.html", logs=logs, current_page='detection_history')
     except Exception as e:
-        return render_template("detection_history.html", error=str(e))
+        logger.error(f"Error fetching detection logs: {e}")
+        logger.error(traceback.format_exc())
+        return render_template("detection_history.html", 
+                              error=f"Failed to load detection history: {str(e)}", 
+                              current_page='detection_history')
 
 @app.route("/warnings")
 def warnings():
@@ -454,9 +507,17 @@ def video_feed(camera_name):
                         active_streams[camera_name].force_stop()
                         del active_streams[camera_name]
                     
+                    # Get the camera_id from the camera document
+                    camera_id = camera.get('camera_id', str(camera_doc.id))
+                    
                     # Create new stream with visibility flag
-                    logger.info(f"Creating stream with type: {camera['input_type']}, value: {camera['input_value']}")
-                    stream = CameraStream(camera["input_type"], camera["input_value"], visible=is_visible)
+                    logger.info(f"Creating stream with type: {camera['input_type']}, value: {camera['input_value']}, id: {camera_id}")
+                    stream = CameraStream(
+                        camera["input_type"], 
+                        camera["input_value"], 
+                        visible=is_visible,
+                        camera_id=camera_id  # Pass the camera_id
+                    )
                     stream.start()
                     active_streams[camera_name] = stream
                     logger.info(f"Stream started for {camera_name}")
@@ -542,18 +603,29 @@ def seek_video(camera_name):
         
         with stream_lock:
             if camera_name in active_streams:
-                active_streams[camera_name].stop()
+                # Get current stream info before stopping
+                current_stream = active_streams[camera_name]
+                was_visible = current_stream.is_visible
+                camera_id = current_stream.camera_id  # Save the camera_id
                 
+                # Stop the current stream
+                current_stream.stop()
+                
+                # Get camera info from database
                 camera_ref = db.collection("cameras").where("camera_name", "==", camera_name).limit(1).get()
                 if not camera_ref:
                     return jsonify({"success": False, "error": "Camera not found"})
                 
                 camera = list(camera_ref)[0].to_dict()
                 
-                # Check if the stream was visible before seeking
-                was_visible = active_streams[camera_name].is_visible
-                
-                stream = CameraStream(camera["input_type"], camera["input_value"], seek_time=seconds, visible=was_visible)
+                # Create new stream with the same camera_id
+                stream = CameraStream(
+                    camera["input_type"], 
+                    camera["input_value"], 
+                    seek_time=seconds, 
+                    visible=was_visible,
+                    camera_id=camera_id
+                )
                 stream.start()
                 active_streams[camera_name] = stream
                 
