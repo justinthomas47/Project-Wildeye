@@ -368,6 +368,7 @@ def home():
 @app.route("/detection-history")
 def detection_history():
     if db is None:
+        logger.error("Firebase not initialized for detection_history")
         return render_template("detection_history.html", error="Firebase not initialized"), 500
 
     try:
@@ -375,8 +376,14 @@ def detection_history():
         logs_ref = db.collection("detection_logs").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(50)
         logs = []
         
+        # Log the query we're trying to execute
+        logger.info(f"Querying detection_logs collection, ordered by timestamp descending, limit 50")
+        
         for doc in logs_ref.stream():
             log_data = doc.to_dict()
+            
+            # Log each document we find
+            logger.info(f"Found detection log: {doc.id}")
             
             # Format the timestamp for display
             if 'timestamp' in log_data and isinstance(log_data['timestamp'], datetime):
@@ -394,9 +401,8 @@ def detection_history():
                 
             logs.append(log_data)
         
-        # Also check the detections collection to ensure it has data
-        detection_count = sum(1 for _ in db.collection("detections").limit(1).stream())
-        logger.info(f"Found {detection_count} records in detections collection")
+        # Log how many logs we found
+        logger.info(f"Found {len(logs)} detection logs to display")
             
         return render_template("detection_history.html", logs=logs, current_page='detection_history')
     except Exception as e:
@@ -405,7 +411,6 @@ def detection_history():
         return render_template("detection_history.html", 
                               error=f"Failed to load detection history: {str(e)}", 
                               current_page='detection_history')
-
 @app.route("/warnings")
 def warnings():
     if db is None:

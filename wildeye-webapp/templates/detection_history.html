@@ -17,19 +17,6 @@
             color: #333;
             min-height: 100vh;
         }
-        .detection-card {
-            transition: transform 0.2s ease-in-out;
-        }
-        .detection-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .image-zoom {
-            transition: transform 0.3s ease;
-        }
-        .image-zoom:hover {
-            transform: scale(1.05);
-        }
         .confidence-high {
             background-color: #c6f6d5;
             color: #22543d;
@@ -45,9 +32,8 @@
     </style>
 </head>
 <body>
-    {% extends "includes/navbar.html" %}
+    {% include "includes/navbar.html" %}
     
-    {% block content %}
     <div class="min-h-screen bg-gray-100">
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-8">
@@ -69,100 +55,111 @@
             </div>
             {% endif %}
             
-            <div class="grid gap-6">
-                {% if logs %}
-                    {% for log in logs %}
-                    <div class="detection-card bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-                        <div class="p-6">
-                            <div class="flex justify-between items-start flex-wrap md:flex-nowrap">
-                                <div class="flex-1 min-w-0 mr-4">
-                                    <div class="flex items-center mb-2 flex-wrap">
-                                        <h3 class="text-xl font-semibold text-gray-800 mr-3">{{ log.animal|title }}</h3>
-                                        
+            <!-- Table View -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Animal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Image</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Camera</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Confidence</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Location</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% if logs %}
+                                {% for log in logs %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="font-medium text-gray-900">{{ log.animal|title }}</div>
+                                        <div class="text-gray-500 text-xs">ID: {{ log.id }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if log.image_url %}
+                                        <a href="{{ log.image_url }}" target="_blank" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                                            Click here
+                                        </a>
+                                        {% else %}
+                                        <span class="text-gray-500 text-xs">No image</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ log.camera }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if log.timestamp %}
+                                            {{ log.timestamp.split(' ')[0] }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if log.timestamp %}
+                                            {{ log.timestamp.split(' ')[1] }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
                                         {% if log.confidence is defined %}
                                             {% if log.confidence >= 80 %}
-                                                <span class="confidence-high px-3 py-1 text-sm font-medium rounded-full">
-                                                    {{ "%.1f"|format(log.confidence) }}% Confidence
+                                                <span class="confidence-high px-2 py-1 text-xs font-medium rounded-full">
+                                                    {{ "%.1f"|format(log.confidence) }}%
                                                 </span>
                                             {% elif log.confidence >= 60 %}
-                                                <span class="confidence-medium px-3 py-1 text-sm font-medium rounded-full">
-                                                    {{ "%.1f"|format(log.confidence) }}% Confidence
+                                                <span class="confidence-medium px-2 py-1 text-xs font-medium rounded-full">
+                                                    {{ "%.1f"|format(log.confidence) }}%
                                                 </span>
                                             {% else %}
-                                                <span class="confidence-low px-3 py-1 text-sm font-medium rounded-full">
-                                                    {{ "%.1f"|format(log.confidence) }}% Confidence
+                                                <span class="confidence-low px-2 py-1 text-xs font-medium rounded-full">
+                                                    {{ "%.1f"|format(log.confidence) }}%
                                                 </span>
                                             {% endif %}
                                         {% endif %}
-                                    </div>
-                                    <p class="text-gray-500 text-sm mb-4">{{ log.timestamp }}</p>
-                                    <div class="space-y-2">
-                                        <p class="text-gray-700">
-                                            <span class="font-medium text-gray-900">Camera:</span> 
-                                            {{ log.camera }}
-                                        </p>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
                                         {% if log.location %}
-                                        <p class="text-gray-700">
-                                            <span class="font-medium text-gray-900">Location:</span> 
                                             {% if log.location.startswith('http') %}
-                                                <a href="{{ log.location }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">View on Google Maps</a>
+                                                <a href="{{ log.location }}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                                    View on Map
+                                                </a>
                                             {% else %}
                                                 {{ log.location }}
                                             {% endif %}
-                                        </p>
+                                        {% else %}
+                                            -
                                         {% endif %}
-                                    </div>
-                                </div>
-                                {% if log.image_url %}
-                                <div class="mt-4 md:mt-0 md:flex-shrink-0">
-                                    <a href="{{ log.image_url }}" target="_blank" class="block">
-                                        <img src="{{ log.image_url }}" 
-                                             alt="Detection of {{ log.animal }}"
-                                             class="w-60 h-48 object-cover rounded-lg shadow-sm image-zoom"
-                                             loading="lazy">
-                                    </a>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="bg-white rounded-xl shadow-md p-8 text-center">
-                        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 12h.01M12 12h.01"></path>
-                        </svg>
-                        <p class="text-gray-600 text-lg">No detection logs found.</p>
-                        <p class="text-gray-500 mt-2">Detection logs will appear here once animals are detected.</p>
-                    </div>
-                {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                                        No detection logs found.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-    {% endblock %}
 
     <script>
-        // Refresh button functionality
-        document.getElementById('refreshBtn').addEventListener('click', function() {
-            window.location.reload();
-        });
-        
-        // Auto-refresh every 5 minutes (300000 ms)
-        setTimeout(function() {
-            window.location.reload();
-        }, 300000);
-    </script>
-
-    <script type="module">
-        // Import Firebase auth if you're using it
-        import('/static/js/firebase-auth.js')
-            .then(module => {
-                module.initAuthStateObserver();
-                window.logOut = module.logout;
-            })
-            .catch(error => {
-                console.error("Firebase auth module not available:", error);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Refresh button functionality
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                window.location.reload();
             });
+            
+            // Auto-refresh every 5 minutes (300000 ms)
+            setTimeout(function() {
+                window.location.reload();
+            }, 300000);
+        });
     </script>
 </body>
 </html>

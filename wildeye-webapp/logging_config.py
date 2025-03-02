@@ -3,7 +3,8 @@ import os
 
 def configure_logging():
     """
-    Configure logging for the entire application to control verbosity.
+    Configure logging for the entire application to control verbosity
+    while ensuring detection details are properly recorded.
     """
     # Create logs directory if it doesn't exist
     os.makedirs('logs', exist_ok=True)
@@ -22,11 +23,12 @@ def configure_logging():
     
     # Configure specific loggers
     
-    # Set detection_handler to WARNING to hide duplicate detection messages
+    # Keep detection_handler at INFO level to ensure detection details are logged
+    # This ensures the data is available for detection_history.html
     detection_handler_logger = logging.getLogger('detection_handler')
-    detection_handler_logger.setLevel(logging.WARNING)
+    detection_handler_logger.setLevel(logging.INFO)
     
-    # Set YOLO related loggers to ERROR to hide detection details
+    # Set YOLO related loggers to ERROR to hide detection model details
     logging.getLogger('ultralytics').setLevel(logging.ERROR)
     
     # Set werkzeug (Flask dev server) to WARNING to hide request logs
@@ -39,3 +41,4 @@ def configure_logging():
     
     # Log the configuration
     logging.getLogger(__name__).info("Logging configured. Complete logs available in logs/wildeye_complete.log")
+    logging.getLogger(__name__).info("Detection details logging enabled for detection_history.html")
