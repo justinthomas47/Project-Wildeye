@@ -1,5 +1,5 @@
 # detection_handler.py
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Generator, Tuple
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -25,6 +25,20 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Function to get Indian Standard Time
+def get_indian_time():
+    """
+    Returns the current time in Indian Standard Time (IST) - UTC+5:30
+    """
+    # Create a timezone object for IST (UTC+5:30)
+    ist = timezone(timedelta(hours=5, minutes=30))
+    
+    # Get current UTC time and convert to IST
+    utc_time = datetime.now(timezone.utc)
+    ist_time = utc_time.astimezone(ist)
+    
+    return ist_time
 
 # Initialize Google Drive
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
@@ -89,7 +103,7 @@ def save_screenshot_to_drive(screenshot: bytes, detection_id: str) -> str:
                 raise Exception("Drive service not initialized")
             
         # Create file metadata
-        filename = f"{detection_id}_{int(datetime.now().timestamp())}.jpg"
+        filename = f"{detection_id}_{int(get_indian_time().timestamp())}.jpg"
         file_metadata = {
             'name': filename,
             'parents': [folder_id]
@@ -125,7 +139,7 @@ def save_screenshot_locally(screenshot: bytes, detection_id: str) -> str:
     """Save screenshot to local storage as fallback"""
     try:
         os.makedirs('static/screenshots', exist_ok=True)
-        filename = f"static/screenshots/{detection_id}_{int(datetime.now().timestamp())}.jpg"
+        filename = f"static/screenshots/{detection_id}_{int(get_indian_time().timestamp())}.jpg"
         with open(filename, 'wb') as f:
             f.write(screenshot)
         return filename
@@ -202,7 +216,8 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
     Returns: Detection ID if saved successfully, None if duplicate detected
     """
     try:
-        current_time = datetime.now()
+        # Use Indian Standard Time
+        current_time = get_indian_time()
         
         # Check for recent duplicate detection
         if is_recent_duplicate(
@@ -436,8 +451,8 @@ class VideoProcessor:
                         detection_data = {
                             'camera_id': self.camera_id,
                             'detection_label': detection['detection_label'],
-                            'confidence': detection['confidence'],
-                            'timestamp': datetime.now()
+                            'confidence': detection['confidence']
+                            # timestamp will be added by add_detection function
                         }
                         
                         # Call add_detection which handles deduplication internally

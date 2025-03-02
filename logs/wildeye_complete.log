@@ -398,3 +398,61 @@ ValueError: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
 2025-03-02 20:01:53,926 - __main__ - WARNING - Thread didn't terminate for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
 2025-03-02 20:01:53,926 - __main__ - INFO - Force stop completed for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
 2025-03-02 20:01:54,050 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:00:23,599 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:00:28,448 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:00:29,823 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:00:29,823 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:00:30,256 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:00:30,256 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:00:30,481 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:00:30,550 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:00:31,767 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:00:32,007 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:00:36,849 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:00:38,090 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:00:38,090 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:00:38,583 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:00:38,583 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:00:38,884 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:00:38,990 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:00:40,748 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:00:40,762 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:00:46,596 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 22:00:46,597 - __main__ - INFO - Creating new stream for cam2
+2025-03-02 22:00:46,911 - __main__ - INFO - Found camera config: {'input_type': 'youtube_link', 'mobile_number': '', 'google_maps_link': '', 'camera_name': 'cam2', 'input_value': 'https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos'}
+2025-03-02 22:00:46,911 - __main__ - INFO - Creating stream with type: youtube_link, value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, id: 3DH0qnXXSXV1xjwSsjLo
+2025-03-02 22:00:46,919 - __main__ - INFO - Starting stream generator for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos (visible=True)
+2025-03-02 22:00:46,919 - __main__ - INFO - Started camera stream thread for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:00:46,920 - process_stream - INFO - Processing stream request - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Visible: True
+2025-03-02 22:00:46,920 - __main__ - INFO - Stream started for cam2
+2025-03-02 22:00:46,920 - process_stream - INFO - Starting stream in active state (visible): https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:00:46,922 - process_stream - INFO - Starting stream processing - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Seek: 0
+2025-03-02 22:00:46,922 - process_stream - INFO - Processing YouTube link
+2025-03-02 22:00:50,737 - process_stream - INFO - Opening video stream from source: https://rr1---sn-3xg5a5-jv3l.googlevideo.com/videoplayback?expire=1740954671&ei=z4fEZ_nFOuqRssUP6dfeiQM&ip=103.160.233.255&id=o-AB7opX0TlkYNsV-Z8L81dDG9eq1Dw_RabOZ6zQQAizV2&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1740933071%2C&mh=rM&mm=31%2C29&mn=sn-3xg5a5-jv3l%2Csn-h557sns7&ms=au%2Crdu&mv=m&mvi=1&pl=24&rms=au%2Cau&initcwndbps=1932500&bui=AUWDL3z_5f4ggXNvAnNbU_4GC3hgXMJxPRB9EWkRhLE0Moei4lOYkF0WzqV9hwyHPVKScRxa6fImvqeO&spc=RjZbSY7dwUppmFq6UPwdUXwrcNKhgVGScyLCFKYCPQZn9ZFXbweVI4EU2cysNm4uA7wlGA&vprv=1&svpuc=1&mime=video%2Fmp4&ns=843foGwhpgrtM7kaSpfx04UQ&rqh=1&cnr=14&ratebypass=yes&dur=158.151&lmt=1699430473321524&mt=1740932470&fvip=2&lmw=1&fexp=51326932&c=TVHTML5&sefc=1&txp=5318224&n=nURHpY60P4w1zg&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRQIgJrzoxwXGxS-h9heIkTUE8FfLsurR_T7CV41mHkgl0_ECIQCjpIkb0KJrDMDAjlF5L642_rPtxkTqqBwKDYoZ3CCzOQ%3D%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=AFVRHeAwRQIgBZnek48ZLK3r3IMz4jJ_yWWY7EcVBNTEiClSYrYOc0gCIQCAM8x5H_xi_k5oo-bimrt9Y5LeNZnDjL4kzWG8MMMa-g%3D%3D
+2025-03-02 22:00:51,107 - process_stream - INFO - Video FPS: 30.0
+2025-03-02 22:00:51,107 - process_stream - INFO - Starting worker 0
+2025-03-02 22:00:51,107 - process_stream - INFO - Starting worker 1
+2025-03-02 22:00:51,107 - process_stream - INFO - Starting worker 2
+2025-03-02 22:00:51,107 - process_stream - INFO - Starting worker 3
+2025-03-02 22:00:52,386 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:00:52,386 - __main__ - INFO - Force cleaning up stream for camera: cam2
+2025-03-02 22:00:52,386 - __main__ - INFO - Force stopping stream for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:00:52,386 - __main__ - ERROR - Error closing generator: generator already executing
+2025-03-02 22:00:52,788 - __main__ - WARNING - No frames received for cam2
+2025-03-02 22:00:52,788 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 22:00:53,889 - __main__ - INFO - Stream stopped for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:00:55,398 - __main__ - WARNING - Thread didn't terminate for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:00:55,398 - __main__ - INFO - Force stop completed for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:00:55,536 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:01:11,875 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 1 detections processed in the last 30 seconds
+2025-03-02 22:01:17,912 - process_stream - INFO - New detection: elephant with 60.1% confidence
+2025-03-02 22:01:41,902 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 437 detections processed in the last 30 seconds
+2025-03-02 22:02:12,151 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 416 detections processed in the last 30 seconds
+2025-03-02 22:02:15,473 - process_stream - INFO - New detection: lion with 51.9% confidence
+2025-03-02 22:02:51,387 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 292 detections processed in the last 30 seconds
+2025-03-02 22:03:33,297 - process_stream - WARNING - Failed to read frame (1/5)
+2025-03-02 22:03:33,398 - process_stream - WARNING - Failed to read frame (2/5)
+2025-03-02 22:03:33,499 - process_stream - WARNING - Failed to read frame (3/5)
+2025-03-02 22:03:33,599 - process_stream - WARNING - Failed to read frame (4/5)
+2025-03-02 22:03:33,700 - process_stream - WARNING - Failed to read frame (5/5)
+2025-03-02 22:03:33,700 - process_stream - ERROR - Too many consecutive frame reading failures
