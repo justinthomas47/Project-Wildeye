@@ -556,3 +556,94 @@ ValueError: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
 2025-03-02 22:13:50,131 - __main__ - ERROR - Error closing generator: generator already executing
 2025-03-02 22:13:50,621 - __main__ - INFO - Stream stopped for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
 2025-03-02 22:15:10,212 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:15:14,968 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:15:16,198 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:15:16,198 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:15:16,552 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:15:16,552 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:15:16,765 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:15:16,824 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:15:18,235 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:15:18,456 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:15:23,139 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:15:24,382 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:15:24,385 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:15:24,805 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:15:24,806 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:15:25,044 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:15:25,148 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:15:26,801 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:15:26,816 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:15:46,798 - __main__ - INFO - Starting stream generator for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos (visible=False)
+2025-03-02 22:15:46,798 - __main__ - INFO - Started camera stream thread for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:15:46,799 - process_stream - INFO - Processing stream request - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Visible: False
+2025-03-02 22:15:46,800 - process_stream - INFO - Starting stream in paused state (not visible): https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:15:46,800 - process_stream - INFO - Starting stream processing - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Seek: 0
+2025-03-02 22:15:46,801 - process_stream - INFO - Processing YouTube link
+2025-03-02 22:15:50,278 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 22:15:50,278 - __main__ - INFO - Updating stream visibility for cam2 to True
+2025-03-02 22:15:50,278 - __main__ - INFO - Setting visibility for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos to True
+2025-03-02 22:15:50,278 - process_stream - INFO - Resuming stream for camera: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:15:50,278 - process_stream - INFO - Resuming video processing
+2025-03-02 22:15:50,427 - process_stream - INFO - Opening video stream from source: https://rr1---sn-3xg5a5-jv3l.googlevideo.com/videoplayback?expire=1740955571&ei=U4vEZ7bULcqq9fwPn--qgAY&ip=103.160.233.255&id=o-AIzMScQol2eHrr8W6kPHwaEpIML_y3v32fXXZwlG_irC&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1740933971%2C&mh=rM&mm=31%2C29&mn=sn-3xg5a5-jv3l%2Csn-h557sns7&ms=au%2Crdu&mv=m&mvi=1&pl=24&rms=au%2Cau&initcwndbps=1897500&bui=AUWDL3zFOo3vfymRAnogkdUFoUeU3X_a_yDyph5J_0tAze-T3gEXR_t2ibu2bOx1tvMCIsdO_Dp4kKPd&spc=RjZbSW1G2IWEeCeq0nt8vjUsGqzPZXSVyX7NbyENCaLdefU35COm__OOwGeDgBL8X1gcTA&vprv=1&svpuc=1&mime=video%2Fmp4&ns=uyYpQ8_0CwOLd8ZTgT5zyaoQ&rqh=1&cnr=14&ratebypass=yes&dur=158.151&lmt=1699430473321524&mt=1740933437&fvip=2&lmw=1&fexp=51326932&c=TVHTML5&sefc=1&txp=5318224&n=uYGbOOmAzaI3Pw&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRQIgVdJhtHXqq8mQLsr2EH-FTMfvV2Xp9HWPealFdnRBX00CIQDWT3IPSkg1dueiJfcrb_dOE113xGviAjBsO_zrK-HfMA%3D%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=AFVRHeAwRQIgEhLxw-fNSa0XpQZ6Rw1m-sSdyLhJfh9iU5KIboRuI0MCIQDcU4dG59-rBqehqled3NqhRUPYtM357kp3eQf4XexE9g%3D%3D
+2025-03-02 22:15:50,649 - process_stream - INFO - Video FPS: 30.0
+2025-03-02 22:15:50,649 - process_stream - INFO - Starting worker 0
+2025-03-02 22:15:50,653 - process_stream - INFO - Starting worker 1
+2025-03-02 22:15:50,653 - process_stream - INFO - Starting worker 2
+2025-03-02 22:15:50,654 - process_stream - INFO - Starting worker 3
+2025-03-02 22:15:52,135 - __main__ - WARNING - No frames received for 5 seconds from https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:15:54,264 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 30 frames, 4.01 fps
+2025-03-02 22:15:55,466 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 60 frames, 6.92 fps
+2025-03-02 22:15:56,908 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 90 frames, 8.90 fps
+2025-03-02 22:15:58,966 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 120 frames, 9.86 fps
+2025-03-02 22:16:01,012 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 150 frames, 10.55 fps
+2025-03-02 22:16:03,058 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 180 frames, 11.07 fps
+2025-03-02 22:16:05,108 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 210 frames, 11.46 fps
+2025-03-02 22:16:07,153 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 240 frames, 11.79 fps
+2025-03-02 22:16:09,202 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 270 frames, 12.05 fps
+2025-03-02 22:16:11,396 - process_stream - INFO - Camera cam2_97fa8196: 1 detections processed in the last 30 seconds
+2025-03-02 22:16:11,675 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 300 frames, 12.06 fps
+2025-03-02 22:16:13,376 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 330 frames, 12.41 fps
+2025-03-02 22:16:15,429 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 360 frames, 12.57 fps
+2025-03-02 22:16:17,488 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 390 frames, 12.70 fps
+2025-03-02 22:16:17,850 - process_stream - INFO - New detection: elephant with 60.1% confidence
+2025-03-02 22:16:19,466 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 420 frames, 12.85 fps
+2025-03-02 22:16:21,517 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 450 frames, 12.96 fps
+2025-03-02 22:16:23,564 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 480 frames, 13.05 fps
+2025-03-02 22:16:25,619 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 510 frames, 13.13 fps
+2025-03-02 22:16:27,668 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 540 frames, 13.21 fps
+2025-03-02 22:16:29,726 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 570 frames, 13.28 fps
+2025-03-02 22:16:31,777 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 600 frames, 13.34 fps
+2025-03-02 22:16:33,829 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 630 frames, 13.39 fps
+2025-03-02 22:16:35,875 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 660 frames, 13.45 fps
+2025-03-02 22:16:37,918 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 690 frames, 13.50 fps
+2025-03-02 22:16:39,967 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 720 frames, 13.54 fps
+2025-03-02 22:16:41,400 - process_stream - INFO - Camera cam2_97fa8196: 438 detections processed in the last 30 seconds
+2025-03-02 22:16:42,022 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 750 frames, 13.58 fps
+2025-03-02 22:16:44,072 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 780 frames, 13.62 fps
+2025-03-02 22:16:46,116 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 810 frames, 13.65 fps
+2025-03-02 22:16:48,176 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 840 frames, 13.68 fps
+2025-03-02 22:16:50,232 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 870 frames, 13.71 fps
+2025-03-02 22:16:52,272 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 900 frames, 13.74 fps
+2025-03-02 22:16:54,329 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 930 frames, 13.77 fps
+2025-03-02 22:16:56,381 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 960 frames, 13.80 fps
+2025-03-02 22:16:58,412 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 990 frames, 13.82 fps
+2025-03-02 22:17:00,470 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1020 frames, 13.84 fps
+2025-03-02 22:17:02,518 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1050 frames, 13.87 fps
+2025-03-02 22:17:04,551 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1080 frames, 13.89 fps
+2025-03-02 22:17:06,617 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1110 frames, 13.91 fps
+2025-03-02 22:17:08,660 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1140 frames, 13.92 fps
+2025-03-02 22:17:10,779 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1170 frames, 13.93 fps
+2025-03-02 22:17:11,591 - process_stream - INFO - Camera cam2_97fa8196: 415 detections processed in the last 30 seconds
+2025-03-02 22:17:12,812 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1200 frames, 13.95 fps
+2025-03-02 22:17:14,336 - process_stream - INFO - New detection: lion with 51.9% confidence
+2025-03-02 22:17:14,793 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1230 frames, 13.98 fps
+2025-03-02 22:17:16,831 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1260 frames, 13.99 fps
+2025-03-02 22:17:18,889 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 1290 frames, 14.01 fps
+2025-03-02 22:17:19,181 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:17:19,181 - __main__ - INFO - Force cleaning up stream for camera: cam2
+2025-03-02 22:17:19,181 - __main__ - INFO - Force stopping stream for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:17:19,181 - __main__ - ERROR - Error closing generator: generator already executing
+2025-03-02 22:17:19,235 - __main__ - INFO - Stream stopped for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:17:24,385 - __main__ - WARNING - No frames received for cam2
+2025-03-02 22:17:24,385 - __main__ - INFO - Client disconnected from stream cam2
