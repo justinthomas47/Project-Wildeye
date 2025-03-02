@@ -456,3 +456,103 @@ ValueError: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
 2025-03-02 22:03:33,599 - process_stream - WARNING - Failed to read frame (4/5)
 2025-03-02 22:03:33,700 - process_stream - WARNING - Failed to read frame (5/5)
 2025-03-02 22:03:33,700 - process_stream - ERROR - Too many consecutive frame reading failures
+2025-03-02 22:11:53,923 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:11:58,848 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:12:00,266 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:12:00,266 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:12:00,645 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:12:00,645 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:12:00,879 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:12:00,943 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:12:02,191 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:12:02,415 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:12:07,268 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:12:08,577 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:12:08,593 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:12:09,010 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:12:09,010 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:12:09,236 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:12:09,298 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:12:09,915 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:12:10,042 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:12:12,543 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:12:17,280 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:12:18,588 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:12:18,588 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:12:19,015 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:12:19,015 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:12:19,244 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:12:19,294 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:12:20,522 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:12:20,746 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:12:25,723 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:12:26,967 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:12:26,968 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:12:27,337 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:12:27,337 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:12:27,564 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:12:27,628 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:12:28,862 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:12:28,873 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:12:47,054 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 22:12:47,054 - __main__ - INFO - Creating new stream for cam2
+2025-03-02 22:12:47,348 - __main__ - INFO - Found camera config: {'input_type': 'youtube_link', 'mobile_number': '', 'google_maps_link': '', 'camera_name': 'cam2', 'input_value': 'https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos'}
+2025-03-02 22:12:47,348 - __main__ - INFO - Creating stream with type: youtube_link, value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, id: 3DH0qnXXSXV1xjwSsjLo
+2025-03-02 22:12:47,356 - __main__ - INFO - Starting stream generator for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos (visible=True)
+2025-03-02 22:12:47,356 - __main__ - INFO - Started camera stream thread for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:12:47,356 - process_stream - INFO - Processing stream request - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Visible: True
+2025-03-02 22:12:47,356 - __main__ - INFO - Stream started for cam2
+2025-03-02 22:12:47,356 - process_stream - INFO - Starting stream in active state (visible): https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:12:47,359 - process_stream - INFO - Starting stream processing - Type: youtube_link, Value: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos, Seek: 0
+2025-03-02 22:12:47,359 - process_stream - INFO - Processing YouTube link
+2025-03-02 22:12:50,384 - process_stream - INFO - Opening video stream from source: https://rr1---sn-3xg5a5-jv3l.googlevideo.com/videoplayback?expire=1740955392&ei=oIrEZ9OcEOGQssUP4-Wq2AU&ip=103.160.233.255&id=o-AF7N_gYHNJkyKvXF41zJSuCBemRM6dgEzqlhgBWW86QZ&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1740933792%2C&mh=rM&mm=31%2C29&mn=sn-3xg5a5-jv3l%2Csn-h557sns7&ms=au%2Crdu&mv=m&mvi=1&pl=24&rms=au%2Cau&initcwndbps=1897500&bui=AUWDL3y_IiSbQ5v4-umUas_Ywg79NhE32HN8zVQWld7uzAwoo7DiyRaPjcEWjliVm32VwuFDQpCu3XMq&spc=RjZbSd08EQazWkl5mHkNWMly3Q8To8K27woMh-Fh27hVtukOLimHbRvvVav9NgxFKxCxlg&vprv=1&svpuc=1&mime=video%2Fmp4&ns=-TbbJyMaZr8yutWAiGVc1BwQ&rqh=1&cnr=14&ratebypass=yes&dur=158.151&lmt=1699430473321524&mt=1740933437&fvip=2&lmw=1&fexp=51326932%2C51411872&c=TVHTML5&sefc=1&txp=5318224&n=SacOaQfAqJitDQ&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Ccnr%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRQIhAJkBVa7ajHfspc6X-AiTsuko9bzFyZlVzO4A2d08UiG_AiBvDey2D2Gr2vi7qZ5sogtMz67gBr94qfoTJEZgqtj0ug%3D%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=AFVRHeAwRQIhAJ9RBwzW_rqLTTg7rd8uoEKa7qr0o1_Bgdii9q5AaXBGAiAeQbFLtPAQg-vNDFjRwo-7iM6M8smMFzMriWqBfBnsog%3D%3D
+2025-03-02 22:12:50,601 - process_stream - INFO - Video FPS: 30.0
+2025-03-02 22:12:50,604 - process_stream - INFO - Starting worker 0
+2025-03-02 22:12:50,604 - process_stream - INFO - Starting worker 1
+2025-03-02 22:12:50,604 - process_stream - INFO - Starting worker 2
+2025-03-02 22:12:50,604 - process_stream - INFO - Starting worker 3
+2025-03-02 22:12:53,196 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 30 frames, 5.13 fps
+2025-03-02 22:12:54,754 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 60 frames, 8.10 fps
+2025-03-02 22:12:56,796 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 90 frames, 9.53 fps
+2025-03-02 22:12:58,856 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 120 frames, 10.43 fps
+2025-03-02 22:13:00,905 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 150 frames, 11.06 fps
+2025-03-02 22:13:02,953 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 180 frames, 11.53 fps
+2025-03-02 22:13:04,990 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 210 frames, 11.90 fps
+2025-03-02 22:13:06,257 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 22:13:06,658 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 22:13:07,040 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 240 frames, 12.19 fps
+2025-03-02 22:13:09,104 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 270 frames, 12.41 fps
+2025-03-02 22:13:09,421 - __main__ - INFO - Starting video feed for cam2 (visible=True)
+2025-03-02 22:13:10,539 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 22:13:11,215 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 1 detections processed in the last 30 seconds
+2025-03-02 22:13:11,493 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 300 frames, 12.42 fps
+2025-03-02 22:13:13,275 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 330 frames, 12.73 fps
+2025-03-02 22:13:15,330 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 360 frames, 12.87 fps
+2025-03-02 22:13:17,382 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 390 frames, 12.99 fps
+2025-03-02 22:13:18,130 - process_stream - INFO - New detection: elephant with 60.1% confidence
+2025-03-02 22:13:19,381 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 420 frames, 13.11 fps
+2025-03-02 22:13:21,442 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 450 frames, 13.20 fps
+2025-03-02 22:13:23,499 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 480 frames, 13.28 fps
+2025-03-02 22:13:25,532 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 510 frames, 13.36 fps
+2025-03-02 22:13:27,569 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 540 frames, 13.43 fps
+2025-03-02 22:13:29,621 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 570 frames, 13.48 fps
+2025-03-02 22:13:31,672 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 600 frames, 13.54 fps
+2025-03-02 22:13:33,719 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 630 frames, 13.59 fps
+2025-03-02 22:13:35,768 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 660 frames, 13.63 fps
+2025-03-02 22:13:37,826 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 690 frames, 13.67 fps
+2025-03-02 22:13:39,870 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 720 frames, 13.71 fps
+2025-03-02 22:13:41,231 - process_stream - INFO - Camera 3DH0qnXXSXV1xjwSsjLo: 437 detections processed in the last 30 seconds
+2025-03-02 22:13:41,927 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 750 frames, 13.74 fps
+2025-03-02 22:13:43,972 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 780 frames, 13.78 fps
+2025-03-02 22:13:46,014 - __main__ - INFO - Stream https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos: 810 frames, 13.81 fps
+2025-03-02 22:13:47,600 - __main__ - INFO - Pausing stream for camera: cam2
+2025-03-02 22:13:47,601 - __main__ - INFO - Setting visibility for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos to False
+2025-03-02 22:13:47,601 - process_stream - INFO - Pausing stream for camera: https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:13:47,601 - process_stream - INFO - Pausing video processing
+2025-03-02 22:13:48,338 - __main__ - INFO - Client disconnected from stream cam2
+2025-03-02 22:13:50,131 - __main__ - INFO - Starting global cleanup of all camera streams
+2025-03-02 22:13:50,131 - __main__ - INFO - Force cleaning up stream for camera: cam2
+2025-03-02 22:13:50,131 - __main__ - INFO - Force stopping stream for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:13:50,131 - __main__ - ERROR - Error closing generator: generator already executing
+2025-03-02 22:13:50,621 - __main__ - INFO - Stream stopped for https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos
+2025-03-02 22:15:10,212 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
