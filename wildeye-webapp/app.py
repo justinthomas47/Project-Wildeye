@@ -1,7 +1,4 @@
-# Add this import at the top of app.py
 from logging_config import configure_logging
-
-# Configure logging - call this before any other logging operations
 configure_logging()
 
 import os
@@ -22,6 +19,14 @@ import cv2
 import gc
 import numpy as np
 import traceback
+from warning_system import (
+    get_all_warnings, 
+    acknowledge_warning, 
+    resolve_warning, 
+    get_notification_preferences,
+    update_notification_preferences,
+    test_notification_channels
+)
 
 # Set up logger for this module
 logger = logging.getLogger(__name__)
@@ -413,15 +418,123 @@ def detection_history():
                               current_page='detection_history')
 @app.route("/warnings")
 def warnings():
+    """Display warning history page with active and resolved warnings"""
     if db is None:
         return render_template("warnings.html", error="Firebase not initialized"), 500
 
     try:
-        warnings_ref = db.collection("warnings").where("active", "==", True).order_by("timestamp", direction=firestore.Query.DESCENDING)
-        warnings = [doc.to_dict() for doc in warnings_ref.stream()]
-        return render_template("warnings.html", warnings=warnings)
+        # Get all warnings (active and resolved)
+        all_warnings = get_all_warnings(db, active_only=False, limit=100)
+        
+        return render_template("warnings.html", warnings=all_warnings, current_page='warnings')
     except Exception as e:
-        return render_template("warnings.html", error=str(e))
+        logger.error(f"Error loading warnings: {e}")
+        logger.error(traceback.format_exc())
+        return render_template("warnings.html", error=str(e), current_page='warnings')
+@app.route("/warning/<warning_id>/acknowledge", methods=["POST"])
+def acknowledge_warning_route(warning_id):
+    """API endpoint to acknowledge a warning"""
+    if db is None:
+        return jsonify({"success": False, "error": "Firebase not initialized"}), 500
+        
+    try:
+        success = acknowledge_warning(db, warning_id)
+        return jsonify({"success": success})
+    except Exception as e:
+        logger.error(f"Error acknowledging warning: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/warning/<warning_id>/resolve", methods=["POST"])
+def resolve_warning_route(warning_id):
+    """API endpoint to resolve a warning"""
+    if db is None:
+        return jsonify({"success": False, "error": "Firebase not initialized"}), 500
+        
+    try:
+        success = resolve_warning(db, warning_id)
+        return jsonify({"success": success})
+    except Exception as e:
+        logger.error(f"Error resolving warning: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/notification_settings", methods=["GET", "POST"])
+def notification_settings():
+    """Page to manage notification settings"""
+    if db is None:
+        return render_template("notification_settings.html", error="Firebase not initialized"), 500
+        
+    try:
+        if request.method == "POST":
+            # Process form submission
+            preferences = {
+                'email': {
+                    'enabled': 'email_enabled' in request.form,
+                    'recipient': request.form.get('email_recipient', '')
+                },
+                'sms': {
+                    'enabled': 'sms_enabled' in request.form,
+                    'recipient': request.form.get('sms_recipient', '')
+                },
+                'telegram': {
+                    'enabled': 'telegram_enabled' in request.form,
+                    'chat_id': request.form.get('telegram_chat_id', '')
+                }
+            }
+            
+            success = update_notification_preferences(db, preferences)
+            
+            if success:
+                return render_template(
+                    "notification_settings.html", 
+                    preferences=preferences, 
+                    success="Notification settings updated successfully",
+                    current_page='settings'
+                )
+            else:
+                return render_template(
+                    "notification_settings.html", 
+                    preferences=preferences, 
+                    error="Failed to update notification settings",
+                    current_page='settings'
+                )
+        
+        # GET request - show current settings
+        preferences = get_notification_preferences(db)
+        return render_template(
+            "notification_settings.html", 
+            preferences=preferences,
+            current_page='settings'
+        )
+    except Exception as e:
+        logger.error(f"Error with notification settings: {e}")
+        return render_template(
+            "notification_settings.html", 
+            error=f"Error: {str(e)}",
+            current_page='settings'
+        )
+
+@app.route("/test_notifications", methods=["POST"])
+def test_notifications():
+    """API endpoint to test notification channels"""
+    if db is None:
+        return jsonify({"success": False, "error": "Firebase not initialized"}), 500
+        
+    try:
+        # Get current notification preferences
+        preferences = get_notification_preferences(db)
+        
+        # Send test notifications
+        test_results = test_notification_channels(db, preferences)
+        
+        return jsonify({
+            "success": True,
+            "email": test_results.get('email', False),
+            "sms": test_results.get('sms', False),
+            "telegram": test_results.get('telegram', False)
+        })
+    except Exception as e:
+        logger.error(f"Error testing notifications: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500    
     
 @app.route("/about")
 def about():
