@@ -1002,3 +1002,54 @@ ValueError: Camera https://youtu.be/xAZl0QFeQiw?si=rmpCawmHR-PcTUos not found
 2025-03-02 22:59:24,122 - __main__ - INFO - Found 3 detection logs to display
 2025-03-02 22:59:33,707 - __main__ - INFO - Starting global cleanup of all camera streams
 2025-03-02 22:59:33,848 - __main__ - INFO - Global cleanup completed successfully
+2025-03-02 22:59:34,701 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-02 22:59:34,701 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-02 22:59:39,719 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:59:40,938 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:59:40,938 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-02 22:59:41,354 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:59:41,355 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-02 22:59:41,355 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-02 22:59:41,355 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-02 22:59:41,596 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-02 22:59:41,599 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-02 22:59:41,599 - process_stream - INFO - Detection handler initialized successfully
+2025-03-02 22:59:41,663 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-02 22:59:42,887 - __main__ - INFO - Detection handler initialized successfully
+2025-03-02 22:59:42,897 - werkzeug - WARNING -  * Debugger is active!
+2025-03-02 22:59:54,117 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 22:59:55,910 - __main__ - INFO - Found detection log: Htgs5DdhJ2OsZxLyzyGK
+2025-03-02 22:59:55,910 - __main__ - INFO - Found detection log: ZHXtl7ZHijEy5s735ZX6
+2025-03-02 22:59:55,912 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 22:59:55,912 - __main__ - INFO - Found 3 detection logs to display
+2025-03-02 23:01:09,787 - __main__ - INFO - Querying detection_logs collection, ordered by timestamp descending, limit 50
+2025-03-02 23:01:10,091 - __main__ - INFO - Found detection log: Htgs5DdhJ2OsZxLyzyGK
+2025-03-02 23:01:10,092 - __main__ - INFO - Found detection log: pG5wqDlObLxLI2xiBMMe
+2025-03-02 23:01:10,092 - __main__ - INFO - Found 2 detection logs to display
+2025-03-03 06:17:33,305 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-03 06:17:33,305 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-03 06:17:54,717 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-03 06:17:56,204 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-03 06:17:56,205 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-03 06:17:56,616 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-03 06:17:56,617 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-03 06:17:56,617 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-03 06:17:56,617 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-03 06:17:56,849 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-03 06:17:56,849 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-03 06:17:56,850 - process_stream - INFO - Detection handler initialized successfully
+2025-03-03 06:17:56,926 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-03 06:17:58,149 - __main__ - INFO - Detection handler initialized successfully
+2025-03-03 06:17:58,387 - logging_config - INFO - Logging configured. Complete logs available in logs/wildeye_complete.log
+2025-03-03 06:17:58,387 - logging_config - INFO - Detection details logging enabled for detection_history.html
+2025-03-03 06:18:03,718 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
+2025-03-03 06:18:04,916 - process_stream - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-03 06:18:04,917 - process_stream - INFO - Loading YOLO model from best.pt
+2025-03-03 06:18:05,298 - process_stream - INFO - YOLO models loaded successfully on cuda
+2025-03-03 06:18:05,299 - process_stream - INFO - VideoProcessor initialized successfully
+2025-03-03 06:18:05,299 - detection_handler - INFO - Initializing VideoProcessor with model: best.pt
+2025-03-03 06:18:05,299 - detection_handler - INFO - Loading YOLO model from best.pt
+2025-03-03 06:18:05,524 - detection_handler - INFO - YOLO models loaded successfully on cuda
+2025-03-03 06:18:05,524 - detection_handler - INFO - VideoProcessor initialized successfully
+2025-03-03 06:18:05,524 - process_stream - INFO - Detection handler initialized successfully
+2025-03-03 06:18:05,586 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0
