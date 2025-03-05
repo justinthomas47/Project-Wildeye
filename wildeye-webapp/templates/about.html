@@ -1,79 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<<<<<<< HEAD
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link
-      href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
-    <title>WildEye - About</title>
-  </head>
-  <body>
-    {% include "includes/navbar.html" %}
-
-    <div class="about-header">
-      <h1>About WildEye</h1>
-      <p>Innovative Wildlife Detection Solution</p>
-    </div>
-    <div class="about-content">
-      <div class="about-description">
-        <h2>Our Mission</h2>
-        <p>WildEye is an advanced wildlife detection system that leverages CCTV feeds and YOLOv8 technology to identify and monitor wild animals in their natural habitat.</p>
-      </div>
-      <div class="developers">
-        <h2>Meet Our Team</h2>
-        <div class="developer-cards">
-          <div class="developer-card">
-            <img src="{{ url_for('static', filename='assets/developer1.jpg') }}" alt="developer" />
-            <h3>John Doe</h3>
-            <p>Team Lead</p>
-            <div class="developer-socials">
-              <a href="#" class="social-icon"><i class="ri-linkedin-fill"></i></a>
-              <a href="#" class="social-icon"><i class="ri-github-fill"></i></a>
-            </div>
-          </div>
-          <div class="developer-card">
-            <img src="{{ url_for('static', filename='assets/developer2.jpg') }}" alt="developer" />
-            <h3>Jane Smith</h3>
-            <p>Backend Developer</p>
-            <div class="developer-socials">
-              <a href="#" class="social-icon"><i class="ri-linkedin-fill"></i></a>
-              <a href="#" class="social-icon"><i class="ri-github-fill"></i></a>
-            </div>
-          </div>
-          <div class="developer-card">
-            <img src="{{ url_for('static', filename='assets/developer3.jpg') }}" alt="developer" />
-            <h3>Mike Johnson</h3>
-            <p>Backend Developer</p>
-            <div class="developer-socials">
-              <a href="#" class="social-icon"><i class="ri-linkedin-fill"></i></a>
-              <a href="#" class="social-icon"><i class="ri-github-fill"></i></a>
-            </div>
-          </div>
-          <div class="developer-card">
-            <img src="{{ url_for('static', filename='assets/developer4.jpg') }}" alt="developer" />
-            <h3>Sarah Wilson</h3>
-            <p>Frontend Developer</p>
-            <div class="developer-socials">
-              <a href="#" class="social-icon"><i class="ri-linkedin-fill"></i></a>
-              <a href="#" class="social-icon"><i class="ri-github-fill"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <script type="module">
-      import { initAuthStateObserver } from '/static/js/firebase-auth.js';
-      initAuthStateObserver();
-=======
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -175,7 +101,6 @@
             `;
             teamContainer.appendChild(memberDiv);
         });
->>>>>>> origin/main
     </script>
-  </body>
+</body>
 </html>
