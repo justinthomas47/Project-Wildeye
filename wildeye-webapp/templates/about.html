@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <title>About Our Team</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
@@ -10,22 +13,29 @@
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #111111;
+            /* Add background image support */
+            background-image: url('your-background-image.jpg'); /* Replace with your image path */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             color: white;
             text-align: center;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
             position: relative;
-            overflow: hidden;
         }
         .container {
             max-width: 1400px;
-            margin: auto;
             padding: 40px;
             position: relative;
             z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
         }
         .team-grid {
             display: flex;
@@ -60,113 +70,14 @@
             margin: 0 auto;
         }
         .text-primary { color: #fbbf24; font-size: 2rem; white-space: nowrap; }
-        canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-        }
-        nav {
-            background:rgb(3, 3, 3);
-            padding: 15px 20px;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-        }
-        nav .brand {
-            font-size: 24px;
-            font-weight: bold;
-            color: white;
-            margin-right: 30px;
-        }
-        nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            gap: 20px;
-        }
-        nav ul li {
-            display: inline;
-        }
-        nav ul li a {
-            color: white;
-            text-decoration: none;
-            font-size: 18px;
-            padding: 10px 15px;
-            transition: background 0.3s, color 0.3s;
-        }
-        nav ul li a:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-        }
     </style>
 </head>
 <body>
-    <canvas id="backgroundCanvas"></canvas>
-    <script>
-        const canvas = document.getElementById("backgroundCanvas");
-        const ctx = canvas.getContext("2d");
-        let particles = [];
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        
-        function createParticles(count) {
-            particles = [];
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: Math.random() * 5 + 1,
-                    speedX: Math.random() * 3 - 1.5,
-                    speedY: Math.random() * 3 - 1.5,
-                });
-            }
-        }
-        
-        function updateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#111111";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#444444";
-            particles.forEach(particle => {
-                particle.x += particle.speedX;
-                particle.y += particle.speedY;
-                if (particle.x > canvas.width) particle.x = 0;
-                if (particle.x < 0) particle.x = canvas.width;
-                if (particle.y > canvas.height) particle.y = 0;
-                if (particle.y < 0) particle.y = canvas.height;
-                ctx.beginPath();
-                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-                ctx.fill();
-            });
-            requestAnimationFrame(updateParticles);
-        }
-
-        resizeCanvas();
-        createParticles(50);
-        updateParticles();
-        window.addEventListener("resize", resizeCanvas);
-    </script>
-    <nav>
-        <span class="brand">WildEye</span>
-        <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/contact">Contact</a></li>
-        </ul>
-    </nav>
+    <div style="width: 100%;">
+        {% include 'includes/navbar.html' %}
+    </div>
     
-    <div class="container">
+    <div class="container" style="margin: auto;">
         <h1 class="text-primary">About Our Team</h1>
         <div class="team-grid" id="teamContainer"></div>
     </div>
@@ -174,10 +85,10 @@
     <script>
         const teamContainer = document.getElementById("teamContainer");
         const team = [
-            { name: "Justin Thomas", role: "CEO & Founder", imageUrl: "https://via.placeholder.com/140" },
-            { name: "Robin Jo Varghese", role: "CTO", imageUrl: "static/robin.jpeg" },
-            { name: "Roshan Jacob", role: "Head of Design", imageUrl: "https://via.placeholder.com/140" },
-            { name: "Tilin Chacko", role: "Lead Developer", imageUrl: "https://via.placeholder.com/140" }
+            { name: "Justin Thomas", role: "Developer", imageUrl: "static/justin.jpeg" },
+            { name: "Robin Jo Varghese", role: "Developer", imageUrl: "static/robin.jpeg" },
+            { name: "Roshan Jacob", role: "Designer", imageUrl: "static/roshan.jpeg" },
+            { name: "Tilin Chacko", role: "Designer", imageUrl: "static/tilin.jpeg" }
         ];
         
         team.forEach(person => {
