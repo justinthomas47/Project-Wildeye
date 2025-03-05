@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 logs/*.log
 logs/wildeye_complete.log
+logs/
