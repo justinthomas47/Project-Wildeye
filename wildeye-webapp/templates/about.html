@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<<<<<<< HEAD
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -72,6 +73,109 @@
     <script type="module">
       import { initAuthStateObserver } from '/static/js/firebase-auth.js';
       initAuthStateObserver();
+=======
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <title>About Our Team</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #111111;
+            /* Add background image support */
+            background-image: url('your-background-image.jpg'); /* Replace with your image path */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: relative;
+        }
+        .container {
+            max-width: 1400px;
+            padding: 40px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+        .team-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 20px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .team-member {
+            background: rgba(64, 64, 64, 0.5);
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 320px;
+            white-space: nowrap;
+        }
+        .team-member:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 223, 0, 0.8);
+        }
+        .team-member img {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            margin: 0 auto;
+        }
+        .text-primary { color: #fbbf24; font-size: 2rem; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div style="width: 100%;">
+        {% include 'includes/navbar.html' %}
+    </div>
+    
+    <div class="container" style="margin: auto;">
+        <h1 class="text-primary">About Our Team</h1>
+        <div class="team-grid" id="teamContainer"></div>
+    </div>
+    
+    <script>
+        const teamContainer = document.getElementById("teamContainer");
+        const team = [
+            { name: "Justin Thomas", role: "Developer", imageUrl: "static/justin.jpeg" },
+            { name: "Robin Jo Varghese", role: "Developer", imageUrl: "static/robin.jpeg" },
+            { name: "Roshan Jacob", role: "Designer", imageUrl: "static/roshan.jpeg" },
+            { name: "Tilin Chacko", role: "Designer", imageUrl: "static/tilin.jpeg" }
+        ];
+        
+        team.forEach(person => {
+            const memberDiv = document.createElement("div");
+            memberDiv.className = "team-member";
+            memberDiv.innerHTML = `
+                <img src="${person.imageUrl}" alt="${person.name}">
+                <h2 class="text-primary">${person.name}</h2>
+                <p>${person.role}</p>
+            `;
+            teamContainer.appendChild(memberDiv);
+        });
+>>>>>>> origin/main
     </script>
   </body>
 </html>
