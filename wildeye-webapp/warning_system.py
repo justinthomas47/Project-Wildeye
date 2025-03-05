@@ -40,6 +40,17 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
         warning_id: The ID of the created warning
     """
     try:
+        # Get the camera details to find the owner
+        camera_id = detection_data.get('camera_id', '')
+        owner_uid = None
+        
+        if camera_id:
+            camera_ref = db.collection('cameras').document(camera_id)
+            camera_doc = camera_ref.get()
+            if camera_doc.exists:
+                camera_data = camera_doc.to_dict()
+                owner_uid = camera_data.get('owner_uid')
+        
         # Create warning document
         warning_ref = db.collection('warnings').document()
         warning_id = warning_ref.id
@@ -48,7 +59,7 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
         warning_record = {
             'warning_id': warning_id,
             'detection_id': detection_data.get('detection_id', ''),
-            'camera_id': detection_data.get('camera_id', ''),
+            'camera_id': camera_id,
             'camera_name': detection_data.get('camera_name', ''),
             'type': detection_data.get('detection_label', 'unknown'),
             'message': f"{detection_data.get('detection_label', 'Animal')} detected at {detection_data.get('camera_name', 'unknown location')}",
@@ -63,11 +74,19 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
                 'sms': False,
                 'telegram': False
             },
-            'mobile_number': detection_data.get('mobile_number', '')
+            'mobile_number': detection_data.get('mobile_number', ''),
+            'owner_uid': owner_uid  # Add owner UID to link warning to user
         }
         
         # Save warning to database
         warning_ref.set(warning_record)
+        
+        # Get user-specific notification preferences if we have owner_uid
+        if owner_uid:
+            user_preferences = get_notification_preferences(db, owner_uid)
+            # Use user preferences if they exist, otherwise use provided preferences
+            if user_preferences:
+                notification_preferences = user_preferences
         
         # Send notifications based on preferences
         notifications_sent = send_notifications(warning_record, notification_preferences)
@@ -371,7 +390,7 @@ def get_notification_preferences(db, user_id: str = None) -> Dict:
     
     Args:
         db: Firestore database instance
-        user_id: Optional user ID (if None, get global settings)
+        user_id: User ID to get preferences for
         
     Returns:
         preferences: Dictionary with notification preferences
@@ -393,15 +412,22 @@ def get_notification_preferences(db, user_id: str = None) -> Dict:
             }
         }
         
-        # If no user ID, get global settings
-        doc_ref = db.collection('settings').document('notifications')
+        # If user_id provided, get user-specific settings
+        if user_id:
+            doc_ref = db.collection('settings').document(f'notifications_{user_id}')
+        else:
+            # Fall back to global settings
+            doc_ref = db.collection('settings').document('notifications')
+            
         doc = doc_ref.get()
         
         if doc.exists:
             return doc.to_dict()
         else:
             # Create default settings
-            doc_ref.set(default_preferences)
+            if user_id:
+                default_preferences['owner_uid'] = user_id
+                doc_ref.set(default_preferences)
             return default_preferences
             
     except Exception as e:
@@ -415,14 +441,21 @@ def update_notification_preferences(db, preferences: Dict, user_id: str = None) 
     Args:
         db: Firestore database instance
         preferences: Dictionary with new preferences
-        user_id: Optional user ID (if None, update global settings)
+        user_id: User ID to update preferences for
         
     Returns:
         success: True if preferences were successfully updated
     """
     try:
-        # If no user ID, update global settings
-        doc_ref = db.collection('settings').document('notifications')
+        if user_id:
+            # Update user-specific settings
+            doc_ref = db.collection('settings').document(f'notifications_{user_id}')
+            # Ensure owner_uid field is set
+            preferences['owner_uid'] = user_id
+        else:
+            # Update global settings
+            doc_ref = db.collection('settings').document('notifications')
+            
         doc_ref.set(preferences, merge=True)
         logger.info("Notification preferences updated")
         return True
@@ -431,14 +464,15 @@ def update_notification_preferences(db, preferences: Dict, user_id: str = None) 
         logger.error(f"Error updating notification preferences: {e}")
         return False
 
-def get_all_warnings(db, active_only: bool = False, limit: int = 100) -> List[Dict]:
+def get_all_warnings(db, active_only: bool = False, limit: int = 100, user_id: str = None) -> List[Dict]:
     """
-    Get all warnings from the database.
+    Get all warnings from the database, optionally filtered by user.
     
     Args:
         db: Firestore database instance
         active_only: If True, only return active warnings
         limit: Maximum number of warnings to return
+        user_id: If provided, only return warnings for this user
         
     Returns:
         warnings: List of warning dictionaries
@@ -448,6 +482,9 @@ def get_all_warnings(db, active_only: bool = False, limit: int = 100) -> List[Di
         
         if active_only:
             query = query.where('active', '==', True)
+            
+        if user_id:
+            query = query.where('owner_uid', '==', user_id)
             
         query = query.limit(limit)
         

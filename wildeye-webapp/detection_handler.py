@@ -18,7 +18,7 @@ import threading
 from queue import Queue, Empty
 import concurrent.futures
 import numpy as np
-
+from warning_system import create_warning, get_notification_preferences
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -225,7 +225,6 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             detection_data['detection_label'],
             current_time
         ):
-            # We no longer log individual skipped duplicates - handled in is_recent_duplicate
             return None
 
         # Get camera details
@@ -244,16 +243,18 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             if not screenshot_url:
                 screenshot_url = save_screenshot_locally(screenshot, detection_id)
 
-        # Prepare detection record
+        # Prepare detection record with owner_uid
         detection_record = {
             'detection_id': detection_id,
             'camera_id': detection_data['camera_id'],
             'camera_name': camera['camera_name'],
             'google_maps_link': camera.get('google_maps_link', ''),
+            'mobile_number': camera.get('mobile_number', ''),
             'detection_label': detection_data['detection_label'],
             'confidence': detection_data.get('confidence', 100.0),
             'timestamp': current_time,
-            'screenshot_url': screenshot_url
+            'screenshot_url': screenshot_url,
+            'owner_uid': camera.get('owner_uid')  # Add owner_uid from camera to detection
         }
 
         # Add the detection to Firestore database
@@ -268,9 +269,28 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             'location': camera.get('google_maps_link', ''),
             'timestamp': current_time,
             'confidence': detection_data.get('confidence', 100.0),
-            'image_url': screenshot_url
+            'image_url': screenshot_url,
+            'camera_id': detection_data['camera_id'],  # Add camera_id to link to owner
+            'owner_uid': camera.get('owner_uid')       # Add owner_uid for filtering
         }
         log_ref.set(log_data)
+        
+        # Create a warning for this detection
+        try:
+            # Get notification preferences for the camera owner
+            owner_uid = camera.get('owner_uid')
+            if owner_uid:
+                notification_preferences = get_notification_preferences(db, owner_uid)
+            else:
+                notification_preferences = get_notification_preferences(db)
+            
+            # Create warning
+            warning_id = create_warning(db, detection_record, notification_preferences)
+            if warning_id:
+                logger.info(f"Created warning {warning_id} for detection {detection_id}")
+        except Exception as warning_error:
+            logger.error(f"Error creating warning: {warning_error}")
+            logger.error(traceback.format_exc())
         
         logger.info(f"Added new detection: {detection_data['detection_label']} from {camera['camera_name']}")
         return detection_id
@@ -660,15 +680,28 @@ def resume_stream(camera_id: str):
         return True
     return False
 
-def get_detections_by_camera(db, camera_id: str, limit: int = 100) -> List[Dict]:
-    """Get recent detections for a specific camera"""
+def get_detections_by_camera(db, camera_id: str, limit: int = 100, user_id: str = None) -> List[Dict]:
+    """
+    Get recent detections for a specific camera, optionally filtered by user.
+    
+    Args:
+        db: Firestore database instance
+        camera_id: ID of the camera to get detections for
+        limit: Maximum number of detections to return
+        user_id: If provided, only return detections for this user
+        
+    Returns:
+        detections: List of detection dictionaries
+    """
     try:
-        detections = (db.collection('detections')
-                     .where('camera_id', '==', camera_id)
-                     .order_by('timestamp', direction=firestore.Query.DESCENDING)
-                     .limit(limit)
-                     .stream())
-        return [doc.to_dict() for doc in detections]
+        query = db.collection('detections').where('camera_id', '==', camera_id)
+        
+        if user_id:
+            query = query.where('owner_uid', '==', user_id)
+            
+        query = query.order_by('timestamp', direction=firestore.Query.DESCENDING).limit(limit)
+        
+        return [doc.to_dict() for doc in query.stream()]
     except Exception as e:
         logger.error(f"Error getting detections: {e}")
         return []

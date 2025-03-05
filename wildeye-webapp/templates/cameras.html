@@ -373,24 +373,42 @@
             
             // Set stream source with visible flag
             const timestamp = new Date().getTime();
-            imgElement.src = `/video_feed/${cameraName}?visible=true&t=${timestamp}`;
-            activeStreams.add(cameraName);
+            const streamUrl = `/video_feed/${encodeURIComponent(cameraName)}?visible=true&t=${timestamp}`;
             
-            // Set up event handlers for the stream
-            imgElement.onload = function() {
-                console.log(`Stream loaded successfully for ${cameraName}`);
-                statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
-                spinner.classList.add('hidden');
-            };
-            
-            imgElement.onerror = function() {
-                console.error(`Stream connection failed for ${cameraName}`);
-                statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
-                spinner.classList.add('hidden');
-                overlay.style.display = 'flex';
-                activeStreams.delete(cameraName);
-                handleStreamError(cameraName);
-            };
+            // Use fetch to check if the stream is accessible before setting the src
+            fetch(streamUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    // Set stream source
+                    imgElement.src = streamUrl;
+                    activeStreams.add(cameraName);
+                    
+                    // Set up event handlers for the stream
+                    imgElement.onload = function() {
+                        console.log(`Stream loaded successfully for ${cameraName}`);
+                        statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
+                        spinner.classList.add('hidden');
+                    };
+                    
+                    imgElement.onerror = function() {
+                        console.error(`Stream connection failed for ${cameraName}`);
+                        statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
+                        spinner.classList.add('hidden');
+                        overlay.style.display = 'flex';
+                        activeStreams.delete(cameraName);
+                        handleStreamError(cameraName);
+                    };
+                })
+                .catch(error => {
+                    console.error(`Error checking stream availability: ${error}`);
+                    statusDiv.innerHTML = '<p class="text-red-500">Stream connection error</p>';
+                    spinner.classList.add('hidden');
+                    overlay.style.display = 'flex';
+                    handleStreamError(cameraName);
+                });
         }
         
         function pauseStream(cameraName) {
@@ -402,7 +420,7 @@
             statusDiv.innerHTML = '<p class="text-gray-500">Stream paused (not visible)</p>';
             
             // Tell backend to pause processing
-            fetch(`/camera/${cameraName}/pause`, {
+            fetch(`/camera/${encodeURIComponent(cameraName)}/pause`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -421,8 +439,18 @@
             
             // Refresh the stream with visible flag
             const timestamp = new Date().getTime();
-            imgElement.src = `/video_feed/${cameraName}?visible=true&t=${timestamp}`;
+            imgElement.src = `/video_feed/${encodeURIComponent(cameraName)}?visible=true&t=${timestamp}`;
             statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
+            
+            // Tell backend to resume processing
+            fetch(`/camera/${encodeURIComponent(cameraName)}/resume`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).catch(error => {
+                console.error('Error resuming stream:', error);
+            });
         }
 
         function handleStreamError(cameraName) {
@@ -462,6 +490,36 @@
             };
         }
 
+        function isStreamWorking(imgElement) {
+            // Check if the img element is displaying a valid stream
+            // We'll check if the naturalWidth is greater than 1
+            // (error images often have a width of 1 or 0)
+            return imgElement.naturalWidth > 1;
+        }
+
+        function setupStreamMonitoring() {
+            // Check stream health every 5 seconds
+            setInterval(() => {
+                activeStreams.forEach(cameraName => {
+                    const sanitizedName = sanitizeCameraName(cameraName);
+                    const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+                    
+                    if (!cameraCard) return;
+                    
+                    const imgElement = cameraCard.querySelector('.camera-feed');
+                    const statusDiv = cameraCard.querySelector('.stream-status');
+                    
+                    if (imgElement && !isStreamWorking(imgElement)) {
+                        console.warn(`Stream for ${cameraName} appears broken, refreshing...`);
+                        // Refresh the stream
+                        const timestamp = new Date().getTime();
+                        imgElement.src = `/video_feed/${encodeURIComponent(cameraName)}?visible=true&t=${timestamp}`;
+                        statusDiv.innerHTML = '<p class="text-blue-500">Reconnecting stream...</p>';
+                    }
+                });
+            }, 5000);
+        }
+
         function seekVideo(cameraName, seconds) {
             const sanitizedName = sanitizeCameraName(cameraName);
             const cameraCard = document.getElementById(`camera-${sanitizedName}`);
@@ -474,7 +532,7 @@
 
             spinner.classList.remove('hidden');
 
-            fetch(`/camera/${cameraName}/seek`, {
+            fetch(`/camera/${encodeURIComponent(cameraName)}/seek`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -489,7 +547,7 @@
                     
                     if (activeStreams.has(cameraName)) {
                         const timestamp = new Date().getTime();
-                        imgElement.src = `/video_feed/${cameraName}?visible=true&t=${timestamp}`;
+                        imgElement.src = `/video_feed/${encodeURIComponent(cameraName)}?visible=true&t=${timestamp}`;
                     }
 
                     setTimeout(() => {
@@ -511,7 +569,7 @@
             content.innerHTML = '<div class="loading-spinner mx-auto"></div>';
             modal.style.display = 'flex';
 
-            fetch(`/camera/${cameraName}/details`)
+            fetch(`/camera/${encodeURIComponent(cameraName)}/details`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -586,8 +644,16 @@
                 
                 // If not visible in viewport when exiting fullscreen, pause stream
                 if (activeStreams.has(cameraName)) {
-                    const observer = new IntersectionObserverEntry(cameraCard);
-                    if (!observer.isIntersecting) {
+                    // Check if element is visible in viewport
+                    const rect = cameraCard.getBoundingClientRect();
+                    const isVisible = (
+                        rect.top >= 0 &&
+                        rect.left >= 0 &&
+                        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                    );
+                    
+                    if (!isVisible) {
                         pauseStream(cameraName);
                     }
                 }
@@ -686,13 +752,16 @@
                     }
                 };
             });
+            
+            // Set up stream monitoring
+            setupStreamMonitoring();
         });
         
         // Clean up when page is unloaded
         window.addEventListener('beforeunload', function() {
             // Pause all active streams
             activeStreams.forEach(cameraName => {
-                fetch(`/camera/${cameraName}/pause`, {
+                fetch(`/camera/${encodeURIComponent(cameraName)}/pause`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -714,6 +783,12 @@
                 const fullscreenContainer = document.querySelector('.fullscreen');
                 if (fullscreenContainer) {
                     toggleFullscreen(fullscreenContainer);
+                }
+                
+                // Also close modal if open
+                const modal = document.getElementById('cameraDetailsModal');
+                if (modal.style.display === 'flex') {
+                    modal.style.display = 'none';
                 }
             }
         });
