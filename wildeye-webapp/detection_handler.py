@@ -1,24 +1,24 @@
-#process_stream.py
+# detection_handler.py
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Optional, Generator, Tuple
+import firebase_admin
+from firebase_admin import credentials, firestore
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
+import io
+import logging
 import cv2
+import torch
 from ultralytics import YOLO
-import yt_dlp
+import traceback
+import os
+import time
 import threading
 from queue import Queue, Empty
 import concurrent.futures
 import numpy as np
-from typing import Generator
-import time
-import logging
-import traceback
-import torch
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
-import os
-import sys
-
-# Import from detection_handler module
-from detection_handler import add_detection, initialize_processor as init_detection_handler
-
+from warning_system import create_warning, get_notification_preferences
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -26,29 +26,133 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Suppress YOLO output by redirecting stdout during predictions
-class SuppressOutput:
-    def __init__(self, suppress=True):
-        self.suppress = suppress
-        self.original_stdout = None
-        self.devnull = None
+# Function to get Indian Standard Time
+def get_indian_time():
+    """
+    Returns the current time in Indian Standard Time (IST) - UTC+5:30
+    """
+    # Create a timezone object for IST (UTC+5:30)
+    ist = timezone(timedelta(hours=5, minutes=30))
     
-    def __enter__(self):
-        if self.suppress:
-            self.original_stdout = sys.stdout
-            self.devnull = open(os.devnull, 'w')
-            sys.stdout = self.devnull
+    # Get current UTC time and convert to IST
+    utc_time = datetime.now(timezone.utc)
+    ist_time = utc_time.astimezone(ist)
     
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.suppress:
-            sys.stdout = self.original_stdout
-            self.devnull.close()
+    return ist_time
+
+# Initialize Google Drive
+SCOPES = ['https://www.googleapis.com/auth/drive.file']
+FOLDER_NAME = 'Wildeye Snapshots'  # Name of the folder in Google Drive
+folder_id = None  # Will store the folder ID
+drive_service = None
 
 # Cache for recent detections to prevent duplicates
 recent_detections = {}
 
+# Stats for duplicate detections (to summarize instead of logging each one)
+duplicate_stats = {
+    'count': 0,
+    'last_log_time': 0,
+    'by_camera': {}
+}
+
+def init_drive_service():
+    """Initialize Google Drive service and create/get folder"""
+    global folder_id, drive_service
+    try:
+        credentials = service_account.Credentials.from_service_account_file(
+            'service_account.json', scopes=SCOPES)
+        service = build('drive', 'v3', credentials=credentials)
+        
+        # Check if folder exists
+        query = f"name='{FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+        results = service.files().list(q=query, spaces='drive').execute()
+        items = results.get('files', [])
+        
+        if not items:
+            # Create folder if it doesn't exist
+            folder_metadata = {
+                'name': FOLDER_NAME,
+                'mimeType': 'application/vnd.google-apps.folder'
+            }
+            folder = service.files().create(body=folder_metadata, fields='id').execute()
+            folder_id = folder.get('id')
+        else:
+            folder_id = items[0]['id']
+            
+        drive_service = service
+        return service
+    except Exception as e:
+        logger.error(f"Drive initialization error: {e}")
+        return None
+
+def get_camera(db, camera_id: str) -> Optional[Dict]:
+    """Get camera details by ID"""
+    try:
+        doc = db.collection('cameras').document(camera_id).get()
+        return doc.to_dict() if doc.exists else None
+    except Exception as e:
+        logger.error(f"Error getting camera: {e}")
+        return None
+
+def save_screenshot_to_drive(screenshot: bytes, detection_id: str) -> str:
+    """Save screenshot to Google Drive"""
+    try:
+        if not drive_service or not folder_id:
+            if not init_drive_service():
+                raise Exception("Drive service not initialized")
+            
+        # Create file metadata
+        filename = f"{detection_id}_{int(get_indian_time().timestamp())}.jpg"
+        file_metadata = {
+            'name': filename,
+            'parents': [folder_id]
+        }
+        
+        # Create media
+        fh = io.BytesIO(screenshot)
+        media = MediaIoBaseUpload(fh, mimetype='image/jpeg', resumable=True)
+        
+        # Upload file
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, webViewLink'
+        ).execute()
+        
+        # Make file publicly viewable
+        permission = {
+            'type': 'anyone',
+            'role': 'reader'
+        }
+        drive_service.permissions().create(
+            fileId=file['id'],
+            body=permission
+        ).execute()
+        
+        return file.get('webViewLink')
+    except Exception as e:
+        logger.error(f"Error uploading to Google Drive: {e}")
+        return None
+
+def save_screenshot_locally(screenshot: bytes, detection_id: str) -> str:
+    """Save screenshot to local storage as fallback"""
+    try:
+        os.makedirs('static/screenshots', exist_ok=True)
+        filename = f"static/screenshots/{detection_id}_{int(get_indian_time().timestamp())}.jpg"
+        with open(filename, 'wb') as f:
+            f.write(screenshot)
+        return filename
+    except Exception as e:
+        logger.error(f"Error saving screenshot locally: {e}")
+        return None
+
 def is_recent_duplicate(camera_id: str, detection_label: str, current_time: datetime) -> bool:
-    """Check if this detection is a duplicate within the last 5 minutes"""
+    """
+    Check if this detection is a duplicate within the last 5 minutes
+    for the same camera and animal type.
+    """
+    global duplicate_stats
     try:
         cache_key = f"{camera_id}_{detection_label}"
         
@@ -57,8 +161,34 @@ def is_recent_duplicate(camera_id: str, detection_label: str, current_time: date
             time_difference = current_time - last_detection_time
             
             if time_difference < timedelta(minutes=5):
+                # Update duplicate stats
+                duplicate_stats['count'] += 1
+                
+                # Update per-camera stats
+                if camera_id not in duplicate_stats['by_camera']:
+                    duplicate_stats['by_camera'][camera_id] = {}
+                
+                if detection_label not in duplicate_stats['by_camera'][camera_id]:
+                    duplicate_stats['by_camera'][camera_id][detection_label] = 0
+                
+                duplicate_stats['by_camera'][camera_id][detection_label] += 1
+                
+                # Log summary of duplicates every 30 seconds
+                current_time_seconds = time.time()
+                if current_time_seconds - duplicate_stats['last_log_time'] > 30:
+                    # Log summary of duplicates
+                    for cam_id, animals in duplicate_stats['by_camera'].items():
+                        animal_counts = ", ".join([f"{animal}: {count}" for animal, count in animals.items()])
+                        logger.info(f"Skipped duplicates for camera {cam_id}: {animal_counts}")
+                    
+                    # Reset stats
+                    duplicate_stats['count'] = 0
+                    duplicate_stats['by_camera'] = {}
+                    duplicate_stats['last_log_time'] = current_time_seconds
+                
                 return True
         
+        # Update the last detection time for this camera/animal pair
         recent_detections[cache_key] = current_time
         cleanup_detection_cache(current_time)
         return False
@@ -67,7 +197,7 @@ def is_recent_duplicate(camera_id: str, detection_label: str, current_time: date
         return False
 
 def cleanup_detection_cache(current_time: datetime):
-    """Remove cache entries older than 5 minutes"""
+    """Remove cache entries older than 5 minutes to prevent memory growth"""
     try:
         keys_to_remove = []
         for key, timestamp in recent_detections.items():
@@ -78,6 +208,96 @@ def cleanup_detection_cache(current_time: datetime):
             del recent_detections[key]
     except Exception as e:
         logger.error(f"Error cleaning up detection cache: {e}")
+
+def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optional[str]:
+    """
+    Add a new detection record with deduplication.
+    
+    Returns: Detection ID if saved successfully, None if duplicate detected
+    """
+    try:
+        # Use Indian Standard Time
+        current_time = get_indian_time()
+        
+        # Check for recent duplicate detection
+        if is_recent_duplicate(
+            detection_data['camera_id'], 
+            detection_data['detection_label'],
+            current_time
+        ):
+            return None
+
+        # Get camera details
+        camera = get_camera(db, detection_data['camera_id'])
+        if not camera:
+            raise ValueError(f"Camera {detection_data['camera_id']} not found")
+
+        # Create detection document
+        detection_ref = db.collection('detections').document()
+        detection_id = detection_ref.id
+        
+        # Store screenshot if provided
+        screenshot_url = None
+        if screenshot:
+            screenshot_url = save_screenshot_to_drive(screenshot, detection_id)
+            if not screenshot_url:
+                screenshot_url = save_screenshot_locally(screenshot, detection_id)
+
+        # Prepare detection record with owner_uid
+        detection_record = {
+            'detection_id': detection_id,
+            'camera_id': detection_data['camera_id'],
+            'camera_name': camera['camera_name'],
+            'google_maps_link': camera.get('google_maps_link', ''),
+            'mobile_number': camera.get('mobile_number', ''),
+            'detection_label': detection_data['detection_label'],
+            'confidence': detection_data.get('confidence', 100.0),
+            'timestamp': current_time,
+            'screenshot_url': screenshot_url,
+            'owner_uid': camera.get('owner_uid')  # Add owner_uid from camera to detection
+        }
+
+        # Add the detection to Firestore database
+        detection_ref.set(detection_record)
+        
+        # Also add to detection_logs collection for history display
+        log_ref = db.collection('detection_logs').document()
+        log_data = {
+            'id': log_ref.id,
+            'animal': detection_data['detection_label'],
+            'camera': camera['camera_name'],
+            'location': camera.get('google_maps_link', ''),
+            'timestamp': current_time,
+            'confidence': detection_data.get('confidence', 100.0),
+            'image_url': screenshot_url,
+            'camera_id': detection_data['camera_id'],  # Add camera_id to link to owner
+            'owner_uid': camera.get('owner_uid')       # Add owner_uid for filtering
+        }
+        log_ref.set(log_data)
+        
+        # Create a warning for this detection
+        try:
+            # Get notification preferences for the camera owner
+            owner_uid = camera.get('owner_uid')
+            if owner_uid:
+                notification_preferences = get_notification_preferences(db, owner_uid)
+            else:
+                notification_preferences = get_notification_preferences(db)
+            
+            # Create warning
+            warning_id = create_warning(db, detection_record, notification_preferences)
+            if warning_id:
+                logger.info(f"Created warning {warning_id} for detection {detection_id}")
+        except Exception as warning_error:
+            logger.error(f"Error creating warning: {warning_error}")
+            logger.error(traceback.format_exc())
+        
+        logger.info(f"Added new detection: {detection_data['detection_label']} from {camera['camera_name']}")
+        return detection_id
+    except Exception as e:
+        logger.error(f"Error adding detection: {e}")
+        logger.error(traceback.format_exc())
+        return None
 
 class VideoProcessor:
     def __init__(self, model_path: str, num_workers: int = 4, queue_size: int = 30):
@@ -91,8 +311,6 @@ class VideoProcessor:
         self.camera_id = None  # Store camera_id
         self.db = None  # Store database instance
         self.last_processed_frame = None  # Keep the last frame for paused state
-        self.detection_count = 0  # Count detections
-        self.last_detection_log = 0  # Timestamp of last detection log
         
         try:
             logger.info(f"Loading YOLO model from {model_path}")
@@ -206,15 +424,14 @@ class VideoProcessor:
             if self.pause_flag.is_set():
                 return frame, [], timestamp
 
-            # Perform object detection with suppressed output
-            with SuppressOutput(suppress=True):
-                results = self.models[worker_id].predict(
-                    frame,
-                    device='cuda' if torch.cuda.is_available() else 'cpu',
-                    stream=True,
-                    conf=0.7,
-                    verbose=False  # Disable verbose output
-                )
+            # Perform object detection
+            results = self.models[worker_id].predict(
+                frame,
+                device='cuda' if torch.cuda.is_available() else 'cpu',
+                stream=True,
+                conf=0.5,
+                verbose=False  # Disable verbose output
+            )
 
             processed_frame = frame.copy()
             detections = []
@@ -226,7 +443,7 @@ class VideoProcessor:
                     label = self.models[worker_id].names[class_id]
 
                     # Only process if confidence is high enough
-                    if confidence > 0.7:
+                    if confidence > 0.5:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         detections.append({
                             'detection_label': label,
@@ -249,32 +466,19 @@ class VideoProcessor:
                     _, buffer = cv2.imencode('.jpg', processed_frame)
                     screenshot = buffer.tobytes()
 
-                    # Only log detection counts periodically to reduce console spam
-                    current_time = time.time()
-                    self.detection_count += len(detections)
-                    
-                    # Log every 30 seconds
-                    if current_time - self.last_detection_log > 30:
-                        logger.info(f"Camera {self.camera_id}: {self.detection_count} detections processed in the last 30 seconds")
-                        self.detection_count = 0
-                        self.last_detection_log = current_time
-
-                    # Save each detection with deduplication using detection_handler
+                    # Save each detection
                     for detection in detections:
-                        # Prepare detection data
                         detection_data = {
                             'camera_id': self.camera_id,
                             'detection_label': detection['detection_label'],
                             'confidence': detection['confidence']
+                            # timestamp will be added by add_detection function
                         }
                         
-                        # Use add_detection from detection_handler module
+                        # Call add_detection which handles deduplication internally
                         detection_id = add_detection(self.db, detection_data, screenshot)
-                        
-                        if detection_id:
-                            # Log only new detections (not duplicates)
-                            logger.info(f"New detection: {detection['detection_label']} with {detection['confidence']:.1f}% confidence")
-                        
+                        # Logging for new detections is handled inside add_detection
+                            
                 except Exception as e:
                     logger.error(f"Failed to save detection to database: {e}")
                     logger.error(traceback.format_exc())
@@ -327,6 +531,7 @@ class VideoProcessor:
                 logger.info(f"Opening local camera at index {stream_source}")
             elif input_type == "youtube_link":
                 logger.info("Processing YouTube link")
+                import yt_dlp
                 ydl_opts = {
                     'format': 'best[ext=mp4]',
                     'quiet': True,
@@ -440,13 +645,6 @@ def initialize_processor():
         logger.info(f"Initializing VideoProcessor with model: {MODEL_PATH}")
         video_processor = VideoProcessor(MODEL_PATH, num_workers=4)
         logger.info("VideoProcessor initialized successfully")
-        
-        # Also initialize the detection handler
-        try:
-            init_detection_handler()
-            logger.info("Detection handler initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize detection handler: {e}")
     except Exception as e:
         logger.error(f"Failed to initialize VideoProcessor: {e}")
         raise
@@ -482,107 +680,31 @@ def resume_stream(camera_id: str):
         return True
     return False
 
-def test_camera_connection(camera_index):
+def get_detections_by_camera(db, camera_id: str, limit: int = 100, user_id: str = None) -> List[Dict]:
     """
-    Thoroughly test camera connection and provide detailed diagnostic information
-    Returns: Tuple (bool, dict) - (success status, diagnostic information)
-    """
-    diagnostics = {
-        "index": camera_index,
-        "can_open": False,
-        "backend": None,
-        "frame_read": False,
-        "resolution": None,
-        "fps": None,
-        "error": None,
-        "buffer_size": None
-    }
+    Get recent detections for a specific camera, optionally filtered by user.
     
+    Args:
+        db: Firestore database instance
+        camera_id: ID of the camera to get detections for
+        limit: Maximum number of detections to return
+        user_id: If provided, only return detections for this user
+        
+    Returns:
+        detections: List of detection dictionaries
+    """
     try:
-        # Try to open the camera
-        cap = cv2.VideoCapture(camera_index)
+        query = db.collection('detections').where('camera_id', '==', camera_id)
         
-        # Check if camera opened successfully
-        if not cap.isOpened():
-            diagnostics["error"] = "Failed to open camera"
-            return False, diagnostics
+        if user_id:
+            query = query.where('owner_uid', '==', user_id)
             
-        diagnostics["can_open"] = True
-        diagnostics["backend"] = cap.getBackendName()
+        query = query.order_by('timestamp', direction=firestore.Query.DESCENDING).limit(limit)
         
-        # Get current buffer size
-        diagnostics["buffer_size"] = cap.get(cv2.CAP_PROP_BUFFERSIZE)
-        
-        # Try to set a larger buffer size
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
-        
-        # Try reading multiple frames to ensure stable connection
-        frames_read = 0
-        max_test_frames = 5
-        start_time = time.time()
-        
-        while frames_read < max_test_frames and (time.time() - start_time) < 2.0:
-            ret, frame = cap.read()
-            if ret and frame is not None:
-                frames_read += 1
-                
-                if frames_read == 1:
-                    # Get camera properties from first successful frame
-                    diagnostics["resolution"] = f"{int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))}"
-                    diagnostics["fps"] = int(cap.get(cv2.CAP_PROP_FPS))
-        
-        diagnostics["frame_read"] = frames_read > 0
-        
-        if frames_read < max_test_frames:
-            diagnostics["error"] = f"Only read {frames_read}/{max_test_frames} frames"
-            return False, diagnostics
-            
-        return True, diagnostics
-        
+        return [doc.to_dict() for doc in query.stream()]
     except Exception as e:
-        diagnostics["error"] = str(e)
-        return False, diagnostics
-        
-    finally:
-        if 'cap' in locals():
-            cap.release()
+        logger.error(f"Error getting detections: {e}")
+        return []
 
-def get_connected_cameras(verbose=True):
-    """
-    Detect and test all connected cameras with detailed diagnostics
-    Returns: List of dicts containing camera information and diagnostics
-    """
-    available_cameras = []
-    max_cameras_to_check = 10
-    
-    for i in range(max_cameras_to_check):
-        success, diagnostics = test_camera_connection(i)
-        
-        if success or diagnostics["can_open"]:
-            camera_info = {
-                "index": i,
-                "name": "Default Webcam" if i == 0 else f"Camera {i}",
-                "status": "OK" if success else "ERROR",
-                **diagnostics
-            }
-            available_cameras.append(camera_info)
-            
-            if verbose:
-                print(f"\nTesting {camera_info['name']} (Index: {i}):")
-                print(f"  Status: {camera_info['status']}")
-                print(f"  Backend: {diagnostics['backend']}")
-                print(f"  Can Open: {diagnostics['can_open']}")
-                print(f"  Frame Read: {diagnostics['frame_read']}")
-                print(f"  Resolution: {diagnostics['resolution']}")
-                print(f"  FPS: {diagnostics['fps']}")
-                print(f"  Buffer Size: {diagnostics['buffer_size']}")
-                if diagnostics['error']:
-                    print(f"  Error: {diagnostics['error']}")
-    
-    return available_cameras
-
-# Initialize the processor when module is imported
-initialize_processor()
-
-# Export the necessary functions
-__all__ = ['process_stream', 'get_connected_cameras', 'pause_stream', 'resume_stream']
+# Initialize drive service when module is imported
+init_drive_service()

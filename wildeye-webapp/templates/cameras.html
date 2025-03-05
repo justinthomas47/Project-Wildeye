@@ -1,9 +1,13 @@
+<!-- cameras.html -->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <title>WildEye - Camera View</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
@@ -34,7 +38,6 @@
             position: relative;
             width: 100%;
             height: 240px;
-            /* Fixed height */
             background: #f0f0f0;
             cursor: pointer;
         }
@@ -48,7 +51,6 @@
             object-fit: cover;
         }
 
-        /* Fullscreen styles */
         .fullscreen {
             position: fixed;
             top: 0;
@@ -87,7 +89,6 @@
             background: rgba(0, 0, 0, 0.7);
         }
 
-        /* Fullscreen icons */
         .expand-icon,
         .collapse-icon {
             width: 16px;
@@ -109,15 +110,51 @@
         :not(.fullscreen) .collapse-icon {
             display: none;
         }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+        }
 
         @keyframes spin {
             0% {
                 transform: rotate(0deg);
             }
-
             100% {
                 transform: rotate(360deg);
             }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .stream-status {
+            text-align: center;
+            padding: 8px;
+            font-size: 14px;
+        }
+        
+        .placeholder-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+        }
+        
+        .placeholder-overlay .play-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
         }
 
         .modal {
@@ -183,13 +220,24 @@
                 </div>
             </div>
 
-            <div class="video-container" onclick="toggleFullscreen(this)">
-                <img src="{{ url_for('video_feed', camera_name=camera.camera_name) }}"
-                    alt="{{ camera.camera_name }} feed" class="absolute top-0 left-0 w-full h-full object-cover"
-                    onerror="handleStreamError('{{ camera.camera_name }}')"
-                    id="feed-{{ camera.camera_name|lower|replace(' ', '-')|replace('.', '-') }}">
-                <div class="loading-spinner absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div class="video-container" onclick="handleVideoContainerClick(this, event)">
+                <!-- Placeholder image -->
+                <img src="" alt="{{ camera.camera_name }} feed" 
+                    class="camera-feed absolute top-0 left-0 w-full h-full object-cover"
+                    id="feed-{{ camera.camera_name|lower|replace(' ', '-')|replace('.', '-') }}"
+                    data-camera-name="{{ camera.camera_name }}">
+                
+                <!-- Loading Spinner -->
+                <div class="loading-spinner absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden"></div>
+                
+                <!-- Play Overlay -->
+                <div class="placeholder-overlay">
+                    <div class="text-center">
+                        <div class="play-icon">▶</div>
+                        <p>Click to start stream</p>
+                    </div>
                 </div>
+                
                 <button class="fullscreen-btn" onclick="event.stopPropagation(); toggleFullscreen(this.parentElement)">
                     <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
@@ -202,7 +250,7 @@
                 </button>
             </div>
 
-            <div class="stream-status text-center p-2"></div>
+            <div class="stream-status text-center p-2">Stream inactive</div>
 
             {% if camera.input_type == 'youtube_link' %}
             <div class="video-controls flex justify-center gap-2 p-2 bg-gray-100">
@@ -243,44 +291,166 @@
         // Make logout function globally available
         window.logOut = logout;
     </script>
+
     <script>
-        // Helper function to sanitize camera names for use in IDs
+        // Track which cameras are actively streaming
+        const activeStreams = new Set();
+        // Track visible cameras using Intersection Observer
+        let cameraObserver;
+        
         function sanitizeCameraName(name) {
             return name.toLowerCase().replace(/[^a-z0-9]/g, '-');
         }
-
-        function checkStreamStatus(cameraName) {
+        
+        function initializeIntersectionObserver() {
+            const options = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1 // 10% of the element is visible
+            };
+            
+            cameraObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const cameraCard = entry.target;
+                    const cameraNameElement = cameraCard.querySelector('.camera-feed');
+                    const cameraName = cameraNameElement.dataset.cameraName;
+                    
+                    if (entry.isIntersecting) {
+                        // Camera is visible - start stream if it's active
+                        if (activeStreams.has(cameraName)) {
+                            console.log(`Camera ${cameraName} is now visible in viewport`);
+                            resumeStream(cameraName);
+                        }
+                    } else {
+                        // Camera is not visible - pause stream if it's not in fullscreen
+                        if (activeStreams.has(cameraName) && !cameraCard.querySelector('.video-container').classList.contains('fullscreen')) {
+                            console.log(`Camera ${cameraName} is no longer visible in viewport`);
+                            pauseStream(cameraName);
+                        }
+                    }
+                });
+            }, options);
+            
+            // Observe all camera cards
+            document.querySelectorAll('.camera-card').forEach(card => {
+                cameraObserver.observe(card);
+            });
+        }
+        
+        function handleVideoContainerClick(container, event) {
+            // Don't handle if the fullscreen button was clicked
+            if (event.target.closest('.fullscreen-btn')) {
+                return;
+            }
+            
+            const cameraCard = container.closest('.camera-card');
+            const imgElement = container.querySelector('.camera-feed');
+            const cameraName = imgElement.dataset.cameraName;
+            const overlay = container.querySelector('.placeholder-overlay');
+            
+            // Start the stream if it's not active
+            if (!activeStreams.has(cameraName)) {
+                startStream(cameraName);
+            }
+            
+            // Toggle fullscreen
+            toggleFullscreen(container);
+        }
+        
+        function startStream(cameraName) {
+            console.log(`Starting stream for ${cameraName}`);
             const sanitizedName = sanitizeCameraName(cameraName);
             const cameraCard = document.getElementById(`camera-${sanitizedName}`);
-
-            if (!cameraCard) {
-                console.error(`Camera card not found for: ${cameraName}`);
-                return;
-            }
-
-            const img = cameraCard.querySelector('img');
+            const imgElement = cameraCard.querySelector('.camera-feed');
             const statusDiv = cameraCard.querySelector('.stream-status');
             const spinner = cameraCard.querySelector('.loading-spinner');
-
-            if (!img || !statusDiv || !spinner) {
-                console.error(`Required elements not found for camera: ${cameraName}`);
-                return;
-            }
-
-            console.log(`Attempting to load stream for ${cameraName} from: ${img.src}`);
+            const overlay = cameraCard.querySelector('.placeholder-overlay');
+            
+            // Show loading spinner and update status
+            spinner.classList.remove('hidden');
             statusDiv.innerHTML = '<p class="text-blue-500">Connecting to stream...</p>';
-
-            img.onload = function () {
-                console.log(`Stream loaded successfully for ${cameraName}`);
-                statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
-                spinner.classList.add('hidden');
-            };
-
-            img.onerror = function () {
-                console.error(`Stream connection failed for ${cameraName}`);
-                statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
-                handleStreamError(cameraName);
-            };
+            overlay.style.display = 'none';
+            
+            // Set stream source with visible flag
+            const timestamp = new Date().getTime();
+            const streamUrl = `/video_feed/${encodeURIComponent(cameraName)}?visible=true&t=${timestamp}`;
+            
+            // Use fetch to check if the stream is accessible before setting the src
+            fetch(streamUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    // Set stream source
+                    imgElement.src = streamUrl;
+                    activeStreams.add(cameraName);
+                    
+                    // Set up event handlers for the stream
+                    imgElement.onload = function() {
+                        console.log(`Stream loaded successfully for ${cameraName}`);
+                        statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
+                        spinner.classList.add('hidden');
+                    };
+                    
+                    imgElement.onerror = function() {
+                        console.error(`Stream connection failed for ${cameraName}`);
+                        statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
+                        spinner.classList.add('hidden');
+                        overlay.style.display = 'flex';
+                        activeStreams.delete(cameraName);
+                        handleStreamError(cameraName);
+                    };
+                })
+                .catch(error => {
+                    console.error(`Error checking stream availability: ${error}`);
+                    statusDiv.innerHTML = '<p class="text-red-500">Stream connection error</p>';
+                    spinner.classList.add('hidden');
+                    overlay.style.display = 'flex';
+                    handleStreamError(cameraName);
+                });
+        }
+        
+        function pauseStream(cameraName) {
+            console.log(`Pausing stream for ${cameraName}`);
+            const sanitizedName = sanitizeCameraName(cameraName);
+            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+            const statusDiv = cameraCard.querySelector('.stream-status');
+            
+            statusDiv.innerHTML = '<p class="text-gray-500">Stream paused (not visible)</p>';
+            
+            // Tell backend to pause processing
+            fetch(`/camera/${encodeURIComponent(cameraName)}/pause`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).catch(error => {
+                console.error('Error pausing stream:', error);
+            });
+        }
+        
+        function resumeStream(cameraName) {
+            console.log(`Resuming stream for ${cameraName}`);
+            const sanitizedName = sanitizeCameraName(cameraName);
+            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+            const imgElement = cameraCard.querySelector('.camera-feed');
+            const statusDiv = cameraCard.querySelector('.stream-status');
+            
+            // Refresh the stream with visible flag
+            const timestamp = new Date().getTime();
+            imgElement.src = `/video_feed/${encodeURIComponent(cameraName)}?visible=true&t=${timestamp}`;
+            statusDiv.innerHTML = '<p class="text-green-500">Stream active</p>';
+            
+            // Tell backend to resume processing
+            fetch(`/camera/${encodeURIComponent(cameraName)}/resume`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).catch(error => {
+                console.error('Error resuming stream:', error);
+            });
         }
 
         function handleStreamError(cameraName) {
@@ -292,46 +462,77 @@
                 return;
             }
 
-            const img = cameraCard.querySelector('img');
+            const overlay = cameraCard.querySelector('.placeholder-overlay');
             const spinner = cameraCard.querySelector('.loading-spinner');
+            const statusDiv = cameraCard.querySelector('.stream-status');
 
             if (spinner) {
                 spinner.classList.add('hidden');
             }
+            
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+            
+            statusDiv.innerHTML = '<p class="text-red-500">Stream not connected</p>';
 
             let retryBtn = cameraCard.querySelector('.retry-btn');
             if (!retryBtn) {
                 retryBtn = document.createElement('button');
                 retryBtn.className = 'retry-btn bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded mx-auto block mt-2';
-                retryBtn.textContent = 'Reconnect Stream';
+                retryBtn.textContent = 'Retry Connection';
                 cameraCard.appendChild(retryBtn);
             }
 
-            retryBtn.onclick = function () {
-                if (spinner) {
-                    spinner.classList.remove('hidden');
-                }
-                const timestamp = new Date().getTime();
-                if (img) {
-                    img.src = `/video_feed/${cameraName}?t=${timestamp}`;
-                }
-                checkStreamStatus(cameraName);
+            retryBtn.onclick = function(e) {
+                e.stopPropagation();
+                startStream(cameraName);
             };
         }
 
+        function isStreamWorking(imgElement) {
+            // Check if the img element is displaying a valid stream
+            // We'll check if the naturalWidth is greater than 1
+            // (error images often have a width of 1 or 0)
+            return imgElement.naturalWidth > 1;
+        }
+
+        function setupStreamMonitoring() {
+            // Check stream health every 5 seconds
+            setInterval(() => {
+                activeStreams.forEach(cameraName => {
+                    const sanitizedName = sanitizeCameraName(cameraName);
+                    const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+                    
+                    if (!cameraCard) return;
+                    
+                    const imgElement = cameraCard.querySelector('.camera-feed');
+                    const statusDiv = cameraCard.querySelector('.stream-status');
+                    
+                    if (imgElement && !isStreamWorking(imgElement)) {
+                        console.warn(`Stream for ${cameraName} appears broken, refreshing...`);
+                        // Refresh the stream
+                        const timestamp = new Date().getTime();
+                        imgElement.src = `/video_feed/${encodeURIComponent(cameraName)}?visible=true&t=${timestamp}`;
+                        statusDiv.innerHTML = '<p class="text-blue-500">Reconnecting stream...</p>';
+                    }
+                });
+            }, 5000);
+        }
+
         function seekVideo(cameraName, seconds) {
-            const cameraCard = document.querySelector(`#camera-${cameraName.replace(/\s+/g, '-')}`);
-            const img = cameraCard.querySelector('img');
+            const sanitizedName = sanitizeCameraName(cameraName);
+            const cameraCard = document.getElementById(`camera-${sanitizedName}`);
+            const imgElement = cameraCard.querySelector('.camera-feed');
             const spinner = cameraCard.querySelector('.loading-spinner');
             const controlsDiv = cameraCard.querySelector('.video-controls');
 
-            // Disable seek buttons during seek operation
             const buttons = controlsDiv.querySelectorAll('button');
             buttons.forEach(btn => btn.disabled = true);
 
             spinner.classList.remove('hidden');
 
-            fetch(`/camera/${cameraName}/seek`, {
+            fetch(`/camera/${encodeURIComponent(cameraName)}/seek`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -343,10 +544,12 @@
                     if (!data.success) {
                         throw new Error(data.error || 'Failed to seek video');
                     }
-                    const timestamp = new Date().getTime();
-                    img.src = `/video_feed/${cameraName}?t=${timestamp}`;
+                    
+                    if (activeStreams.has(cameraName)) {
+                        const timestamp = new Date().getTime();
+                        imgElement.src = `/video_feed/${encodeURIComponent(cameraName)}?visible=true&t=${timestamp}`;
+                    }
 
-                    // Re-enable seek buttons after a short delay
                     setTimeout(() => {
                         buttons.forEach(btn => btn.disabled = false);
                         spinner.classList.add('hidden');
@@ -354,33 +557,11 @@
                 })
                 .catch(error => {
                     console.error('Error seeking video:', error);
-                    alert('Error seeking video: ' + error);
+                    alert(`Error seeking video: ${error}`);
                     buttons.forEach(btn => btn.disabled = false);
                     spinner.classList.add('hidden');
                 });
         }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Wait a bit longer for initial load
-            setTimeout(() => {
-                const cameras = document.querySelectorAll('.camera-card');
-                cameras.forEach(camera => {
-                    const cameraId = camera.id.replace('camera-', '');
-                    checkStreamStatus(cameraId);
-                });
-            }, 500);
-
-            // Set up periodic checking with a longer interval
-            setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    const cameras = document.querySelectorAll('.camera-card');
-                    cameras.forEach(camera => {
-                        const cameraId = camera.id.replace('camera-', '');
-                        checkStreamStatus(cameraId);
-                    });
-                }
-            }, 1000000); // Check every 10 seconds instead of 5
-        });
 
         function showCameraDetails(cameraName) {
             const modal = document.getElementById('cameraDetailsModal');
@@ -388,7 +569,7 @@
             content.innerHTML = '<div class="loading-spinner mx-auto"></div>';
             modal.style.display = 'flex';
 
-            fetch(`/camera/${cameraName}/details`)
+            fetch(`/camera/${encodeURIComponent(cameraName)}/details`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -408,7 +589,7 @@
                             </div>
                             <div>
                                 <p class="font-semibold">Status:</p>
-                                <p>${data.status}</p>
+                                <p>${activeStreams.has(data.camera_name) ? 'Active' : 'Inactive'}</p>
                             </div>
                             ${data.google_maps_link ? `
                                 <div>
@@ -440,15 +621,42 @@
             const button = container.querySelector('.fullscreen-btn');
             const expandText = button.querySelector('.expand-text');
             const collapseText = button.querySelector('.collapse-text');
+            const cameraCard = container.closest('.camera-card');
+            const imgElement = container.querySelector('.camera-feed');
+            const cameraName = imgElement.dataset.cameraName;
 
             if (container.classList.contains('fullscreen')) {
                 expandText.style.display = 'none';
                 collapseText.style.display = 'inline';
                 document.body.style.overflow = 'hidden';
+                
+                // If stream is not active, start it for fullscreen
+                if (!activeStreams.has(cameraName)) {
+                    startStream(cameraName);
+                } else {
+                    // If paused, resume for fullscreen
+                    resumeStream(cameraName);
+                }
             } else {
                 expandText.style.display = 'inline';
                 collapseText.style.display = 'none';
                 document.body.style.overflow = '';
+                
+                // If not visible in viewport when exiting fullscreen, pause stream
+                if (activeStreams.has(cameraName)) {
+                    // Check if element is visible in viewport
+                    const rect = cameraCard.getBoundingClientRect();
+                    const isVisible = (
+                        rect.top >= 0 &&
+                        rect.left >= 0 &&
+                        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                    );
+                    
+                    if (!isVisible) {
+                        pauseStream(cameraName);
+                    }
+                }
             }
         }
 
@@ -458,119 +666,129 @@
 
         function removeCamera(cameraName) {
             if (confirm('Are you sure you want to remove this camera?')) {
-                // Find and disable the camera feed first
-                const sanitizedName = cameraName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const sanitizedName = sanitizeCameraName(cameraName);
                 const cameraCard = document.getElementById(`camera-${sanitizedName}`);
-                if (cameraCard) {
-                    // Disable all buttons in the camera card
-                    const buttons = cameraCard.querySelectorAll('button');
-                    buttons.forEach(btn => btn.disabled = true);
 
-                    // Add loading state
+                if (cameraCard) {
+                    // Disable the card immediately
                     cameraCard.style.opacity = '0.5';
                     cameraCard.style.pointerEvents = 'none';
-                }
 
-                // Send removal request to backend
-                fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
+                    // Stop observing this camera
+                    if (cameraObserver) {
+                        cameraObserver.unobserve(cameraCard);
+                    }
+
+                    // Remove from active streams
+                    activeStreams.delete(cameraName);
+
+                    // Stop the video feed
+                    const imgElement = cameraCard.querySelector('.camera-feed');
+                    if (imgElement) {
+                        imgElement.src = '';
+                    }
+
+                    // Send removal request
+                    fetch(`/camera/${encodeURIComponent(cameraName)}/remove`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'same-origin'
                     })
-                    .then(data => {
-                        if (data.success) {
-                            // Remove the camera card with animation
-                            if (cameraCard) {
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Remove the camera card with animation
                                 cameraCard.style.transition = 'all 0.3s ease';
                                 cameraCard.style.transform = 'scale(0.8)';
                                 cameraCard.style.opacity = '0';
 
+                                // Wait for animation to complete before removing
                                 setTimeout(() => {
                                     cameraCard.remove();
 
-                                    // Check if there are any cameras left
+                                    // Check remaining cameras
                                     const remainingCameras = document.querySelectorAll('.camera-card');
                                     if (remainingCameras.length === 0) {
-                                        window.location.reload(); // Reload if no cameras left
+                                        // Only reload if no cameras left
+                                        window.location.reload();
                                     }
                                 }, 300);
+                            } else {
+                                throw new Error(data.error || 'Failed to remove camera');
                             }
-                        } else {
-                            throw new Error(data.error || 'Failed to remove camera');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error removing camera:', error);
-                        alert(`Error removing camera: ${error.message}`);
+                        })
+                        .catch(error => {
+                            console.error('Error removing camera:', error);
+                            alert(`Error removing camera: ${error.message}`);
 
-                        // Restore the camera card if it exists
-                        if (cameraCard) {
+                            // Restore the camera card
                             cameraCard.style.opacity = '1';
                             cameraCard.style.pointerEvents = 'auto';
-                            const buttons = cameraCard.querySelectorAll('button');
-                            buttons.forEach(btn => btn.disabled = false);
-                        }
-                    });
+                        });
+                }
             }
         }
 
-        function seekVideo(cameraName, seconds) {
-            const cameraCard = document.querySelector(`#camera-${cameraName.replace(' ', '-')}`);
-            const imgElement = cameraCard.querySelector('img');
-            const spinner = cameraCard.querySelector('.loading-spinner');
-
-            spinner.classList.remove('hidden');
-
-            fetch(`/camera/${cameraName}/seek`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ seconds: seconds })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.success) {
-                        throw new Error(data.error || 'Failed to seek video');
+        // Initialize when document is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize intersection observer for camera visibility
+            initializeIntersectionObserver();
+            
+            // Set up placeholder images for all cameras
+            document.querySelectorAll('.camera-card').forEach(card => {
+                const imgElement = card.querySelector('.camera-feed');
+                imgElement.onerror = function() {
+                    // Show placeholder on error
+                    const overlay = card.querySelector('.placeholder-overlay');
+                    if (overlay) {
+                        overlay.style.display = 'flex';
                     }
-                    imgElement.src = `/video_feed/${cameraName}?t=${Date.now()}`;
-                })
-                .catch(error => {
-                    alert('Error seeking video: ' + error);
-                })
-                .finally(() => {
-                    spinner.classList.add('hidden');
-                });
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const cameras = document.querySelectorAll('.camera-card');
-            cameras.forEach(camera => {
-                const cameraName = camera.id.replace('camera-', '');
-                checkStreamStatus(cameraName);
-                setInterval(() => checkStreamStatus(cameraName), 5000);
+                };
+            });
+            
+            // Set up stream monitoring
+            setupStreamMonitoring();
+        });
+        
+        // Clean up when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            // Pause all active streams
+            activeStreams.forEach(cameraName => {
+                fetch(`/camera/${encodeURIComponent(cameraName)}/pause`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    keepalive: true
+                }).catch(() => {});
             });
         });
 
-        window.onclick = function (event) {
+        window.onclick = function(event) {
             const modal = document.getElementById('cameraDetailsModal');
             if (event.target === modal) {
                 modal.style.display = 'none';
             }
         };
 
-        document.addEventListener('keydown', function (e) {
+        document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const fullscreenContainer = document.querySelector('.fullscreen');
                 if (fullscreenContainer) {
                     toggleFullscreen(fullscreenContainer);
+                }
+                
+                // Also close modal if open
+                const modal = document.getElementById('cameraDetailsModal');
+                if (modal.style.display === 'flex') {
+                    modal.style.display = 'none';
                 }
             }
         });

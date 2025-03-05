@@ -1,8 +1,12 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <title>WildEye - Login</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -277,117 +281,126 @@
         </form>
     </div>
 
-    <script type="module">
-        import { 
-            loginWithEmailAndPassword, 
-            registerWithEmailAndPassword, 
-            signInWithGoogle, 
-            resetPassword, 
-            initAuthStateObserver 
-        } from '/static/js/firebase-auth.js';
+    <!-- Update the script section in index.html -->
+<script type="module">
+    import { 
+        loginWithEmailAndPassword, 
+        registerWithEmailAndPassword, 
+        signInWithGoogle, 
+        resetPassword, 
+        initAuthStateObserver,
+        getCurrentUser
+    } from '/static/js/firebase-auth.js';
 
-        // Initialize auth state observer
-        initAuthStateObserver();
-        
-        // Google Sign In
-        document.getElementById('google-signin').addEventListener('click', async () => {
-            try {
-                await signInWithGoogle();
-            } catch (error) {
-                alert(error.message);
-            }
-        });
+    // Initialize auth state observer
+    initAuthStateObserver();
 
-        document.getElementById('google-signup').addEventListener('click', async () => {
-            try {
-                await signInWithGoogle();
-            } catch (error) {
-                alert(error.message);
-            }
-        });
-        
-        // Forgot password functionality
-        document.querySelector('.remember-forgot a').addEventListener('click', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            
-            if (!email) {
-                alert('Please enter your email address first');
-                return;
-            }
-
-            try {
-                await resetPassword(email);
-                alert('Password reset email sent. Please check your inbox.');
-            } catch (error) {
-                alert(error.message);
-            }
-        });
-
-        // Login/Signup card toggle
-        const loginCard = document.getElementById('login-card');
-        const signupCard = document.getElementById('signup-card');
-        const toSignup = document.getElementById('to-signup');
-        const toLogin = document.getElementById('to-login');
-
-        toSignup.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginCard.classList.add('hidden');
-            signupCard.classList.remove('hidden');
-        });
-
-        toLogin.addEventListener('click', (e) => {
-            e.preventDefault();
-            signupCard.classList.add('hidden');
-            loginCard.classList.remove('hidden');
-        });
-
-        // Login form handler
-        const loginForm = document.getElementById('login-form');
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-
-            try {
-                await loginWithEmailAndPassword(email, password);
-            } catch (error) {
-                alert(error.message);
-            }
-        });
-
-        // Signup form handler
-        const signupForm = document.getElementById('signup-form');
-        signupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-
-            try {
-                const success = await registerWithEmailAndPassword(email, password);
-                if (success) {
-                    alert('Account created successfully. Please log in.');
-                    signupCard.classList.add('hidden');
-                    loginCard.classList.remove('hidden');
-                }
-            } catch (error) {
-                alert(error.message);
-            }
-        });
-
-        // Password toggle functionality
-        window.togglePassword = function(inputId, icon) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('bxs-hide');
-                icon.classList.add('bxs-show');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('bxs-show');
-                icon.classList.add('bxs-hide');
-            }
+    // Check if user is already logged in
+    window.addEventListener('DOMContentLoaded', () => {
+        const user = getCurrentUser();
+        if (user) {
+            window.location.href = '/home';
         }
-    </script>
+    });
+    
+    // Google Sign In
+    document.getElementById('google-signin').addEventListener('click', async () => {
+        try {
+            await signInWithGoogle();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    document.getElementById('google-signup').addEventListener('click', async () => {
+        try {
+            await signInWithGoogle();
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+    
+    // Forgot password functionality
+    document.querySelector('.remember-forgot a').addEventListener('click', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        
+        if (!email) {
+            alert('Please enter your email address first');
+            return;
+        }
+
+        try {
+            await resetPassword(email);
+            alert('Password reset email sent. Please check your inbox.');
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Login/Signup card toggle
+    const loginCard = document.getElementById('login-card');
+    const signupCard = document.getElementById('signup-card');
+    const toSignup = document.getElementById('to-signup');
+    const toLogin = document.getElementById('to-login');
+
+    toSignup.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginCard.classList.add('hidden');
+        signupCard.classList.remove('hidden');
+    });
+
+    toLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        signupCard.classList.add('hidden');
+        loginCard.classList.remove('hidden');
+    });
+
+    // Login form handler
+    const loginForm = document.getElementById('login-form');
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            await loginWithEmailAndPassword(email, password);
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Signup form handler
+    const signupForm = document.getElementById('signup-form');
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+
+        try {
+            const success = await registerWithEmailAndPassword(email, password);
+            if (success) {
+                // Redirect directly to home after signup
+                window.location.href = '/home';
+            }
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Password toggle functionality
+    window.togglePassword = function(inputId, icon) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bxs-hide');
+            icon.classList.add('bxs-show');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bxs-show');
+            icon.classList.add('bxs-hide');
+        }
+    }
+</script>
 </body>
 </html>
