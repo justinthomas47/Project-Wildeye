@@ -1,4 +1,4 @@
 # Ignore Python cache files and folders
 __pycache__/
 *.pyc
-logs/wildeye_complete.log
+logs
