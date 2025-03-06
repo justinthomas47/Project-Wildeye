@@ -27,6 +27,20 @@ TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '')
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 
+def format_date_dmy(date_obj):
+    """
+    Format a datetime object to day-month-year format with 12-hour time
+    
+    Args:
+        date_obj: datetime object to format
+        
+    Returns:
+        formatted_date: String in format "DD-MM-YYYY HH:MM:SS AM/PM"
+    """
+    if not date_obj:
+        return None
+    return date_obj.strftime("%d-%m-%Y %I:%M:%S %p")
+
 def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> str:
     """
     Create a warning in the database based on a detection.
@@ -60,8 +74,10 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
         
         # Current time
         current_time = datetime.now()
+        
         # Format timestamp for display in 12-hour format
-        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")  # Keep original for backwards compatibility
+        formatted_date = format_date_dmy(current_time)  # DD-MM-YYYY format
         
         # Create warning record
         warning_record = {
@@ -76,7 +92,8 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
             'google_maps_link': detection_data.get('google_maps_link', ''),
             'severity': determine_severity(detection_label),
             'timestamp': current_time,                  # Keep datetime object for sorting
-            'formatted_timestamp': formatted_time,      # Add formatted time string
+            'formatted_timestamp': formatted_time,      # Keep original format for backwards compatibility
+            'formatted_date': formatted_date,           # Add new day-month-year format
             'active': True,
             'acknowledged': False,
             'notification_status': {
@@ -106,7 +123,7 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
             'notification_status': notifications_sent
         })
         
-        logger.info(f"Created warning {warning_id} for {detection_data.get('detection_label', 'unknown')} detection at {formatted_time}")
+        logger.info(f"Created warning {warning_id} for {detection_data.get('detection_label', 'unknown')} detection at {formatted_date}")
         return warning_id
         
     except Exception as e:
@@ -156,15 +173,16 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
         'telegram': False
     }
     
-    # Construct the message - Use formatted_timestamp if available
+    # Use formatted_date if available, otherwise format the timestamp
+    if 'formatted_date' in warning:
+        time_display = warning['formatted_date']
+    else:
+        time_display = warning['formatted_timestamp'] if 'formatted_timestamp' in warning else format_date_dmy(warning['timestamp'])
+    
+    # Construct the message
     message = f"🚨 WildEye Alert: {warning['type']} detected at {warning['camera_name']}\n\n"
     message += f"Severity: {warning['severity'].upper()}\n"
-    
-    # Use formatted timestamp if available, otherwise format the timestamp
-    if 'formatted_timestamp' in warning:
-        message += f"Time: {warning['formatted_timestamp']}\n"
-    else:
-        message += f"Time: {warning['timestamp'].strftime('%Y-%m-%d %I:%M:%S %p')}\n"
+    message += f"Time: {time_display}\n"
     
     # Add location information without the direct link
     if warning['google_maps_link']:
@@ -258,14 +276,29 @@ def send_email(recipient: str, subject: str, body: str, screenshot_url: Optional
             </div>
             """
         
-        # Get formatted timestamp for email
+        # Get formatted timestamp for email using DD-MM-YYYY format
         if warning:
-            if 'formatted_timestamp' in warning:
-                timestamp_display = warning['formatted_timestamp']
+            if 'formatted_date' in warning:
+                timestamp_display = warning['formatted_date']
+            elif 'formatted_timestamp' in warning:
+                # Try to convert to day-month-year format
+                timestamp_str = warning['formatted_timestamp']
+                try:
+                    date_parts = timestamp_str.split(' ')[0].split('-')
+                    if len(date_parts) == 3:
+                        year, month, day = date_parts
+                        time_parts = ' '.join(timestamp_str.split(' ')[1:])
+                        timestamp_display = f"{day}-{month}-{year} {time_parts}"
+                    else:
+                        timestamp_display = timestamp_str
+                except:
+                    timestamp_display = timestamp_str
+            elif warning.get('timestamp'):
+                timestamp_display = format_date_dmy(warning['timestamp'])
             else:
-                timestamp_display = warning.get('timestamp').strftime('%Y-%m-%d %I:%M:%S %p') if warning.get('timestamp') else 'Unknown'
+                timestamp_display = 'Unknown'
         else:
-            timestamp_display = 'Unknown'
+            timestamp_display = format_date_dmy(datetime.now())
             
         # Create HTML email with enhanced layout
         html_body = f"""
@@ -528,15 +561,17 @@ def acknowledge_warning(db, warning_id: str) -> bool:
     """
     try:
         current_time = datetime.now()
-        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")  # Original format
+        formatted_date = format_date_dmy(current_time)  # DD-MM-YYYY format
         
         warning_ref = db.collection('warnings').document(warning_id)
         warning_ref.update({
             'acknowledged': True,
             'acknowledged_at': current_time,
-            'acknowledged_at_formatted': formatted_time
+            'acknowledged_at_formatted': formatted_time,
+            'acknowledged_at_formatted_date': formatted_date
         })
-        logger.info(f"Warning {warning_id} acknowledged at {formatted_time}")
+        logger.info(f"Warning {warning_id} acknowledged at {formatted_date}")
         return True
         
     except Exception as e:
@@ -556,15 +591,17 @@ def resolve_warning(db, warning_id: str) -> bool:
     """
     try:
         current_time = datetime.now()
-        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")  # Original format
+        formatted_date = format_date_dmy(current_time)  # DD-MM-YYYY format
         
         warning_ref = db.collection('warnings').document(warning_id)
         warning_ref.update({
             'active': False,
             'resolved_at': current_time,
-            'resolved_at_formatted': formatted_time
+            'resolved_at_formatted': formatted_time,
+            'resolved_at_formatted_date': formatted_date
         })
-        logger.info(f"Warning {warning_id} resolved at {formatted_time}")
+        logger.info(f"Warning {warning_id} resolved at {formatted_date}")
         return True
         
     except Exception as e:
@@ -699,8 +736,9 @@ def test_notification_channels(db, user_id: str) -> Dict:
         
         current_time = datetime.now()
         formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        formatted_date = format_date_dmy(current_time)  # DD-MM-YYYY format
         
-        test_message = f"This is a test notification from WildEye at {formatted_time}. If you're receiving this, your notification setup is working correctly."
+        test_message = f"This is a test notification from WildEye at {formatted_date}. If you're receiving this, your notification setup is working correctly."
         
         test_warning = {
             'type': 'Test Alert',
@@ -708,6 +746,7 @@ def test_notification_channels(db, user_id: str) -> Dict:
             'severity': 'low',
             'timestamp': current_time,
             'formatted_timestamp': formatted_time,
+            'formatted_date': formatted_date,
             'google_maps_link': '',
             'screenshot_url': '',
             'mobile_number': preferences.get('sms', {}).get('recipient', '')

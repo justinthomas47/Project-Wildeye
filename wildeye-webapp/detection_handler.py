@@ -215,13 +215,16 @@ def cleanup_detection_cache(current_time: datetime):
 
 def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optional[str]:
     """
-    Add a new detection record with deduplication.
+    Add a new detection record with deduplication and create a warning if needed.
     
     Returns: Detection ID if saved successfully, None if duplicate detected
     """
     try:
         # Use Indian Standard Time
         current_time = get_indian_time()
+        
+        # Format the date string in day-month-year format for display purposes
+        formatted_date = current_time.strftime("%d-%m-%Y %I:%M:%S %p")
         
         # Check for recent duplicate detection
         if is_recent_duplicate(
@@ -247,7 +250,7 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             if not screenshot_url:
                 screenshot_url = save_screenshot_locally(screenshot, detection_id)
 
-        # Prepare detection record with owner_uid
+        # Prepare detection record
         detection_record = {
             'detection_id': detection_id,
             'camera_id': detection_data['camera_id'],
@@ -257,15 +260,12 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             'detection_label': detection_data['detection_label'],
             'confidence': detection_data.get('confidence', 100.0),
             'timestamp': current_time,
-            'screenshot_url': screenshot_url,
-            'owner_uid': camera.get('owner_uid')  # Add owner_uid from camera to detection
+            'formatted_date': formatted_date,  # Add formatted date string
+            'screenshot_url': screenshot_url
         }
 
         # Add the detection to Firestore database
         detection_ref.set(detection_record)
-        
-        # Format the timestamp string for display in 12-hour format for the log
-        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
         
         # Also add to detection_logs collection for history display
         log_ref = db.collection('detection_logs').document()
@@ -274,23 +274,17 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             'animal': detection_data['detection_label'],
             'camera': camera['camera_name'],
             'location': camera.get('google_maps_link', ''),
-            'timestamp': current_time,  # Keep as datetime for sorting in Firestore
-            'formatted_timestamp': formatted_time,  # Add formatted timestamp string
+            'timestamp': current_time,
+            'formatted_date': formatted_date,  # Add formatted date string
             'confidence': detection_data.get('confidence', 100.0),
-            'image_url': screenshot_url,
-            'camera_id': detection_data['camera_id'],  # Add camera_id to link to owner
-            'owner_uid': camera.get('owner_uid')       # Add owner_uid for filtering
+            'image_url': screenshot_url
         }
         log_ref.set(log_data)
         
         # Create a warning for this detection
         try:
-            # Get notification preferences for the camera owner
-            owner_uid = camera.get('owner_uid')
-            if owner_uid:
-                notification_preferences = get_notification_preferences(db, owner_uid)
-            else:
-                notification_preferences = get_notification_preferences(db)
+            # Get notification preferences
+            notification_preferences = get_notification_preferences(db)
             
             # Create warning
             warning_id = create_warning(db, detection_record, notification_preferences)
@@ -300,7 +294,7 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             logger.error(f"Error creating warning: {warning_error}")
             logger.error(traceback.format_exc())
         
-        logger.info(f"Added new detection: {detection_data['detection_label']} from {camera['camera_name']} at {formatted_time}")
+        logger.info(f"Added new detection: {detection_data['detection_label']} from {camera['camera_name']}")
         return detection_id
     except Exception as e:
         logger.error(f"Error adding detection: {e}")

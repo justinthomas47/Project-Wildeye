@@ -118,6 +118,20 @@ ANIMAL_EMAIL_TEMPLATES = {
     """
 }
 
+def format_date_dmy(date_obj):
+    """
+    Format a datetime object to day-month-year format with 12-hour time
+    
+    Args:
+        date_obj: datetime object to format
+        
+    Returns:
+        formatted_date: String in format "DD-MM-YYYY HH:MM:SS AM/PM"
+    """
+    if not date_obj:
+        return None
+    return date_obj.strftime("%d-%m-%Y %I:%M:%S %p")
+
 def get_animal_email_template(animal_type: str) -> str:
     """
     Get the appropriate email template for the specified animal type.
@@ -217,12 +231,31 @@ def send_email(recipient: str, subject: str, detection_data: Dict) -> bool:
             
         animal_email_content = get_animal_email_template(animal_type)
         
-        # Handle timestamp formatting
+        # Format timestamp in day-month-year format
+        timestamp_str = ""
         timestamp = detection_data.get('timestamp', datetime.now())
-        if isinstance(timestamp, datetime):
-            timestamp_str = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Check for formatted_date first (new field)
+        if 'formatted_date' in detection_data:
+            timestamp_str = detection_data['formatted_date']
         else:
-            timestamp_str = str(timestamp)
+            # Check for existing formatted timestamp
+            if 'formatted_timestamp' in detection_data:
+                timestamp_str = detection_data['formatted_timestamp']
+                # Try to convert to day-month-year format
+                try:
+                    if isinstance(timestamp_str, str) and '-' in timestamp_str:
+                        date_parts = timestamp_str.split(' ')[0].split('-')
+                        if len(date_parts) == 3:
+                            year, month, day = date_parts
+                            time_parts = ' '.join(timestamp_str.split(' ')[1:])
+                            timestamp_str = f"{day}-{month}-{year} {time_parts}"
+                except Exception as e:
+                    logger.error(f"Error formatting timestamp: {e}")
+            elif isinstance(timestamp, datetime):
+                timestamp_str = format_date_dmy(timestamp)
+            else:
+                timestamp_str = str(timestamp)
         
         # Get camera name and location info
         camera_name = detection_data.get('camera_name', 'Unknown location')

@@ -90,8 +90,10 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ log.camera }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if log.timestamp %}
-                                            {{ log.timestamp.split(' ')[0] }}
+                                        {% if log.formatted_date %}
+                                            {{ log.formatted_date.split(' ')[0] }}
+                                        {% elif log.timestamp %}
+                                            {{ log.timestamp|format_date }}
                                         {% else %}
                                             -
                                         {% endif %}

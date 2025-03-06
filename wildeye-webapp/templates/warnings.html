@@ -101,10 +101,12 @@
                                         </span>
                                     </div>
                                     <p class="text-gray-500 text-sm mb-2">
-                                        {% if warning.formatted_timestamp %}
-                                            {{ warning.formatted_timestamp }}
+                                        {% if warning.formatted_date %}
+                                            {{ warning.formatted_date }}
+                                        {% elif warning.formatted_timestamp %}
+                                            {{ warning.formatted_timestamp|format_date }}
                                         {% elif warning.timestamp %}
-                                            {{ warning.timestamp.strftime('%Y-%m-%d %I:%M:%S %p') if warning.timestamp else 'Unknown time' }}
+                                            {{ warning.timestamp|format_date }}
                                         {% else %}
                                             Unknown time
                                         {% endif %}
@@ -214,10 +216,12 @@
                                         {% endif %}
                                     </div>
                                     <p class="text-gray-500 text-sm mb-2">
-                                        {% if warning.formatted_timestamp %}
-                                            {{ warning.formatted_timestamp }}
+                                        {% if warning.formatted_date %}
+                                            {{ warning.formatted_date }}
+                                        {% elif warning.formatted_timestamp %}
+                                            {{ warning.formatted_timestamp|format_date }}
                                         {% elif warning.timestamp %}
-                                            {{ warning.timestamp.strftime('%Y-%m-%d %I:%M:%S %p') if warning.timestamp else 'Unknown time' }}
+                                            {{ warning.timestamp|format_date }}
                                         {% else %}
                                             Unknown time
                                         {% endif %}
@@ -283,10 +287,12 @@
                                     {% else %}
                                     <div class="text-sm text-gray-500">
                                         Resolved at: 
-                                        {% if warning.resolved_at_formatted %}
-                                            {{ warning.resolved_at_formatted }}
+                                        {% if warning.resolved_at_formatted_date %}
+                                            {{ warning.resolved_at_formatted_date }}
+                                        {% elif warning.resolved_at_formatted %}
+                                            {{ warning.resolved_at_formatted|format_date }}
                                         {% elif warning.resolved_at %}
-                                            {{ warning.resolved_at.strftime('%Y-%m-%d %I:%M:%S %p') if warning.resolved_at else 'Unknown' }}
+                                            {{ warning.resolved_at|format_date }}
                                         {% else %}
                                             Unknown
                                         {% endif %}

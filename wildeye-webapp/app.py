@@ -92,6 +92,51 @@ def login_required(f):
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
+def format_date_for_display(date_str):
+    """
+    Convert a date string from YYYY-MM-DD format to DD-MM-YYYY format
+    Returns the original string if conversion fails
+    """
+    try:
+        # Check if the input is a string
+        if not isinstance(date_str, str):
+            if hasattr(date_str, 'strftime'):
+                # It's a datetime object
+                return date_str.strftime("%d-%m-%Y")
+            return str(date_str)
+            
+        # Split by space to get just the date part (not time)
+        date_part = date_str.split(' ')[0]
+        
+        # Split the date by the delimiter
+        if '-' in date_part:
+            parts = date_part.split('-')
+        elif '/' in date_part:
+            parts = date_part.split('/')
+        else:
+            return date_str
+            
+        # Check if we have a proper date format with 3 parts
+        if len(parts) == 3:
+            year, month, day = parts
+            # Check if the input was already in day-month-year format
+            if len(year) == 2 or len(year) == 1:  # If year has 1 or 2 digits, it's likely the day
+                return date_str  # Already in the desired format
+                
+            # Rearrange to day-month-year format
+            return f"{day}-{month}-{year}"
+            
+        return date_str
+    except Exception as e:
+        logger.error(f"Error formatting date: {e}")
+        return date_str
+
+@app.template_filter('format_date')
+def format_date_filter(date_str):
+    """
+    Jinja2 template filter to format dates in DD-MM-YYYY format
+    """
+    return format_date_for_display(date_str)
 
 class CameraStream:
     def __init__(self, input_type, input_value, seek_time=0, visible=False, camera_id=None):

@@ -50,6 +50,20 @@ ANIMAL_SMS_TEMPLATES = {
     'lion': 'EXTREME DANGER! Lion detected. Stay inside, secure all doors/windows, call emergency services!'
 }
 
+def format_date_dmy(date_obj):
+    """
+    Format a datetime object to day-month-year format with 12-hour time
+    
+    Args:
+        date_obj: datetime object to format
+        
+    Returns:
+        formatted_date: String in format "DD-MM-YYYY HH:MM:SS AM/PM"
+    """
+    if not date_obj:
+        return None
+    return date_obj.strftime("%d-%m-%Y %I:%M:%S %p")
+
 def get_animal_sms_content(animal_type: str) -> str:
     """
     Get the appropriate SMS content for the specified animal type.
@@ -111,9 +125,23 @@ def send_sms_via_email(phone_number: str, detection_data: Dict, carrier: str = '
             
         sms_content = get_animal_sms_content(animal_type)
         
-        # Add detection location
+        # Format timestamp for the SMS
+        timestamp_str = ""
+        
+        # Check for formatted_date first (new field)
+        if 'formatted_date' in detection_data:
+            timestamp_str = detection_data['formatted_date']
+        else:
+            # Use timestamp or current time 
+            timestamp = detection_data.get('timestamp', datetime.now())
+            if isinstance(timestamp, datetime):
+                timestamp_str = format_date_dmy(timestamp)
+            else:
+                timestamp_str = str(timestamp)
+        
+        # Add detection location and time
         camera_name = detection_data.get('camera_name', 'Unknown location')
-        sms_content = f"WildEye: {sms_content} Location: {camera_name}"
+        sms_content = f"WildEye ({timestamp_str}): {sms_content} Location: {camera_name}"
         
         # Truncate if too long for SMS
         if len(sms_content) > 160:
