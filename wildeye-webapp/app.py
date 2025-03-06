@@ -567,9 +567,9 @@ def detection_history():
             
             # Only include if camera belongs to user
             if log_data.get('camera') in user_cameras:
-                # Format the timestamp for display
+                # Format the timestamp for display in 12-hour format
                 if 'timestamp' in log_data and isinstance(log_data['timestamp'], datetime):
-                    log_data['timestamp'] = log_data['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
+                    log_data['timestamp'] = log_data['timestamp'].strftime("%Y-%m-%d %I:%M:%S %p")
                     
                 # Ensure confidence is a number
                 if 'confidence' in log_data:

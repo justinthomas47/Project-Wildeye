@@ -97,8 +97,22 @@
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if log.timestamp %}
-                                            {{ log.timestamp.split(' ')[1] }}
+                                        {% if log.formatted_timestamp %}
+                                            {% set time_parts = log.formatted_timestamp.split(' ') %}
+                                            {% if time_parts|length >= 3 %}
+                                                {{ time_parts[1] }} {{ time_parts[2] }}
+                                            {% else %}
+                                                {{ time_parts[1] if time_parts|length > 1 else "-" }}
+                                            {% endif %}
+                                        {% elif log.timestamp %}
+                                            {% set time_parts = log.timestamp.split(' ') %}
+                                            {% if time_parts|length >= 2 %}
+                                                {% set time_str = time_parts[1] %}
+                                                {% set am_pm = time_parts[2] if time_parts|length > 2 else "" %}
+                                                {{ time_str }} {{ am_pm }}
+                                            {% else %}
+                                                {{ time_parts[1] if time_parts|length > 1 else "-" }}
+                                            {% endif %}
                                         {% else %}
                                             -
                                         {% endif %}

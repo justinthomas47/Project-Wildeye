@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 def get_indian_time():
     """
     Returns the current time in Indian Standard Time (IST) - UTC+5:30
+    Using 12-hour time format with AM/PM
     """
     # Create a timezone object for IST (UTC+5:30)
     ist = timezone(timedelta(hours=5, minutes=30))
@@ -37,6 +38,9 @@ def get_indian_time():
     # Get current UTC time and convert to IST
     utc_time = datetime.now(timezone.utc)
     ist_time = utc_time.astimezone(ist)
+    
+    # Format the time in 12-hour format
+    ist_time = ist_time.replace(tzinfo=None)  # Remove timezone info for Firestore
     
     return ist_time
 
@@ -260,6 +264,9 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
         # Add the detection to Firestore database
         detection_ref.set(detection_record)
         
+        # Format the timestamp string for display in 12-hour format for the log
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        
         # Also add to detection_logs collection for history display
         log_ref = db.collection('detection_logs').document()
         log_data = {
@@ -267,7 +274,8 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             'animal': detection_data['detection_label'],
             'camera': camera['camera_name'],
             'location': camera.get('google_maps_link', ''),
-            'timestamp': current_time,
+            'timestamp': current_time,  # Keep as datetime for sorting in Firestore
+            'formatted_timestamp': formatted_time,  # Add formatted timestamp string
             'confidence': detection_data.get('confidence', 100.0),
             'image_url': screenshot_url,
             'camera_id': detection_data['camera_id'],  # Add camera_id to link to owner
@@ -292,7 +300,7 @@ def add_detection(db, detection_data: Dict, screenshot: bytes = None) -> Optiona
             logger.error(f"Error creating warning: {warning_error}")
             logger.error(traceback.format_exc())
         
-        logger.info(f"Added new detection: {detection_data['detection_label']} from {camera['camera_name']}")
+        logger.info(f"Added new detection: {detection_data['detection_label']} from {camera['camera_name']} at {formatted_time}")
         return detection_id
     except Exception as e:
         logger.error(f"Error adding detection: {e}")
