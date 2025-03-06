@@ -58,6 +58,11 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
         # Get animal type, ensuring field name consistency
         detection_label = detection_data.get('detection_label', 'unknown')
         
+        # Current time
+        current_time = datetime.now()
+        # Format timestamp for display in 12-hour format
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        
         # Create warning record
         warning_record = {
             'warning_id': warning_id,
@@ -70,7 +75,8 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
             'screenshot_url': detection_data.get('screenshot_url', ''),
             'google_maps_link': detection_data.get('google_maps_link', ''),
             'severity': determine_severity(detection_label),
-            'timestamp': datetime.now(),
+            'timestamp': current_time,                  # Keep datetime object for sorting
+            'formatted_timestamp': formatted_time,      # Add formatted time string
             'active': True,
             'acknowledged': False,
             'notification_status': {
@@ -100,7 +106,7 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
             'notification_status': notifications_sent
         })
         
-        logger.info(f"Created warning {warning_id} for {detection_data.get('detection_label', 'unknown')} detection")
+        logger.info(f"Created warning {warning_id} for {detection_data.get('detection_label', 'unknown')} detection at {formatted_time}")
         return warning_id
         
     except Exception as e:
@@ -150,10 +156,15 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
         'telegram': False
     }
     
-    # Construct the message
+    # Construct the message - Use formatted_timestamp if available
     message = f"🚨 WildEye Alert: {warning['type']} detected at {warning['camera_name']}\n\n"
     message += f"Severity: {warning['severity'].upper()}\n"
-    message += f"Time: {warning['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}\n"
+    
+    # Use formatted timestamp if available, otherwise format the timestamp
+    if 'formatted_timestamp' in warning:
+        message += f"Time: {warning['formatted_timestamp']}\n"
+    else:
+        message += f"Time: {warning['timestamp'].strftime('%Y-%m-%d %I:%M:%S %p')}\n"
     
     # Add location information without the direct link
     if warning['google_maps_link']:
@@ -247,6 +258,15 @@ def send_email(recipient: str, subject: str, body: str, screenshot_url: Optional
             </div>
             """
         
+        # Get formatted timestamp for email
+        if warning:
+            if 'formatted_timestamp' in warning:
+                timestamp_display = warning['formatted_timestamp']
+            else:
+                timestamp_display = warning.get('timestamp').strftime('%Y-%m-%d %I:%M:%S %p') if warning.get('timestamp') else 'Unknown'
+        else:
+            timestamp_display = 'Unknown'
+            
         # Create HTML email with enhanced layout
         html_body = f"""
         <html>
@@ -276,7 +296,7 @@ def send_email(recipient: str, subject: str, body: str, screenshot_url: Optional
               <div class="severity-{warning.get('severity', 'low') if warning else 'low'}">
                 <h3 style="margin-top: 0;">Alert Details</h3>
                 <p><strong>Animal Detected:</strong> {warning.get('type', 'Unknown animal').title() if warning else 'Unknown'}</p>
-                <p><strong>Time:</strong> {warning.get('timestamp').strftime('%Y-%m-%d %H:%M:%S') if warning and warning.get('timestamp') else 'Unknown'}</p>
+                <p><strong>Time:</strong> {timestamp_display}</p>
                 <p style="margin-bottom: 0;"><strong>Severity:</strong> {warning.get('severity', 'Unknown').upper() if warning else 'Unknown'}</p>
               </div>
               
@@ -507,12 +527,16 @@ def acknowledge_warning(db, warning_id: str) -> bool:
         success: True if warning was successfully acknowledged
     """
     try:
+        current_time = datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        
         warning_ref = db.collection('warnings').document(warning_id)
         warning_ref.update({
             'acknowledged': True,
-            'acknowledged_at': datetime.now()
+            'acknowledged_at': current_time,
+            'acknowledged_at_formatted': formatted_time
         })
-        logger.info(f"Warning {warning_id} acknowledged")
+        logger.info(f"Warning {warning_id} acknowledged at {formatted_time}")
         return True
         
     except Exception as e:
@@ -531,12 +555,16 @@ def resolve_warning(db, warning_id: str) -> bool:
         success: True if warning was successfully resolved
     """
     try:
+        current_time = datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        
         warning_ref = db.collection('warnings').document(warning_id)
         warning_ref.update({
             'active': False,
-            'resolved_at': datetime.now()
+            'resolved_at': current_time,
+            'resolved_at_formatted': formatted_time
         })
-        logger.info(f"Warning {warning_id} resolved")
+        logger.info(f"Warning {warning_id} resolved at {formatted_time}")
         return True
         
     except Exception as e:
@@ -654,27 +682,50 @@ def get_all_warnings(db, active_only: bool = False, limit: int = 100, user_id: s
         return []
 
 # Function to test notification channels
-def test_notification_channels(db, preferences: Dict) -> Dict:
+def test_notification_channels(db, user_id: str) -> Dict:
     """
     Send test notifications to verify channels are working.
     
     Args:
         db: Firestore database instance
-        preferences: Dictionary with notification preferences
+        user_id: User ID to test notifications for
         
     Returns:
         status: Dictionary with test results
     """
-    test_message = "This is a test notification from WildEye. If you're receiving this, your notification setup is working correctly."
-    
-    test_warning = {
-        'type': 'Test Alert',
-        'camera_name': 'Test Camera',
-        'severity': 'low',
-        'timestamp': datetime.now(),
-        'google_maps_link': '',
-        'screenshot_url': '',
-        'mobile_number': preferences.get('sms', {}).get('recipient', '')
-    }
-    
-    return send_notifications(test_warning, preferences)
+    try:
+        # Get the user's notification preferences
+        preferences = get_notification_preferences(db, user_id)
+        
+        current_time = datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%d %I:%M:%S %p")
+        
+        test_message = f"This is a test notification from WildEye at {formatted_time}. If you're receiving this, your notification setup is working correctly."
+        
+        test_warning = {
+            'type': 'Test Alert',
+            'camera_name': 'Test Camera',
+            'severity': 'low',
+            'timestamp': current_time,
+            'formatted_timestamp': formatted_time,
+            'google_maps_link': '',
+            'screenshot_url': '',
+            'mobile_number': preferences.get('sms', {}).get('recipient', '')
+        }
+        
+        notification_results = send_notifications(test_warning, preferences)
+        
+        return {
+            'success': True,
+            'email': notification_results['email'],
+            'sms': notification_results['sms'],
+            'telegram': notification_results['telegram'],
+            'message': 'Test notifications sent'
+        }
+    except Exception as e:
+        logger.error(f"Error testing notification channels: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'message': 'Failed to test notifications'
+        }

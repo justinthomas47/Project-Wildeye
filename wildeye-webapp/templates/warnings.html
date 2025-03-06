@@ -100,7 +100,15 @@
                                             {{ warning.severity|title }}
                                         </span>
                                     </div>
-                                    <p class="text-gray-500 text-sm mb-2">{{ warning.timestamp.strftime('%Y-%m-%d %H:%M:%S') if warning.timestamp else 'Unknown time' }}</p>
+                                    <p class="text-gray-500 text-sm mb-2">
+                                        {% if warning.formatted_timestamp %}
+                                            {{ warning.formatted_timestamp }}
+                                        {% elif warning.timestamp %}
+                                            {{ warning.timestamp.strftime('%Y-%m-%d %I:%M:%S %p') if warning.timestamp else 'Unknown time' }}
+                                        {% else %}
+                                            Unknown time
+                                        {% endif %}
+                                    </p>
                                     <p class="text-gray-700 mb-2">{{ warning.message }}</p>
                                     <p class="text-gray-600 text-sm mb-4">
                                         <strong>Camera:</strong> {{ warning.camera_name }}
@@ -205,7 +213,15 @@
                                         </span>
                                         {% endif %}
                                     </div>
-                                    <p class="text-gray-500 text-sm mb-2">{{ warning.timestamp.strftime('%Y-%m-%d %H:%M:%S') if warning.timestamp else 'Unknown time' }}</p>
+                                    <p class="text-gray-500 text-sm mb-2">
+                                        {% if warning.formatted_timestamp %}
+                                            {{ warning.formatted_timestamp }}
+                                        {% elif warning.timestamp %}
+                                            {{ warning.timestamp.strftime('%Y-%m-%d %I:%M:%S %p') if warning.timestamp else 'Unknown time' }}
+                                        {% else %}
+                                            Unknown time
+                                        {% endif %}
+                                    </p>
                                     <p class="text-gray-700 mb-2">{{ warning.message }}</p>
                                     <p class="text-gray-600 text-sm mb-4">
                                         <strong>Camera:</strong> {{ warning.camera_name }}
@@ -266,7 +282,14 @@
                                     </div>
                                     {% else %}
                                     <div class="text-sm text-gray-500">
-                                        Resolved at: {{ warning.resolved_at.strftime('%Y-%m-%d %H:%M:%S') if warning.resolved_at else 'Unknown' }}
+                                        Resolved at: 
+                                        {% if warning.resolved_at_formatted %}
+                                            {{ warning.resolved_at_formatted }}
+                                        {% elif warning.resolved_at %}
+                                            {{ warning.resolved_at.strftime('%Y-%m-%d %I:%M:%S %p') if warning.resolved_at else 'Unknown' }}
+                                        {% else %}
+                                            Unknown
+                                        {% endif %}
                                     </div>
                                     {% endif %}
                                 </div>
