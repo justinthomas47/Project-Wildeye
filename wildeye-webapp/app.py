@@ -1,7 +1,8 @@
 #app.py
 from logging_config import configure_logging
 configure_logging()
-
+from dotenv import load_dotenv
+load_dotenv()
 import os
 import threading
 import webbrowser
@@ -610,7 +611,7 @@ def warnings():
             user_cameras.append(camera_data['camera_id'])
         
         # Get all warnings
-        warnings_ref = db.collection('warnings').order_by('timestamp', direction='desc').limit(100)
+        warnings_ref = db.collection('warnings').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(100)
         all_warnings = []
         
         for doc in warnings_ref.stream():
@@ -665,6 +666,12 @@ def notification_settings():
         return redirect(url_for('index'))
         
     try:
+        # Import required functions from sms_service
+        from sms_service import get_available_carriers, save_carrier_preference
+
+        # Get available carriers for the dropdown
+        carriers = get_available_carriers()
+        
         if request.method == "POST":
             # Process form submission
             preferences = {
@@ -674,7 +681,8 @@ def notification_settings():
                 },
                 'sms': {
                     'enabled': 'sms_enabled' in request.form,
-                    'recipient': request.form.get('sms_recipient', '')
+                    'recipient': request.form.get('sms_recipient', ''),
+                    'carrier': request.form.get('sms_carrier', 'default')
                 },
                 'telegram': {
                     'enabled': 'telegram_enabled' in request.form,
@@ -687,9 +695,14 @@ def notification_settings():
             doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
             doc_ref.set(preferences)
             
+            # Also save carrier preference for SMS service
+            if 'sms_enabled' in request.form and request.form.get('sms_carrier'):
+                save_carrier_preference(db, user['uid'], request.form.get('sms_carrier'))
+            
             return render_template(
                 "notification_settings.html", 
                 preferences=preferences, 
+                carriers=carriers,
                 success="Notification settings updated successfully",
                 current_page='settings'
             )
@@ -709,7 +722,8 @@ def notification_settings():
                 },
                 'sms': {
                     'enabled': False,
-                    'recipient': ''
+                    'recipient': '',
+                    'carrier': 'default'
                 },
                 'telegram': {
                     'enabled': False,
@@ -723,6 +737,7 @@ def notification_settings():
         return render_template(
             "notification_settings.html", 
             preferences=preferences,
+            carriers=carriers,
             current_page='settings'
         )
     except Exception as e:
@@ -730,6 +745,7 @@ def notification_settings():
         return render_template(
             "notification_settings.html", 
             error=f"Error: {str(e)}",
+            carriers=get_available_carriers() if 'get_available_carriers' in locals() else [],
             current_page='settings'
         )
 
@@ -741,32 +757,21 @@ def test_notifications():
         return jsonify({"success": False, "error": "Firebase not initialized"}), 500
         
     try:
-        # Get current notification preferences
+        # Get current user
         user = get_current_user()
         if not user:
             return jsonify({"success": False, "error": "User not authenticated"}), 401
             
-        # Get user-specific preferences
-        doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
-        doc = doc_ref.get()
+        # Import test function from warning system
+        from warning_system import test_notification_channels
         
-        if doc.exists:
-            preferences = doc.to_dict()
-        else:
-            preferences = get_notification_preferences(db)
+        # Run test
+        test_results = test_notification_channels(db, user['uid'])
         
-        # Send test notifications
-        test_results = test_notification_channels(db, preferences)
-        
-        return jsonify({
-            "success": True,
-            "email": test_results.get('email', False),
-            "sms": test_results.get('sms', False),
-            "telegram": test_results.get('telegram', False)
-        })
+        return jsonify(test_results)
     except Exception as e:
         logger.error(f"Error testing notifications: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500    
+        return jsonify({"success": False, "error": str(e)}), 500
     
 @app.route("/about")
 def about():

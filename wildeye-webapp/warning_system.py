@@ -55,17 +55,21 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
         warning_ref = db.collection('warnings').document()
         warning_id = warning_ref.id
         
+        # Get animal type, ensuring field name consistency
+        detection_label = detection_data.get('detection_label', 'unknown')
+        
         # Create warning record
         warning_record = {
             'warning_id': warning_id,
             'detection_id': detection_data.get('detection_id', ''),
             'camera_id': camera_id,
             'camera_name': detection_data.get('camera_name', ''),
-            'type': detection_data.get('detection_label', 'unknown'),
-            'message': f"{detection_data.get('detection_label', 'Animal')} detected at {detection_data.get('camera_name', 'unknown location')}",
+            'type': detection_label,                    # Keep 'type' for backward compatibility
+            'detection_label': detection_label,         # Add 'detection_label' to ensure consistency
+            'message': f"{detection_label} detected at {detection_data.get('camera_name', 'unknown location')}",
             'screenshot_url': detection_data.get('screenshot_url', ''),
             'google_maps_link': detection_data.get('google_maps_link', ''),
-            'severity': determine_severity(detection_data.get('detection_label', '')),
+            'severity': determine_severity(detection_label),
             'timestamp': datetime.now(),
             'active': True,
             'acknowledged': False,
@@ -151,11 +155,13 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
     message += f"Severity: {warning['severity'].upper()}\n"
     message += f"Time: {warning['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}\n"
     
+    # Add location information without the direct link
     if warning['google_maps_link']:
-        message += f"Location: {warning['google_maps_link']}\n"
+        message += f"Location: {warning['camera_name']}\n"
     
+    # Mention that screenshot is available but don't include the URL
     if warning['screenshot_url']:
-        message += f"Screenshot: {warning['screenshot_url']}\n"
+        message += f"Screenshot is available in email or app\n"
     
     # Send email if enabled
     if preferences.get('email', {}).get('enabled', False):
@@ -166,7 +172,8 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
                     recipient=email_recipient,
                     subject=f"WildEye Alert: {warning['type']} Detected",
                     body=message,
-                    screenshot_url=warning.get('screenshot_url')
+                    screenshot_url=warning.get('screenshot_url'),
+                    warning=warning
                 )
         except Exception as e:
             logger.error(f"Error sending email notification: {e}")
@@ -198,15 +205,16 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
     
     return notification_status
 
-def send_email(recipient: str, subject: str, body: str, screenshot_url: Optional[str] = None) -> bool:
+def send_email(recipient: str, subject: str, body: str, screenshot_url: Optional[str] = None, warning: Dict = None) -> bool:
     """
-    Send an email notification.
+    Send an enhanced email notification with location details, animal photo and precaution measures.
     
     Args:
         recipient: Email recipient
         subject: Email subject
-        body: Email body text
+        body: Basic email body text
         screenshot_url: Optional URL to screenshot
+        warning: Warning information dictionary
         
     Returns:
         success: True if email was sent successfully
@@ -221,20 +229,79 @@ def send_email(recipient: str, subject: str, body: str, screenshot_url: Optional
         msg['To'] = recipient
         msg['Subject'] = subject
         
-        # Add text body
+        # Add text version as fallback
         msg.attach(MIMEText(body, 'plain'))
         
-        # Add HTML body with image if screenshot_url is available
-        if screenshot_url:
-            html_body = f"""
-            <html>
-              <body>
-                <p>{body.replace('\n', '<br>')}</p>
-                <img src="{screenshot_url}" alt="Detection Screenshot" style="max-width:600px">
-              </body>
-            </html>
+        # Get animal type for precaution recommendations
+        animal_type = warning.get('type', '').lower() if warning else 'unknown'
+        precautions = get_precautions_for_animal(animal_type)
+        
+        # Format location information
+        location_info = ""
+        if warning and warning.get('google_maps_link'):
+            location_info = f"""
+            <div style="margin: 15px 0;">
+                <h3 style="color: #2c3e50; margin-bottom: 10px;">📍 Location Details</h3>
+                <p>The detection occurred at <strong>{warning.get('camera_name', 'Unknown location')}</strong>.</p>
+                <p><a href="{warning['google_maps_link']}" style="background-color: #3498db; color: white; padding: 8px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">View on Google Maps</a></p>
+            </div>
             """
-            msg.attach(MIMEText(html_body, 'html'))
+        
+        # Create HTML email with enhanced layout
+        html_body = f"""
+        <html>
+          <head>
+            <style>
+              body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; }}
+              .container {{ border: 1px solid #ddd; border-radius: 5px; padding: 20px; }}
+              .header {{ background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+              .severity-high {{ color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 5px; }}
+              .severity-medium {{ color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 5px; }}
+              .severity-low {{ color: #0c5460; background-color: #d1ecf1; padding: 10px; border-radius: 5px; }}
+              .image-container {{ margin: 20px 0; }}
+              .image-container img {{ max-width: 100%; height: auto; border-radius: 5px; }}
+              .precautions {{ background-color: #e8f4f8; padding: 15px; border-radius: 5px; margin-top: 20px; }}
+              .footer {{ font-size: 12px; text-align: center; margin-top: 30px; color: #6c757d; }}
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2 style="margin-top: 0;">🚨 WildEye Wildlife Detection Alert</h2>
+                <p>This automated alert has been generated by the WildEye wildlife monitoring system.</p>
+              </div>
+              
+              <div class="severity-{warning.get('severity', 'low') if warning else 'low'}">
+                <h3>Alert Details</h3>
+                <p><strong>Animal Detected:</strong> {warning.get('type', 'Unknown animal').title() if warning else 'Unknown'}</p>
+                <p><strong>Time:</strong> {warning.get('timestamp').strftime('%Y-%m-%d %H:%M:%S') if warning and warning.get('timestamp') else 'Unknown'}</p>
+                <p><strong>Severity:</strong> {warning.get('severity', 'Unknown').upper() if warning else 'Unknown'}</p>
+              </div>
+              
+              {location_info}
+              
+              <div class="image-container">
+                <h3 style="color: #2c3e50;">📸 Detection Image</h3>
+                {f'<a href="{screenshot_url}"><img src="{screenshot_url}" alt="Detection Screenshot" style="max-width:100%; border:1px solid #ddd;"></a>' if screenshot_url else '<p>No image available for this detection.</p>'}
+              </div>
+              
+              <div class="precautions">
+                <h3 style="color: #2c3e50;">⚠️ Recommended Precautions</h3>
+                <ul>
+                  {precautions}
+                </ul>
+              </div>
+              
+              <div class="footer">
+                <p>This is an automated message from the WildEye system. Please do not reply to this email.</p>
+                <p>To manage your notification settings, please log in to your WildEye account.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+        """
+        
+        msg.attach(MIMEText(html_body, 'html'))
         
         # Connect to server and send email
         with smtplib.SMTP(EMAIL_SERVER, EMAIL_PORT) as server:
@@ -242,12 +309,93 @@ def send_email(recipient: str, subject: str, body: str, screenshot_url: Optional
             server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
             server.send_message(msg)
         
-        logger.info(f"Email notification sent to {recipient}")
+        logger.info(f"Enhanced email notification sent to {recipient}")
         return True
         
     except Exception as e:
         logger.error(f"Failed to send email: {e}")
         return False
+
+def get_precautions_for_animal(animal_type: str) -> str:
+    """
+    Get recommended precautions based on animal type.
+    
+    Args:
+        animal_type: Type of animal detected
+        
+    Returns:
+        HTML formatted list of precautions
+    """
+    # Default precautions for all wildlife
+    default_precautions = [
+        "Keep a safe distance from the animal and avoid approaching it",
+        "Ensure children and pets remain indoors or supervised",
+        "Do not attempt to feed or interact with the animal",
+        "Report the sighting to local wildlife authorities if the animal appears injured or in distress"
+    ]
+    
+    # Animal-specific precautions
+    precautions_map = {
+        'tiger': [
+            "Evacuate the area immediately and move to a secure location",
+            "Alert all staff and residents in the vicinity",
+            "Contact forest department or wildlife rangers urgently",
+            "Do not run if you see the tiger - back away slowly while facing it",
+            "Avoid outdoor activities until authorities confirm it's safe"
+        ],
+        'leopard': [
+            "Stay indoors and secure all entry points to buildings",
+            "Keep livestock in protected enclosures",
+            "Travel in groups and carry noise-making devices if movement is necessary",
+            "Contact wildlife authorities immediately",
+            "Be particularly cautious during dawn and dusk hours"
+        ],
+        'elephant': [
+            "Maintain a minimum distance of 100 meters",
+            "Never position yourself between a mother and her calf",
+            "If in a vehicle, turn off the engine and remain quiet",
+            "Avoid sudden movements or loud noises",
+            "Be aware that elephants can charge with little warning"
+        ],
+        'bear': [
+            "Make noise to avoid surprising the bear",
+            "Secure all food and garbage in bear-proof containers",
+            "If you encounter a bear, speak calmly and back away slowly",
+            "Never run from a bear - this may trigger a chase response",
+            "If attacked, use bear spray if available"
+        ],
+        'wild boar': [
+            "Keep distance as wild boars can be aggressive",
+            "Secure gardens and crops with appropriate fencing",
+            "Avoid walking dogs in areas where wild boars have been sighted",
+            "Never corner or threaten a wild boar"
+        ],
+        'deer': [
+            "Drive cautiously in the area, especially at dawn and dusk",
+            "Keep dogs leashed in areas with deer",
+            "Do not approach fawns, even if they appear abandoned"
+        ],
+        'wolf': [
+            "Keep pets indoors or on short leashes",
+            "Never approach or follow wolves",
+            "Eliminate potential food sources near human settlements",
+            "If you encounter a wolf, make yourself look large and make loud noises"
+        ],
+        'hyena': [
+            "Secure livestock in predator-proof enclosures",
+            "Do not leave food waste accessible",
+            "Keep children close and supervised in areas with reported hyena activity",
+            "If encountered, maintain eye contact and back away slowly"
+        ]
+    }
+    
+    # Get specific precautions or use defaults
+    specific_precautions = precautions_map.get(animal_type, default_precautions)
+    
+    # Format as HTML list items
+    formatted_precautions = '\n'.join([f'<li>{precaution}</li>' for precaution in specific_precautions])
+    
+    return formatted_precautions
 
 def send_sms(recipient: str, message: str) -> bool:
     """

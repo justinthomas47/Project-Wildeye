@@ -1,6 +1,7 @@
 <!-- notification_settings.html -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,11 +19,13 @@
             color: #333;
             min-height: 100vh;
         }
+
         .toggle-checkbox {
             height: 0;
             width: 0;
             visibility: hidden;
         }
+
         .toggle-label {
             display: flex;
             align-items: center;
@@ -35,6 +38,7 @@
             position: relative;
             transition: background-color .2s;
         }
+
         .toggle-label .toggle-button {
             content: '';
             position: absolute;
@@ -47,44 +51,48 @@
             background: #fff;
             box-shadow: 0 0 2px 0 rgba(10, 10, 10, 0.29);
         }
-        .toggle-checkbox:checked + .toggle-label {
+
+        .toggle-checkbox:checked+.toggle-label {
             background: #4f46e5;
         }
-        .toggle-checkbox:checked + .toggle-label .toggle-button {
+
+        .toggle-checkbox:checked+.toggle-label .toggle-button {
             left: calc(100% - 2px);
             transform: translateX(-100%);
         }
     </style>
 </head>
+
 <body>
     {% include "includes/navbar.html" %}
-    
+
     <div class="min-h-screen bg-gray-100">
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-gray-800">Notification Settings</h1>
-                
-                <a href="{{ url_for('warnings') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+
+                <a href="{{ url_for('warnings') }}"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
                     Back to Warnings
                 </a>
             </div>
-            
+
             {% if error %}
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6" role="alert">
                 <p>{{ error }}</p>
             </div>
             {% endif %}
-            
+
             {% if success %}
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6" role="alert">
                 <p>{{ success }}</p>
             </div>
             {% endif %}
-            
+
             <div class="bg-white rounded-xl shadow-md p-6 mb-8">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Notification Methods</h2>
                 <p class="text-gray-600 mb-6">Configure how you want to be notified when animals are detected.</p>
-                
+
                 <form id="notificationForm" method="POST" action="{{ url_for('notification_settings') }}">
                     <!-- Email Notifications -->
                     <div class="border-b border-gray-200 pb-6 mb-6">
@@ -94,24 +102,25 @@
                                 <p class="text-sm text-gray-600">Receive detection alerts via email</p>
                             </div>
                             <div class="flex items-center">
-                                <input type="checkbox" id="email_enabled" name="email_enabled" class="toggle-checkbox" 
-                                       {% if preferences.email.enabled %}checked{% endif %}>
+                                <input type="checkbox" id="email_enabled" name="email_enabled" class="toggle-checkbox"
+                                    {% if preferences.email.enabled %}checked{% endif %}>
                                 <label for="email_enabled" class="toggle-label">
                                     <span class="toggle-button"></span>
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="email-settings {% if not preferences.email.enabled %}opacity-50{% endif %}">
                             <div class="mb-4">
-                                <label for="email_recipient" class="block text-sm font-medium text-gray-700 mb-1">Recipient Email Address</label>
-                                <input type="email" id="email_recipient" name="email_recipient" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                       value="{{ preferences.email.recipient }}" placeholder="email@example.com">
+                                <label for="email_recipient"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Recipient Email Address</label>
+                                <input type="email" id="email_recipient" name="email_recipient"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    value="{{ preferences.email.recipient }}" placeholder="email@example.com">
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- SMS Notifications -->
                     <div class="border-b border-gray-200 pb-6 mb-6">
                         <div class="flex justify-between items-center mb-4">
@@ -120,25 +129,89 @@
                                 <p class="text-sm text-gray-600">Receive detection alerts via SMS</p>
                             </div>
                             <div class="flex items-center">
-                                <input type="checkbox" id="sms_enabled" name="sms_enabled" class="toggle-checkbox"
-                                       {% if preferences.sms.enabled %}checked{% endif %}>
+                                <input type="checkbox" id="sms_enabled" name="sms_enabled" class="toggle-checkbox" {% if
+                                    preferences.sms.enabled %}checked{% endif %}>
                                 <label for="sms_enabled" class="toggle-label">
                                     <span class="toggle-button"></span>
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="sms-settings {% if not preferences.sms.enabled %}opacity-50{% endif %}">
                             <div class="mb-4">
-                                <label for="sms_recipient" class="block text-sm font-medium text-gray-700 mb-1">Default Phone Number</label>
-                                <input type="tel" id="sms_recipient" name="sms_recipient" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                       value="{{ preferences.sms.recipient }}" placeholder="+91XXXXXXXXXX">
-                                <p class="text-xs text-gray-500 mt-1">Include country code (e.g., +91 for India). Camera-specific numbers take precedence when available.</p>
+                                <label for="sms_recipient" class="block text-sm font-medium text-gray-700 mb-1">Phone
+                                    Number</label>
+                                <input type="tel" id="sms_recipient" name="sms_recipient"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    value="{{ preferences.sms.recipient }}" placeholder="+91XXXXXXXXXX">
+                                <p class="text-xs text-gray-500 mt-1">Include country code (e.g., +91 for India).
+                                    Camera-specific numbers take precedence when available.</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="sms_carrier" class="block text-sm font-medium text-gray-700 mb-1">Mobile
+                                    Carrier</label>
+                                <select id="sms_carrier" name="sms_carrier"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="default" {% if preferences.sms.carrier=='default' %}selected{% endif
+                                        %}>Select your carrier</option>
+                                    <!-- Indian Carriers -->
+                                    <option value="jio" {% if preferences.sms.carrier=='jio' %}selected{% endif %}>
+                                        Reliance Jio</option>
+                                    <option value="airtel" {% if preferences.sms.carrier=='airtel' %}selected{% endif
+                                        %}>Airtel</option>
+                                    <option value="vodafoneidea" {% if preferences.sms.carrier=='vodafoneidea'
+                                        %}selected{% endif %}>Vodafone Idea (Vi)</option>
+                                    <option value="bsnl" {% if preferences.sms.carrier=='bsnl' %}selected{% endif %}>
+                                        BSNL</option>
+                                    <option value="mtnl" {% if preferences.sms.carrier=='mtnl' %}selected{% endif %}>
+                                        MTNL</option>
+                                    <!-- US Carriers -->
+                                    <option value="at&t" {% if preferences.sms.carrier=='at&t' %}selected{% endif %}>
+                                        AT&T</option>
+                                    <option value="verizon" {% if preferences.sms.carrier=='verizon' %}selected{% endif
+                                        %}>Verizon</option>
+                                    <option value="tmobile" {% if preferences.sms.carrier=='tmobile' %}selected{% endif
+                                        %}>T-Mobile</option>
+                                    <option value="sprint" {% if preferences.sms.carrier=='sprint' %}selected{% endif
+                                        %}>Sprint</option>
+                                    <option value="boost" {% if preferences.sms.carrier=='boost' %}selected{% endif %}>
+                                        Boost Mobile</option>
+                                    <option value="cricket" {% if preferences.sms.carrier=='cricket' %}selected{% endif
+                                        %}>Cricket</option>
+                                    <option value="uscellular" {% if preferences.sms.carrier=='uscellular' %}selected{%
+                                        endif %}>US Cellular</option>
+                                    <!-- Other International -->
+                                    <option value="vodafone" {% if preferences.sms.carrier=='vodafone' %}selected{%
+                                        endif %}>Vodafone</option>
+                                    <option value="orange" {% if preferences.sms.carrier=='orange' %}selected{% endif
+                                        %}>Orange</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Select your mobile carrier for SMS delivery. If
+                                    unsure, choose the closest option.</p>
+                            </div>
+
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-yellow-700">
+                                            SMS notifications are sent using email-to-SMS gateways. Carrier selection is
+                                            important for delivery. Message and data rates may apply.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Telegram Notifications -->
                     <div class="pb-6 mb-6">
                         <div class="flex justify-between items-center mb-4">
@@ -147,23 +220,25 @@
                                 <p class="text-sm text-gray-600">Receive detection alerts via Telegram</p>
                             </div>
                             <div class="flex items-center">
-                                <input type="checkbox" id="telegram_enabled" name="telegram_enabled" class="toggle-checkbox"
-                                       {% if preferences.telegram.enabled %}checked{% endif %}>
+                                <input type="checkbox" id="telegram_enabled" name="telegram_enabled"
+                                    class="toggle-checkbox" {% if preferences.telegram.enabled %}checked{% endif %}>
                                 <label for="telegram_enabled" class="toggle-label">
                                     <span class="toggle-button"></span>
                                 </label>
                             </div>
                         </div>
-                        
+
                         <div class="telegram-settings {% if not preferences.telegram.enabled %}opacity-50{% endif %}">
                             <div class="mb-4">
-                                <label for="telegram_chat_id" class="block text-sm font-medium text-gray-700 mb-1">Telegram Chat ID</label>
-                                <input type="text" id="telegram_chat_id" name="telegram_chat_id" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                       value="{{ preferences.telegram.chat_id }}" placeholder="Your Telegram Chat ID">
-                                <p class="text-xs text-gray-500 mt-1">You can get your Chat ID by messaging @userinfobot on Telegram</p>
+                                <label for="telegram_chat_id"
+                                    class="block text-sm font-medium text-gray-700 mb-1">Telegram Chat ID</label>
+                                <input type="text" id="telegram_chat_id" name="telegram_chat_id"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    value="{{ preferences.telegram.chat_id }}" placeholder="Your Telegram Chat ID">
+                                <p class="text-xs text-gray-500 mt-1">You can get your Chat ID by messaging @userinfobot
+                                    on Telegram</p>
                             </div>
-                            
+
                             <div class="mb-4">
                                 <p class="text-sm text-gray-700 mb-2">To receive Telegram notifications:</p>
                                 <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
@@ -175,18 +250,19 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="flex justify-end">
-                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        <button type="submit"
+                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                             Save Settings
                         </button>
                     </div>
                 </form>
             </div>
-            
+
             <div class="bg-white rounded-xl shadow-md p-6">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Notification Setup Guide</h2>
-                
+
                 <div class="mb-6">
                     <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Email Notifications</h3>
                     <p class="text-gray-700 mb-3">To receive email notifications:</p>
@@ -196,7 +272,7 @@
                         <li>Email alerts will be sent whenever an animal is detected</li>
                     </ol>
                 </div>
-                
+
                 <div class="mb-6">
                     <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up SMS Notifications</h3>
                     <p class="text-gray-700 mb-3">To receive SMS notifications:</p>
@@ -207,7 +283,7 @@
                         <li>SMS alerts will be sent whenever an animal is detected</li>
                     </ol>
                 </div>
-                
+
                 <div>
                     <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Telegram Notifications</h3>
                     <p class="text-gray-700 mb-3">To receive Telegram notifications:</p>
@@ -223,39 +299,40 @@
             </div>
         </div>
     </div>
-    
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Toggle for email settings
             const emailEnabledCheckbox = document.getElementById('email_enabled');
             const emailSettings = document.querySelector('.email-settings');
-            
-            emailEnabledCheckbox.addEventListener('change', function() {
+
+            emailEnabledCheckbox.addEventListener('change', function () {
                 emailSettings.classList.toggle('opacity-50', !this.checked);
             });
-            
+
             // Toggle for SMS settings
             const smsEnabledCheckbox = document.getElementById('sms_enabled');
             const smsSettings = document.querySelector('.sms-settings');
-            
-            smsEnabledCheckbox.addEventListener('change', function() {
+
+            smsEnabledCheckbox.addEventListener('change', function () {
                 smsSettings.classList.toggle('opacity-50', !this.checked);
             });
-            
+
             // Toggle for Telegram settings
             const telegramEnabledCheckbox = document.getElementById('telegram_enabled');
             const telegramSettings = document.querySelector('.telegram-settings');
-            
-            telegramEnabledCheckbox.addEventListener('change', function() {
+
+            telegramEnabledCheckbox.addEventListener('change', function () {
                 telegramSettings.classList.toggle('opacity-50', !this.checked);
             });
         });
     </script>
-    
+
     <script type="module">
         import { initAuthStateObserver, logout } from '/static/js/firebase-auth.js';
         initAuthStateObserver();
         window.logOut = logout;
     </script>
 </body>
+
 </html>
