@@ -1,8 +1,10 @@
 #app.py
 from logging_config import configure_logging
-configure_logging()
 from dotenv import load_dotenv
 load_dotenv()
+configure_logging()
+from telegram_init import setup_telegram_environment
+telegram_config = setup_telegram_environment()
 import os
 import threading
 import webbrowser
@@ -31,7 +33,7 @@ from warning_system import (
     test_notification_channels
 )
 from functools import wraps
-
+telegram_config = setup_telegram_environment()
 # Set up logger for this module
 logger = logging.getLogger(__name__)
 

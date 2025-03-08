@@ -8,6 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from twilio.rest import Client
 from datetime import datetime
 from typing import Dict, Optional, List
+from telegram_service import send_telegram_notification
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -220,14 +221,16 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
         except Exception as e:
             logger.error(f"Error sending SMS notification: {e}")
     
-    # Send Telegram if enabled
+    # Send Telegram if enabled - UPDATED TO USE THE NEW APPROACH
     if preferences.get('telegram', {}).get('enabled', False):
         try:
             chat_id = preferences.get('telegram', {}).get('chat_id', TELEGRAM_CHAT_ID)
+            # Pass the entire warning object to the telegram function
             notification_status['telegram'] = send_telegram(
                 chat_id=chat_id,
                 message=message,
-                screenshot_url=warning.get('screenshot_url')
+                screenshot_url=warning.get('screenshot_url'),
+                warning=warning  # Pass the entire warning object
             )
         except Exception as e:
             logger.error(f"Error sending Telegram notification: {e}")
@@ -498,7 +501,7 @@ def send_sms(recipient: str, message: str) -> bool:
         logger.error(f"Failed to send SMS: {e}")
         return False
 
-def send_telegram(chat_id: str, message: str, screenshot_url: Optional[str] = None) -> bool:
+def send_telegram(chat_id: str, message: str, screenshot_url: Optional[str] = None, warning: Dict = None) -> bool:
     """
     Send a Telegram notification.
     
@@ -506,44 +509,42 @@ def send_telegram(chat_id: str, message: str, screenshot_url: Optional[str] = No
         chat_id: Telegram chat ID
         message: Message text
         screenshot_url: Optional URL to screenshot
+        warning: Optional warning data dictionary
         
     Returns:
         success: True if Telegram message was sent successfully
     """
     try:
-        if not all([TELEGRAM_BOT_TOKEN, chat_id]):
-            logger.warning("Missing Telegram credentials")
+        # Import the telegram notification function
+        from telegram_service import send_telegram_notification
+        
+        if not chat_id:
+            logger.warning("Missing Telegram chat ID")
             return False
         
-        # Base URL for Telegram Bot API
-        base_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
+        # If we have a full warning object, use the enhanced notification function
+        if warning:
+            # Make sure screenshot_url is included in the warning data
+            if screenshot_url and 'screenshot_url' not in warning:
+                warning['screenshot_url'] = screenshot_url
+                
+            # Call the enhanced function from telegram_service
+            return send_telegram_notification(chat_id, warning)
         
-        # Send text message first
-        response = requests.post(
-            f"{base_url}/sendMessage",
-            json={
-                "chat_id": chat_id,
-                "text": message,
-                "parse_mode": "Markdown"
+        # Otherwise, create a minimal warning object with just the message
+        else:
+            minimal_warning = {
+                'detection_label': 'Alert',
+                'type': 'Alert',
+                'camera_name': 'WildEye System',
+                'timestamp': datetime.now(),
+                'formatted_date': format_date_dmy(datetime.now()),
+                'message': message,
+                'screenshot_url': screenshot_url
             }
-        )
-        response.raise_for_status()
-        
-        # Send photo if available
-        if screenshot_url:
-            photo_response = requests.post(
-                f"{base_url}/sendPhoto",
-                json={
-                    "chat_id": chat_id,
-                    "photo": screenshot_url,
-                    "caption": "Detection Screenshot"
-                }
-            )
-            photo_response.raise_for_status()
-        
-        logger.info(f"Telegram notification sent to chat {chat_id}")
-        return True
-        
+            
+            return send_telegram_notification(chat_id, minimal_warning)
+            
     except Exception as e:
         logger.error(f"Failed to send Telegram notification: {e}")
         return False
@@ -742,13 +743,14 @@ def test_notification_channels(db, user_id: str) -> Dict:
         
         test_warning = {
             'type': 'Test Alert',
+            'detection_label': 'Test Alert',
             'camera_name': 'Test Camera',
             'severity': 'low',
             'timestamp': current_time,
             'formatted_timestamp': formatted_time,
             'formatted_date': formatted_date,
             'google_maps_link': '',
-            'screenshot_url': '',
+            'screenshot_url': 'https://via.placeholder.com/800x600.png?text=WildEye+Test',
             'mobile_number': preferences.get('sms', {}).get('recipient', '')
         }
         
