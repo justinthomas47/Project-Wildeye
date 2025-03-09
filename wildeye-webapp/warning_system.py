@@ -9,6 +9,7 @@ from twilio.rest import Client
 from datetime import datetime
 from typing import Dict, Optional, List
 from telegram_service import send_telegram_notification
+from email_service import send_email  # Import the enhanced email function
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -193,17 +194,17 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
     if warning['screenshot_url']:
         message += f"Screenshot is available in email or app\n"
     
-    # Send email if enabled
+    # Send email if enabled - now using the enhanced email_service function
     if preferences.get('email', {}).get('enabled', False):
         try:
             email_recipient = preferences.get('email', {}).get('recipient')
             if email_recipient:
+                email_subject = f"WildEye Alert: {warning['type']} Detected"
+                # Use the enhanced email function from email_service.py
                 notification_status['email'] = send_email(
                     recipient=email_recipient,
-                    subject=f"WildEye Alert: {warning['type']} Detected",
-                    body=message,
-                    screenshot_url=warning.get('screenshot_url'),
-                    warning=warning
+                    subject=email_subject,
+                    detection_data=warning
                 )
         except Exception as e:
             logger.error(f"Error sending email notification: {e}")
@@ -221,7 +222,7 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
         except Exception as e:
             logger.error(f"Error sending SMS notification: {e}")
     
-    # Send Telegram if enabled - UPDATED TO USE THE NEW APPROACH
+    # Send Telegram if enabled
     if preferences.get('telegram', {}).get('enabled', False):
         try:
             chat_id = preferences.get('telegram', {}).get('chat_id', TELEGRAM_CHAT_ID)
@@ -236,233 +237,6 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
             logger.error(f"Error sending Telegram notification: {e}")
     
     return notification_status
-
-def send_email(recipient: str, subject: str, body: str, screenshot_url: Optional[str] = None, warning: Dict = None) -> bool:
-    """
-    Send an enhanced email notification with location details, animal photo and precaution measures.
-    
-    Args:
-        recipient: Email recipient
-        subject: Email subject
-        body: Basic email body text
-        screenshot_url: Optional URL to screenshot
-        warning: Warning information dictionary
-        
-    Returns:
-        success: True if email was sent successfully
-    """
-    try:
-        if not all([EMAIL_USERNAME, EMAIL_PASSWORD, recipient]):
-            logger.warning("Missing email credentials or recipient")
-            return False
-        
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_USERNAME
-        msg['To'] = recipient
-        msg['Subject'] = subject
-        
-        # Add text version as fallback
-        msg.attach(MIMEText(body, 'plain'))
-        
-        # Get animal type for precaution recommendations
-        animal_type = warning.get('type', '').lower() if warning else 'unknown'
-        precautions = get_precautions_for_animal(animal_type)
-        
-        # Format location information
-        location_info = ""
-        if warning and warning.get('google_maps_link'):
-            location_info = f"""
-            <div style="margin: 25px 0; background-color: #f5f5f5; border-radius: 6px; padding: 20px; border-left: 5px solid #2ecc71;">
-                <h3 style="color: #2c3e50; margin-top: 0; margin-bottom: 15px;">📍 Location Details</h3>
-                <p>The detection occurred at <strong>{warning.get('camera_name', 'Unknown location')}</strong>.</p>
-                <p style="margin-bottom: 0;"><a href="{warning['google_maps_link']}" style="background-color: #2ecc71; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">View on Google Maps</a></p>
-            </div>
-            """
-        
-        # Get formatted timestamp for email using DD-MM-YYYY format
-        if warning:
-            if 'formatted_date' in warning:
-                timestamp_display = warning['formatted_date']
-            elif 'formatted_timestamp' in warning:
-                # Try to convert to day-month-year format
-                timestamp_str = warning['formatted_timestamp']
-                try:
-                    date_parts = timestamp_str.split(' ')[0].split('-')
-                    if len(date_parts) == 3:
-                        year, month, day = date_parts
-                        time_parts = ' '.join(timestamp_str.split(' ')[1:])
-                        timestamp_display = f"{day}-{month}-{year} {time_parts}"
-                    else:
-                        timestamp_display = timestamp_str
-                except:
-                    timestamp_display = timestamp_str
-            elif warning.get('timestamp'):
-                timestamp_display = format_date_dmy(warning['timestamp'])
-            else:
-                timestamp_display = 'Unknown'
-        else:
-            timestamp_display = format_date_dmy(datetime.now())
-            
-        # Create HTML email with enhanced layout
-        html_body = f"""
-        <html>
-          <head>
-            <style>
-              body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; }}
-              .container {{ border: 1px solid #ddd; border-radius: 8px; padding: 30px; background-color: #fcfcfc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }}
-              .header {{ background-color: #2c3e50; padding: 20px; border-radius: 6px; margin-bottom: 25px; color: white; }}
-              .severity-high {{ color: #721c24; background-color: #f8d7da; padding: 15px; border-radius: 6px; border-left: 5px solid #dc3545; }}
-              .severity-medium {{ color: #856404; background-color: #fff3cd; padding: 15px; border-radius: 6px; border-left: 5px solid #ffc107; }}
-              .severity-low {{ color: #0c5460; background-color: #d1ecf1; padding: 15px; border-radius: 6px; border-left: 5px solid #17a2b8; }}
-              .image-container {{ margin: 25px 0; }}
-              .image-container img {{ max-width: 100%; height: auto; border-radius: 6px; }}
-              .precautions {{ background-color: #e8f4f8; padding: 20px; border-radius: 6px; margin-top: 25px; border-left: 5px solid #3498db; }}
-              .precautions ul {{ padding-left: 20px; }}
-              .precautions li {{ margin-bottom: 8px; }}
-              .footer {{ font-size: 13px; text-align: center; margin-top: 35px; color: #6c757d; padding-top: 15px; border-top: 1px solid #eee; }}
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h2 style="margin-top: 0; margin-bottom: 10px;">🚨 WildEye Wildlife Detection Alert</h2>
-                <p style="margin-bottom: 0; opacity: 0.9;">This automated alert has been generated by the WildEye wildlife monitoring system.</p>
-              </div>
-              
-              <div class="severity-{warning.get('severity', 'low') if warning else 'low'}">
-                <h3 style="margin-top: 0;">Alert Details</h3>
-                <p><strong>Animal Detected:</strong> {warning.get('type', 'Unknown animal').title() if warning else 'Unknown'}</p>
-                <p><strong>Time:</strong> {timestamp_display}</p>
-                <p style="margin-bottom: 0;"><strong>Severity:</strong> {warning.get('severity', 'Unknown').upper() if warning else 'Unknown'}</p>
-              </div>
-              
-              {location_info}
-              
-              <div class="image-container">
-                <h3 style="color: #2c3e50;">📸 Detection Image</h3>
-                {f'''
-                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); background-color: #fff;">
-                  <a href="{screenshot_url}" style="display: block;">
-                    <img src="{screenshot_url}" alt="Detection Screenshot" style="max-width:100%; border-radius: 4px; display: block; margin: 0 auto;">
-                    <div style="text-align: center; margin-top: 10px;">
-                      <span style="background-color: #3498db; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; display: inline-block;">View Full Image</span>
-                    </div>
-                  </a>
-                </div>
-                ''' if screenshot_url else '<p>No image available for this detection.</p>'}
-              </div>
-              
-              <div class="precautions">
-                <h3 style="color: #2c3e50;">⚠️ Recommended Precautions</h3>
-                <ul>
-                  {precautions}
-                </ul>
-              </div>
-              
-              <div class="footer">
-                <p>This is an automated message from the WildEye system. Please do not reply to this email.</p>
-                <p>To manage your notification settings, please log in to your WildEye account.</p>
-              </div>
-            </div>
-          </body>
-        </html>
-        """
-        
-        msg.attach(MIMEText(html_body, 'html'))
-        
-        # Connect to server and send email
-        with smtplib.SMTP(EMAIL_SERVER, EMAIL_PORT) as server:
-            server.starttls()
-            server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
-            server.send_message(msg)
-        
-        logger.info(f"Enhanced email notification sent to {recipient}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Failed to send email: {e}")
-        return False
-
-def get_precautions_for_animal(animal_type: str) -> str:
-    """
-    Get recommended precautions based on animal type.
-    
-    Args:
-        animal_type: Type of animal detected
-        
-    Returns:
-        HTML formatted list of precautions
-    """
-    # Default precautions for all wildlife
-    default_precautions = [
-        "Keep a safe distance from the animal and avoid approaching it",
-        "Ensure children and pets remain indoors or supervised",
-        "Do not attempt to feed or interact with the animal",
-        "Report the sighting to local wildlife authorities if the animal appears injured or in distress"
-    ]
-    
-    # Animal-specific precautions
-    precautions_map = {
-        'tiger': [
-            "Evacuate the area immediately and move to a secure location",
-            "Alert all staff and residents in the vicinity",
-            "Contact forest department or wildlife rangers urgently",
-            "Do not run if you see the tiger - back away slowly while facing it",
-            "Avoid outdoor activities until authorities confirm it's safe"
-        ],
-        'leopard': [
-            "Stay indoors and secure all entry points to buildings",
-            "Keep livestock in protected enclosures",
-            "Travel in groups and carry noise-making devices if movement is necessary",
-            "Contact wildlife authorities immediately",
-            "Be particularly cautious during dawn and dusk hours"
-        ],
-        'elephant': [
-            "Maintain a minimum distance of 100 meters",
-            "Never position yourself between a mother and her calf",
-            "If in a vehicle, turn off the engine and remain quiet",
-            "Avoid sudden movements or loud noises",
-            "Be aware that elephants can charge with little warning"
-        ],
-        'bear': [
-            "Make noise to avoid surprising the bear",
-            "Secure all food and garbage in bear-proof containers",
-            "If you encounter a bear, speak calmly and back away slowly",
-            "Never run from a bear - this may trigger a chase response",
-            "If attacked, use bear spray if available"
-        ],
-        'wild boar': [
-            "Keep distance as wild boars can be aggressive",
-            "Secure gardens and crops with appropriate fencing",
-            "Avoid walking dogs in areas where wild boars have been sighted",
-            "Never corner or threaten a wild boar"
-        ],
-        'deer': [
-            "Drive cautiously in the area, especially at dawn and dusk",
-            "Keep dogs leashed in areas with deer",
-            "Do not approach fawns, even if they appear abandoned"
-        ],
-        'wolf': [
-            "Keep pets indoors or on short leashes",
-            "Never approach or follow wolves",
-            "Eliminate potential food sources near human settlements",
-            "If you encounter a wolf, make yourself look large and make loud noises"
-        ],
-        'hyena': [
-            "Secure livestock in predator-proof enclosures",
-            "Do not leave food waste accessible",
-            "Keep children close and supervised in areas with reported hyena activity",
-            "If encountered, maintain eye contact and back away slowly"
-        ]
-    }
-    
-    # Get specific precautions or use defaults
-    specific_precautions = precautions_map.get(animal_type, default_precautions)
-    
-    # Format as HTML list items
-    formatted_precautions = '\n'.join([f'<li>{precaution}</li>' for precaution in specific_precautions])
-    
-    return formatted_precautions
 
 def send_sms(recipient: str, message: str) -> bool:
     """
