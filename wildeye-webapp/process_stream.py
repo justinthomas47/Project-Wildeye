@@ -1,4 +1,3 @@
-#process_stream.py
 import cv2
 from ultralytics import YOLO
 import yt_dlp
@@ -6,15 +5,17 @@ import threading
 from queue import Queue, Empty
 import concurrent.futures
 import numpy as np
-from typing import Generator
+from typing import Generator, Dict, List, Optional
 import time
 import logging
 import traceback
 import torch
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
 import os
 import sys
+import tempfile
+import hashlib
+import shutil
 
 # Import from detection_handler module
 from detection_handler import add_detection, initialize_processor as init_detection_handler
@@ -25,6 +26,10 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Directory for temporary downloaded YouTube videos
+TEMP_VIDEO_DIR = os.path.join(tempfile.gettempdir(), "wildeye_videos")
+os.makedirs(TEMP_VIDEO_DIR, exist_ok=True)
 
 # Suppress YOLO output by redirecting stdout during predictions
 class SuppressOutput:
@@ -46,6 +51,119 @@ class SuppressOutput:
 
 # Cache for recent detections to prevent duplicates
 recent_detections = {}
+# Cache for downloaded YouTube videos
+youtube_cache = {}
+
+def get_video_hash(url):
+    """Generate a hash for a YouTube URL to use as a filename"""
+    return hashlib.md5(url.encode()).hexdigest()
+
+def download_youtube_video(url, seek_time=0, max_duration=None):
+    """
+    Download a YouTube video to a temporary file
+    Returns: Path to the downloaded video file
+    """
+    video_hash = get_video_hash(url)
+    video_path = os.path.join(TEMP_VIDEO_DIR, f"{video_hash}.mp4")
+    
+    # Check if video already exists in cache
+    if os.path.exists(video_path):
+        file_age = time.time() - os.path.getmtime(video_path)
+        # Keep videos in cache for up to 24 hours
+        if file_age < 86400:  # 24 hours in seconds
+            logger.info(f"Using cached video for {url}")
+            return video_path
+        else:
+            # Remove old cached file
+            os.remove(video_path)
+    
+    logger.info(f"Downloading YouTube video: {url}")
+    
+    try:
+        ydl_opts = {
+            'format': 'best[ext=mp4]/best',
+            'outtmpl': video_path,
+            'quiet': True,
+            'no_warnings': True,
+            'ignoreerrors': True
+        }
+        
+        # Add time range if specified
+        if seek_time > 0 or max_duration:
+            ydl_opts['download_ranges'] = download_range = {}
+            download_range['ranges'] = []
+            
+            start_time = seek_time
+            end_time = None if not max_duration else (seek_time + max_duration)
+            
+            time_range = {'start_time': start_time}
+            if end_time:
+                time_range['end_time'] = end_time
+                
+            download_range['ranges'].append(time_range)
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        
+        if os.path.exists(video_path):
+            logger.info(f"Successfully downloaded video to {video_path}")
+            youtube_cache[url] = video_path
+            return video_path
+        else:
+            logger.error(f"Failed to download video: file not found")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error downloading YouTube video: {e}")
+        return None
+
+def clean_youtube_cache(max_size_gb=5):
+    """Clean up old downloaded videos if cache exceeds maximum size"""
+    try:
+        # Calculate current cache size
+        total_size = 0
+        files = []
+        
+        for file in os.listdir(TEMP_VIDEO_DIR):
+            if file.endswith('.mp4'):
+                file_path = os.path.join(TEMP_VIDEO_DIR, file)
+                file_size = os.path.getsize(file_path)
+                files.append((file_path, os.path.getmtime(file_path), file_size))
+                total_size += file_size
+        
+        # Convert to GB
+        total_size_gb = total_size / (1024**3)
+        
+        if total_size_gb > max_size_gb:
+            logger.info(f"YouTube cache size ({total_size_gb:.2f} GB) exceeds limit ({max_size_gb} GB). Cleaning up...")
+            
+            # Sort by modification time (oldest first)
+            files.sort(key=lambda x: x[1])
+            
+            # Delete oldest files until under limit
+            for file_path, _, file_size in files:
+                if total_size_gb <= max_size_gb:
+                    break
+                    
+                try:
+                    os.remove(file_path)
+                    logger.info(f"Removed old cached video: {file_path}")
+                    
+                    # Update size
+                    total_size -= file_size
+                    total_size_gb = total_size / (1024**3)
+                    
+                    # Remove from cache dictionary if present
+                    for url, path in youtube_cache.items():
+                        if path == file_path:
+                            del youtube_cache[url]
+                            break
+                            
+                except Exception as e:
+                    logger.error(f"Error removing cached file {file_path}: {e}")
+    
+    except Exception as e:
+        logger.error(f"Error cleaning YouTube cache: {e}")
 
 def is_recent_duplicate(camera_id: str, detection_label: str, current_time: datetime) -> bool:
     """Check if this detection is a duplicate within the last 5 minutes"""
@@ -93,6 +211,8 @@ class VideoProcessor:
         self.last_processed_frame = None  # Keep the last frame for paused state
         self.detection_count = 0  # Count detections
         self.last_detection_log = 0  # Timestamp of last detection log
+        self.prefetch_buffer = Queue(maxsize=30)  # Buffer for prefetched frames
+        self.current_video_path = None  # Path to current video file
         
         try:
             logger.info(f"Loading YOLO model from {model_path}")
@@ -114,12 +234,60 @@ class VideoProcessor:
         logger.info("Resuming video processing")
         self.pause_flag.clear()
 
+    def _frame_prefetcher(self, cap: cv2.VideoCapture) -> None:
+        """Prefetch frames into a buffer for smoother playback"""
+        frame_count = 0
+        last_frame_time = time.time()
+        consecutive_failures = 0
+        max_failures = 5
+        
+        logger.info("Starting frame prefetcher thread")
+        
+        while not self.stop_flag.is_set():
+            try:
+                # If buffer is full, sleep briefly
+                if self.prefetch_buffer.full():
+                    time.sleep(0.01)
+                    continue
+                
+                # Read frame
+                ret, frame = cap.read()
+                if not ret:
+                    consecutive_failures += 1
+                    logger.warning(f"Prefetcher: Failed to read frame ({consecutive_failures}/{max_failures})")
+                    if consecutive_failures >= max_failures:
+                        logger.error("Prefetcher: Too many consecutive failures, breaking")
+                        break
+                    time.sleep(0.1)
+                    continue
+                
+                # Reset failures counter and add to buffer
+                consecutive_failures = 0
+                frame_count += 1
+                last_frame_time = time.time()
+                
+                # Add frame to prefetch buffer
+                try:
+                    self.prefetch_buffer.put((frame, time.time()), timeout=1)
+                except Exception as e:
+                    logger.error(f"Prefetcher: Error adding to buffer: {e}")
+                
+            except Exception as e:
+                logger.error(f"Frame prefetcher error: {e}")
+                break
+                
+        logger.info("Frame prefetcher thread exiting")
+        
     def _frame_producer(self, cap: cv2.VideoCapture) -> None:
         frame_count = 0
         last_frame_time = time.time()
         consecutive_failures = 0
         max_failures = 5  # Maximum number of consecutive failures before breaking
         last_frame = None  # Store the last successfully read frame
+        
+        # Start prefetcher thread for smoother playback
+        prefetcher_thread = threading.Thread(target=self._frame_prefetcher, args=(cap,), daemon=True)
+        prefetcher_thread.start()
 
         while not self.stop_flag.is_set():
             try:
@@ -162,7 +330,15 @@ class VideoProcessor:
                 if time_diff < self.frame_time:
                     time.sleep(self.frame_time - time_diff)
 
-                ret, frame = cap.read()
+                # Try to get frame from prefetch buffer first
+                try:
+                    frame, timestamp = self.prefetch_buffer.get_nowait()
+                    ret = True
+                except Empty:
+                    # Fall back to direct capture if buffer is empty
+                    ret, frame = cap.read()
+                    timestamp = time.time()
+                
                 if not ret:
                     consecutive_failures += 1
                     logger.warning(f"Failed to read frame ({consecutive_failures}/{max_failures})")
@@ -327,14 +503,25 @@ class VideoProcessor:
                 logger.info(f"Opening local camera at index {stream_source}")
             elif input_type == "youtube_link":
                 logger.info("Processing YouTube link")
-                ydl_opts = {
-                    'format': 'best[ext=mp4]',
-                    'quiet': True,
-                    'youtube_include_dash_manifest': False
-                }
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(input_value, download=False)
-                    stream_source = info['url']
+                
+                # Attempt to download the video first for better performance
+                video_path = download_youtube_video(input_value, seek_time)
+                
+                if video_path and os.path.exists(video_path):
+                    logger.info(f"Using downloaded video file: {video_path}")
+                    stream_source = video_path
+                    self.current_video_path = video_path
+                else:
+                    # Fall back to streaming if download fails
+                    logger.warning("Downloaded video not available, falling back to streaming")
+                    ydl_opts = {
+                        'format': 'best[ext=mp4]',
+                        'quiet': True,
+                        'youtube_include_dash_manifest': False
+                    }
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(input_value, download=False)
+                        stream_source = info['url']
             else:
                 # RTSP URL case
                 stream_source = input_value
@@ -357,7 +544,7 @@ class VideoProcessor:
             logger.info(f"Video FPS: {self.fps}")
 
             # Handle seeking for video files
-            if seek_time > 0 and input_type != "manual":
+            if seek_time > 0 and input_type != "manual" and not self.current_video_path:
                 frame_number = int(seek_time * self.fps)
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
 
@@ -411,6 +598,13 @@ class VideoProcessor:
             logger.info("Stopping stream processing")
             self.stop_flag.set()
             
+            # Clean up prefetch buffer
+            while not self.prefetch_buffer.empty():
+                try:
+                    self.prefetch_buffer.get_nowait()
+                except Empty:
+                    break
+            
             # Clean up threads
             if 'producer_thread' in locals():
                 producer_thread.join(timeout=5)
@@ -420,6 +614,10 @@ class VideoProcessor:
             # Release camera/video capture
             if cap is not None:
                 cap.release()
+            
+            # Clean up YouTube cache if it's getting too large
+            if input_type == "youtube_link":
+                threading.Thread(target=clean_youtube_cache, daemon=True).start()
 
     def __del__(self):
         self.stop_flag.set()
@@ -583,6 +781,21 @@ def get_connected_cameras(verbose=True):
 
 # Initialize the processor when module is imported
 initialize_processor()
+
+# Run periodic YouTube cache cleanup
+def periodic_cache_cleanup():
+    """Run periodic cleanup of YouTube cache in a background thread"""
+    while True:
+        try:
+            # Clean cache every hour
+            time.sleep(3600)
+            clean_youtube_cache()
+        except Exception as e:
+            logger.error(f"Error in periodic cache cleanup: {e}")
+
+# Start periodic cache cleanup in a daemon thread
+cleanup_thread = threading.Thread(target=periodic_cache_cleanup, daemon=True)
+cleanup_thread.start()
 
 # Export the necessary functions
 __all__ = ['process_stream', 'get_connected_cameras', 'pause_stream', 'resume_stream']
