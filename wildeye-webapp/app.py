@@ -24,6 +24,8 @@ import cv2
 import gc
 import numpy as np
 import traceback
+from flask import Response
+from call_service import create_call_webhook
 from warning_system import (
     get_all_warnings, 
     acknowledge_warning, 
@@ -715,7 +717,6 @@ def notification_settings():
     try:
         # Import required functions from sms_service
         from sms_service import get_available_carriers, save_carrier_preference
-
         # Get available carriers for the dropdown
         carriers = get_available_carriers()
         
@@ -729,11 +730,18 @@ def notification_settings():
                 'sms': {
                     'enabled': 'sms_enabled' in request.form,
                     'recipient': request.form.get('sms_recipient', ''),
+                    'country_code': request.form.get('country_code', '+91'),  # Default to India if not specified
                     'carrier': request.form.get('sms_carrier', 'default')
                 },
                 'telegram': {
                     'enabled': 'telegram_enabled' in request.form,
                     'chat_id': request.form.get('telegram_chat_id', '')
+                },
+                'call': {
+                    'enabled': 'call_enabled' in request.form,
+                    'recipient': request.form.get('call_recipient', ''),
+                    'country_code': request.form.get('country_code_call', '+91'),  # Default to India if not specified
+                    'threshold': request.form.get('call_threshold', 'high')  # Default to high severity only
                 },
                 'owner_uid': user['uid']  # Add user ID to preferences
             }
@@ -760,6 +768,18 @@ def notification_settings():
         
         if doc.exists:
             preferences = doc.to_dict()
+            # Make sure SMS has country_code field
+            if 'sms' in preferences and 'country_code' not in preferences['sms']:
+                preferences['sms']['country_code'] = '+91'  # Default to India
+                
+            # Make sure call settings exist
+            if 'call' not in preferences:
+                preferences['call'] = {
+                    'enabled': False,
+                    'recipient': preferences.get('sms', {}).get('recipient', ''),  # Default to SMS number
+                    'country_code': preferences.get('sms', {}).get('country_code', '+91'),  # Default to SMS country code
+                    'threshold': 'high'  # Default to high severity only
+                }
         else:
             # Default preferences
             preferences = {
@@ -770,11 +790,18 @@ def notification_settings():
                 'sms': {
                     'enabled': False,
                     'recipient': '',
+                    'country_code': '+91',  # Default to India
                     'carrier': 'default'
                 },
                 'telegram': {
                     'enabled': False,
                     'chat_id': ''
+                },
+                'call': {
+                    'enabled': False,
+                    'recipient': '',
+                    'country_code': '+91',  # Default to India
+                    'threshold': 'high'  # Default to high severity only
                 },
                 'owner_uid': user['uid']
             }
@@ -789,6 +816,7 @@ def notification_settings():
         )
     except Exception as e:
         logger.error(f"Error with notification settings: {e}")
+        logger.error(traceback.format_exc())
         return render_template(
             "notification_settings.html", 
             error=f"Error: {str(e)}",
@@ -1224,6 +1252,40 @@ def cleanup_streams():
             gc.collect()
         except:
             pass
+@app.route("/call_webhook", methods=["POST", "GET"])
+def call_webhook():
+    """
+    Webhook for Twilio voice calls.
+    Returns TwiML instructions for the call.
+    """
+    response = create_call_webhook()
+    return Response(response, mimetype='text/xml')
+
+@app.route("/call_status_callback", methods=["POST"])
+def call_status_callback():
+    """
+    Callback URL for Twilio to report call status updates.
+    """
+    try:
+        call_sid = request.form.get('CallSid')
+        call_status = request.form.get('CallStatus')
+        call_duration = request.form.get('CallDuration')
+        
+        logger.info(f"Call status update - SID: {call_sid}, Status: {call_status}, Duration: {call_duration}s")
+        
+        # If you want to store call status in the database:
+        # if db is not None and call_sid:
+        #     db.collection('call_logs').document(call_sid).set({
+        #         'call_sid': call_sid,
+        #         'status': call_status,
+        #         'duration': call_duration,
+        #         'timestamp': datetime.now()
+        #     }, merge=True)
+        
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Error processing call status callback: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     if not is_running_from_reloader():

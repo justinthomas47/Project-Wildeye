@@ -10,6 +10,8 @@ from datetime import datetime
 from typing import Dict, Optional, List
 from telegram_service import send_telegram_notification
 from email_service import send_email  # Import the enhanced email function
+from sms_service import send_sms as send_sms_service
+from call_service import make_call, should_call_for_detection  # Import the call service
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -101,7 +103,8 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
             'notification_status': {
                 'email': False,
                 'sms': False,
-                'telegram': False
+                'telegram': False,
+                'call': False                           # Add call status
             },
             'mobile_number': detection_data.get('mobile_number', ''),
             'owner_uid': owner_uid  # Add owner UID to link warning to user
@@ -172,7 +175,8 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
     notification_status = {
         'email': False,
         'sms': False,
-        'telegram': False
+        'telegram': False,
+        'call': False  # Add call status to notification status
     }
     
     # Use formatted_date if available, otherwise format the timestamp
@@ -214,10 +218,13 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
         try:
             # Use camera's mobile number if available, otherwise use default
             mobile_number = warning.get('mobile_number') or preferences.get('sms', {}).get('recipient')
+            country_code = preferences.get('sms', {}).get('country_code', '+91')  # Default to India code if not specified
             if mobile_number:
-                notification_status['sms'] = send_sms(
+                from sms_service import send_sms as send_sms_service
+                notification_status['sms'] = send_sms_service(
                     recipient=mobile_number,
-                    message=message
+                    message=message,
+                    country_code=country_code 
                 )
         except Exception as e:
             logger.error(f"Error sending SMS notification: {e}")
@@ -235,6 +242,34 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
             )
         except Exception as e:
             logger.error(f"Error sending Telegram notification: {e}")
+            
+    # Make voice call if enabled and the detection meets the threshold criteria
+    if preferences.get('call', {}).get('enabled', False) and should_call_for_detection(warning, preferences):
+        try:
+            # Use camera's mobile number if available, otherwise use default from call preferences
+            mobile_number = warning.get('mobile_number') or preferences.get('call', {}).get('recipient')
+            
+            # If no call-specific number, try the SMS number as fallback
+            if not mobile_number:
+                mobile_number = preferences.get('sms', {}).get('recipient')
+                
+            # Format with country code if needed
+            if mobile_number and preferences.get('call', {}).get('country_code'):
+                country_code = preferences.get('call', {}).get('country_code')
+                # Only add country code if it doesn't already have one
+                if not mobile_number.startswith('+'):
+                    # Remove leading zeros if present
+                    mobile_number = mobile_number.lstrip('0')
+                    # Add country code
+                    mobile_number = f"{country_code}{mobile_number}"
+            
+            if mobile_number:
+                notification_status['call'] = make_call(
+                    recipient=mobile_number,
+                    detection_data=warning
+                )
+        except Exception as e:
+            logger.error(f"Error making call notification: {e}")
     
     return notification_status
 
@@ -408,6 +443,12 @@ def get_notification_preferences(db, user_id: str = None) -> Dict:
             'telegram': {
                 'enabled': False,
                 'chat_id': TELEGRAM_CHAT_ID
+            },
+            'call': {
+                'enabled': False,
+                'recipient': '',
+                'country_code': '+91',  # Default to India
+                'threshold': 'high'     # Options: 'high', 'medium', 'all'
             }
         }
         
@@ -421,7 +462,17 @@ def get_notification_preferences(db, user_id: str = None) -> Dict:
         doc = doc_ref.get()
         
         if doc.exists:
-            return doc.to_dict()
+            preferences = doc.to_dict()
+            
+            # Ensure call settings exist in older preference records
+            if 'call' not in preferences:
+                preferences['call'] = default_preferences['call']
+                # If SMS is enabled, use that number for calls by default
+                if preferences.get('sms', {}).get('enabled', False):
+                    preferences['call']['recipient'] = preferences.get('sms', {}).get('recipient', '')
+                    preferences['call']['country_code'] = preferences.get('sms', {}).get('country_code', '+91')
+                
+            return preferences
         else:
             # Create default settings
             if user_id:
@@ -515,26 +566,37 @@ def test_notification_channels(db, user_id: str) -> Dict:
         
         test_message = f"This is a test notification from WildEye at {formatted_date}. If you're receiving this, your notification setup is working correctly."
         
+        # For call testing, we'll simulate a medium severity detection
         test_warning = {
             'type': 'Test Alert',
             'detection_label': 'Test Alert',
             'camera_name': 'Test Camera',
-            'severity': 'low',
+            'severity': 'medium',  # Use medium severity for testing
             'timestamp': current_time,
             'formatted_timestamp': formatted_time,
             'formatted_date': formatted_date,
             'google_maps_link': '',
             'screenshot_url': 'https://via.placeholder.com/800x600.png?text=WildEye+Test',
-            'mobile_number': preferences.get('sms', {}).get('recipient', '')
+            'mobile_number': preferences.get('sms', {}).get('recipient', '') or preferences.get('call', {}).get('recipient', '')
         }
         
-        notification_results = send_notifications(test_warning, preferences)
+        # Create temporary preferences for testing calls
+        # For testing purposes, if call is enabled, we'll force the threshold to 'all'
+        # so the test call will be made regardless of the normal threshold setting
+        test_preferences = preferences.copy()
+        if test_preferences.get('call', {}).get('enabled', False):
+            if 'call' not in test_preferences:
+                test_preferences['call'] = {}
+            test_preferences['call']['threshold'] = 'all'
+        
+        notification_results = send_notifications(test_warning, test_preferences)
         
         return {
             'success': True,
             'email': notification_results['email'],
             'sms': notification_results['sms'],
             'telegram': notification_results['telegram'],
+            'call': notification_results['call'],
             'message': 'Test notifications sent'
         }
     except Exception as e:

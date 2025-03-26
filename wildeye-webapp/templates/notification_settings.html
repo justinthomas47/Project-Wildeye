@@ -10,6 +10,11 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <title>WildEye - Notification Settings</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- Add intl-tel-input CSS and JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/intlTelInput.min.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,6 +65,22 @@
             left: calc(100% - 2px);
             transform: translateX(-100%);
         }
+
+        /* Fix for intl-tel-input with Tailwind */
+        .iti {
+            width: 100%;
+        }
+
+        .iti__flag {
+            background-image: url("https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/img/flags.png");
+        }
+
+        @media (-webkit-min-device-pixel-ratio: 2),
+        (min-resolution: 192dpi) {
+            .iti__flag {
+                background-image: url("https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/img/flags@2x.png");
+            }
+        }
     </style>
 </head>
 
@@ -94,6 +115,39 @@
                 <p class="text-gray-600 mb-6">Configure how you want to be notified when animals are detected.</p>
 
                 <form id="notificationForm" method="POST" action="{{ url_for('notification_settings') }}">
+                    <!-- Voice Call Notifications Section - MOVED TO TOP -->
+                    <div class="border-b border-gray-200 pb-6 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-800">Voice Call Notifications</h3>
+                                <p class="text-sm text-gray-600">Receive phone calls for critical wildlife detections
+                                </p>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="call_enabled" name="call_enabled" class="toggle-checkbox" {%
+                                    if preferences.call.enabled %}checked{% endif %}>
+                                <label for="call_enabled" class="toggle-label">
+                                    <span class="toggle-button"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="call-settings {% if not preferences.call.enabled %}opacity-50{% endif %}">
+                            <div class="mb-4">
+                                <label for="call_recipient" class="block text-sm font-medium text-gray-700 mb-1">Phone
+                                    Number for Calls</label>
+                                <input type="tel" id="call_recipient" name="call_recipient"
+                                    value="{{ preferences.call.recipient }}"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                <input type="hidden" id="country_code_call" name="country_code_call"
+                                    value="{{ preferences.call.country_code }}">
+                                <p class="text-xs text-gray-500 mt-1">Enter the phone number you want to receive voice calls on</p>
+                            </div>
+
+
+                        </div>
+                    </div>
+
                     <!-- Email Notifications -->
                     <div class="border-b border-gray-200 pb-6 mb-6">
                         <div class="flex justify-between items-center mb-4">
@@ -142,72 +196,14 @@
                                 <label for="sms_recipient" class="block text-sm font-medium text-gray-700 mb-1">Phone
                                     Number</label>
                                 <input type="tel" id="sms_recipient" name="sms_recipient"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    value="{{ preferences.sms.recipient }}" placeholder="+91XXXXXXXXXX">
-                                <p class="text-xs text-gray-500 mt-1">Include country code (e.g., +91 for India).
-                                    Camera-specific numbers take precedence when available.</p>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="sms_carrier" class="block text-sm font-medium text-gray-700 mb-1">Mobile
-                                    Carrier</label>
-                                <select id="sms_carrier" name="sms_carrier"
+                                    value="{{ preferences.sms.recipient }}"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="default" {% if preferences.sms.carrier=='default' %}selected{% endif
-                                        %}>Select your carrier</option>
-                                    <!-- Indian Carriers -->
-                                    <option value="jio" {% if preferences.sms.carrier=='jio' %}selected{% endif %}>
-                                        Reliance Jio</option>
-                                    <option value="airtel" {% if preferences.sms.carrier=='airtel' %}selected{% endif
-                                        %}>Airtel</option>
-                                    <option value="vodafoneidea" {% if preferences.sms.carrier=='vodafoneidea'
-                                        %}selected{% endif %}>Vodafone Idea (Vi)</option>
-                                    <option value="bsnl" {% if preferences.sms.carrier=='bsnl' %}selected{% endif %}>
-                                        BSNL</option>
-                                    <option value="mtnl" {% if preferences.sms.carrier=='mtnl' %}selected{% endif %}>
-                                        MTNL</option>
-                                    <!-- US Carriers -->
-                                    <option value="at&t" {% if preferences.sms.carrier=='at&t' %}selected{% endif %}>
-                                        AT&T</option>
-                                    <option value="verizon" {% if preferences.sms.carrier=='verizon' %}selected{% endif
-                                        %}>Verizon</option>
-                                    <option value="tmobile" {% if preferences.sms.carrier=='tmobile' %}selected{% endif
-                                        %}>T-Mobile</option>
-                                    <option value="sprint" {% if preferences.sms.carrier=='sprint' %}selected{% endif
-                                        %}>Sprint</option>
-                                    <option value="boost" {% if preferences.sms.carrier=='boost' %}selected{% endif %}>
-                                        Boost Mobile</option>
-                                    <option value="cricket" {% if preferences.sms.carrier=='cricket' %}selected{% endif
-                                        %}>Cricket</option>
-                                    <option value="uscellular" {% if preferences.sms.carrier=='uscellular' %}selected{%
-                                        endif %}>US Cellular</option>
-                                    <!-- Other International -->
-                                    <option value="vodafone" {% if preferences.sms.carrier=='vodafone' %}selected{%
-                                        endif %}>Vodafone</option>
-                                    <option value="orange" {% if preferences.sms.carrier=='orange' %}selected{% endif
-                                        %}>Orange</option>
-                                </select>
-                                <p class="text-xs text-gray-500 mt-1">Select your mobile carrier for SMS delivery. If
-                                    unsure, choose the closest option.</p>
-                            </div>
-
-                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                                <div class="flex">
-                                    <div class="flex-shrink-0">
-                                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd"
-                                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-yellow-700">
-                                            SMS notifications are sent using email-to-SMS gateways. Carrier selection is
-                                            important for delivery. Message and data rates may apply.
-                                        </p>
-                                    </div>
-                                </div>
+                                <input type="hidden" id="country_code" name="country_code"
+                                    value="{{ preferences.sms.country_code }}">
+                                <p class="text-xs text-gray-500 mt-1">Select your country code and enter your phone
+                                    number</p>
+                                <button type="button" id="copy_from_voice_call"
+                                    class="mt-2 text-xs text-blue-600 hover:text-blue-800">Copy from Voice Call</button>
                             </div>
                         </div>
                     </div>
@@ -264,6 +260,17 @@
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Notification Setup Guide</h2>
 
                 <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Voice Call Notifications</h3>
+                    <p class="text-gray-700 mb-3">To receive voice call notifications:</p>
+                    <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
+                        <li class="mb-1">Select your country code and enter your phone number</li>
+                        <li class="mb-1">Enter your preferred phone number for receiving calls</li>
+                        <li class="mb-1">Make sure the toggle is enabled</li>
+                        <li>Call alerts will be sent for critical wildlife detections</li>
+                    </ol>
+                </div>
+
+                <div class="mb-6">
                     <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Email Notifications</h3>
                     <p class="text-gray-700 mb-3">To receive email notifications:</p>
                     <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
@@ -277,7 +284,8 @@
                     <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up SMS Notifications</h3>
                     <p class="text-gray-700 mb-3">To receive SMS notifications:</p>
                     <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                        <li class="mb-1">Enter your mobile number with country code (e.g., +91XXXXXXXXXX)</li>
+                        <li class="mb-1">Select your country code from the dropdown</li>
+                        <li class="mb-1">Enter your phone number</li>
                         <li class="mb-1">Make sure the toggle is enabled</li>
                         <li class="mb-1">You can also set camera-specific phone numbers when adding cameras</li>
                         <li>SMS alerts will be sent whenever an animal is detected</li>
@@ -302,7 +310,89 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Toggle for email settings
+            // Initialize intl-tel-input for SMS
+            var smsInput = document.querySelector("#sms_recipient");
+            var smsIti = window.intlTelInput(smsInput, {
+                initialCountry: "in", // Default to India
+                preferredCountries: ["in", "us", "gb", "ca", "au"],
+                separateDialCode: true,
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/utils.js",
+            });
+
+            // Initialize intl-tel-input for Call
+            var callInput = document.querySelector("#call_recipient");
+            var callIti = window.intlTelInput(callInput, {
+                initialCountry: "in", // Default to India
+                preferredCountries: ["in", "us", "gb", "ca", "au"],
+                separateDialCode: true,
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/utils.js",
+            });
+
+            // Set initial values if preferences exist
+            if (document.getElementById('country_code').value) {
+                try {
+                    // Try to initialize with saved country code
+                    var countryCode = document.getElementById('country_code').value;
+                    var countryData = smsIti.getSelectedCountryData();
+                    if (countryCode) {
+                        // Remove the '+' if present
+                        if (countryCode.startsWith('+')) {
+                            countryCode = countryCode.substring(1);
+                        }
+                        smsIti.setCountry(getCountryCodeByDialCode(countryCode));
+                    }
+                } catch (e) {
+                    console.log("Error setting initial country for SMS", e);
+                }
+            }
+
+            if (document.getElementById('country_code_call').value) {
+                try {
+                    // Try to initialize with saved country code
+                    var countryCodeCall = document.getElementById('country_code_call').value;
+                    if (countryCodeCall) {
+                        // Remove the '+' if present
+                        if (countryCodeCall.startsWith('+')) {
+                            countryCodeCall = countryCodeCall.substring(1);
+                        }
+                        callIti.setCountry(getCountryCodeByDialCode(countryCodeCall));
+                    }
+                } catch (e) {
+                    console.log("Error setting initial country for Call", e);
+                }
+            }
+
+            // Helper function to convert dial code to country code
+            function getCountryCodeByDialCode(dialCode) {
+                var countryData = window.intlTelInputGlobals.getCountryData();
+                for (var i = 0; i < countryData.length; i++) {
+                    if (countryData[i].dialCode == dialCode) {
+                        return countryData[i].iso2;
+                    }
+                }
+                return "in"; // Default to India if not found
+            }
+
+            // Set hidden field values on form submit
+            document.getElementById('notificationForm').addEventListener('submit', function () {
+                if (smsIti) {
+                    document.getElementById('country_code').value =
+                        '+' + smsIti.getSelectedCountryData().dialCode;
+                }
+
+                if (callIti) {
+                    document.getElementById('country_code_call').value =
+                        '+' + callIti.getSelectedCountryData().dialCode;
+                }
+            });
+
+            // Copy from Voice Call button
+            document.getElementById('copy_from_voice_call').addEventListener('click', function () {
+                smsInput.value = callInput.value;
+                smsIti.setCountry(callIti.getSelectedCountryData().iso2);
+            });
+
+            // Toggle sections opacity based on checkboxes
             const emailEnabledCheckbox = document.getElementById('email_enabled');
             const emailSettings = document.querySelector('.email-settings');
 
@@ -310,7 +400,6 @@
                 emailSettings.classList.toggle('opacity-50', !this.checked);
             });
 
-            // Toggle for SMS settings
             const smsEnabledCheckbox = document.getElementById('sms_enabled');
             const smsSettings = document.querySelector('.sms-settings');
 
@@ -318,12 +407,18 @@
                 smsSettings.classList.toggle('opacity-50', !this.checked);
             });
 
-            // Toggle for Telegram settings
             const telegramEnabledCheckbox = document.getElementById('telegram_enabled');
             const telegramSettings = document.querySelector('.telegram-settings');
 
             telegramEnabledCheckbox.addEventListener('change', function () {
                 telegramSettings.classList.toggle('opacity-50', !this.checked);
+            });
+
+            const callEnabledCheckbox = document.getElementById('call_enabled');
+            const callSettings = document.querySelector('.call-settings');
+
+            callEnabledCheckbox.addEventListener('change', function () {
+                callSettings.classList.toggle('opacity-50', !this.checked);
             });
         });
     </script>
