@@ -18,7 +18,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from process_stream import process_stream, pause_stream, resume_stream
 from werkzeug.serving import is_running_from_reloader
-from detection_handler import init_drive_service as init_detection_drive
+from process_stream import init_drive_service as init_detection_drive
 import logging
 import cv2
 import gc
