@@ -665,10 +665,20 @@ def warnings():
         
         for doc in warnings_ref.stream():
             warning_data = doc.to_dict()
-            # Only include warnings for cameras owned by this user
-            if warning_data.get('camera_id') in user_cameras:
-                all_warnings.append(warning_data)
+            
+            # For broadcast alerts, check if this user is the intended recipient
+            if warning_data.get('is_broadcast', False):
+                # Only show broadcast warnings where this user is the intended recipient (owner_uid)
+                if warning_data.get('owner_uid') == user['uid']:
+                    logger.info(f"Including broadcast warning {warning_data.get('warning_id')} for user {user['uid']}")
+                    all_warnings.append(warning_data)
+            else:
+                # For direct alerts, check if the camera belongs to this user
+                if warning_data.get('camera_id') in user_cameras:
+                    logger.info(f"Including direct warning {warning_data.get('warning_id')} for user {user['uid']}")
+                    all_warnings.append(warning_data)
         
+        logger.info(f"Found {len(all_warnings)} warnings total for user {user['uid']}")
         return render_template("warnings.html", warnings=all_warnings, current_page='warnings')
     except Exception as e:
         logger.error(f"Error loading warnings: {e}")
@@ -703,7 +713,7 @@ def resolve_warning_route(warning_id):
         logger.error(f"Error resolving warning: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route("/notification_settings", methods=["GET", "POST"])
+@app.route("/notification_settings", methods=["GET"])
 @login_required
 def notification_settings():
     """Page to manage notification settings"""
@@ -715,54 +725,12 @@ def notification_settings():
         return redirect(url_for('index'))
         
     try:
-        # Import required functions from sms_service
-        from sms_service import get_available_carriers, save_carrier_preference
+        # Import required functions from sms_service for carriers dropdown
+        from sms_service import get_available_carriers
         # Get available carriers for the dropdown
         carriers = get_available_carriers()
         
-        if request.method == "POST":
-            # Process form submission
-            preferences = {
-                'email': {
-                    'enabled': 'email_enabled' in request.form,
-                    'recipient': request.form.get('email_recipient', '')
-                },
-                'sms': {
-                    'enabled': 'sms_enabled' in request.form,
-                    'recipient': request.form.get('sms_recipient', ''),
-                    'country_code': request.form.get('country_code', '+91'),  # Default to India if not specified
-                    'carrier': request.form.get('sms_carrier', 'default')
-                },
-                'telegram': {
-                    'enabled': 'telegram_enabled' in request.form,
-                    'chat_id': request.form.get('telegram_chat_id', '')
-                },
-                'call': {
-                    'enabled': 'call_enabled' in request.form,
-                    'recipient': request.form.get('call_recipient', ''),
-                    'country_code': request.form.get('country_code_call', '+91'),  # Default to India if not specified
-                    'threshold': request.form.get('call_threshold', 'high')  # Default to high severity only
-                },
-                'owner_uid': user['uid']  # Add user ID to preferences
-            }
-            
-            # Save preferences to user-specific document
-            doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
-            doc_ref.set(preferences)
-            
-            # Also save carrier preference for SMS service
-            if 'sms_enabled' in request.form and request.form.get('sms_carrier'):
-                save_carrier_preference(db, user['uid'], request.form.get('sms_carrier'))
-            
-            return render_template(
-                "notification_settings.html", 
-                preferences=preferences, 
-                carriers=carriers,
-                success="Notification settings updated successfully",
-                current_page='settings'
-            )
-        
-        # GET request - show current settings
+        # Get current settings
         doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
         doc = doc_ref.get()
         
@@ -779,6 +747,16 @@ def notification_settings():
                     'recipient': preferences.get('sms', {}).get('recipient', ''),  # Default to SMS number
                     'country_code': preferences.get('sms', {}).get('country_code', '+91'),  # Default to SMS country code
                     'threshold': 'high'  # Default to high severity only
+                }
+            
+            # Make sure broadcast settings exist
+            if 'broadcast' not in preferences:
+                preferences['broadcast'] = {
+                    'enabled': False,
+                    'location': '',
+                    'radius': 10,  # Default radius of 10km
+                    'animals': ['all'],  # Default to all animals
+                    'methods': ['email', 'sms']  # Default notification methods
                 }
         else:
             # Default preferences
@@ -803,6 +781,13 @@ def notification_settings():
                     'country_code': '+91',  # Default to India
                     'threshold': 'high'  # Default to high severity only
                 },
+                'broadcast': {
+                    'enabled': False,
+                    'location': '',
+                    'radius': 10,  # Default radius of 10km
+                    'animals': ['all'],  # Default to all animals
+                    'methods': ['email', 'sms']  # Default notification methods
+                },
                 'owner_uid': user['uid']
             }
             # Create default settings
@@ -823,6 +808,136 @@ def notification_settings():
             carriers=get_available_carriers() if 'get_available_carriers' in locals() else [],
             current_page='settings'
         )
+
+@app.route("/update_notification_settings", methods=["POST"])
+@login_required
+def update_notification_settings():
+    """API endpoint to update notification settings via AJAX"""
+    if db is None:
+        return jsonify({"success": False, "error": "Firebase not initialized"}), 500
+        
+    user = get_current_user()
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+        
+    try:
+        # Get request data
+        settings_update = request.json
+        if not settings_update:
+            return jsonify({"success": False, "error": "No settings provided"}), 400
+            
+        # Log the received settings for debugging
+        logger.info(f"Received settings update: {settings_update}")
+            
+        # Get existing settings
+        doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            preferences = doc.to_dict()
+        else:
+            # Create default settings if none exist
+            preferences = {
+                'email': {
+                    'enabled': False,
+                    'recipient': user.get('email', '')
+                },
+                'sms': {
+                    'enabled': False,
+                    'recipient': '',
+                    'country_code': '+91'
+                },
+                'telegram': {
+                    'enabled': False,
+                    'chat_id': ''
+                },
+                'call': {
+                    'enabled': False,
+                    'recipient': '',
+                    'country_code': '+91',
+                    'threshold': 'high'
+                },
+                'broadcast': {
+                    'enabled': False,
+                    'location': '',
+                    'radius': 10,
+                    'animals': ['all'],
+                    'methods': ['email', 'sms']
+                },
+                'owner_uid': user['uid']
+            }
+        
+        # Update settings
+        for key, value in settings_update.items():
+            parts = key.split('.')
+            
+            if len(parts) == 1:
+                # Top-level setting
+                preferences[parts[0]] = value
+            elif len(parts) == 2:
+                # Nested setting
+                if parts[0] not in preferences:
+                    preferences[parts[0]] = {}
+                    
+                # Special handling for broadcast.location to ensure it's always a string
+                if parts[0] == 'broadcast' and parts[1] == 'location':
+                    logger.info(f"Updating broadcast location: {value}")
+                    # If value is None or empty, use an empty string
+                    preferences[parts[0]][parts[1]] = str(value) if value else ''
+                else:
+                    preferences[parts[0]][parts[1]] = value
+            else:
+                # Handle arrays specially
+                if parts[0] == 'broadcast' and parts[1] in ['animals', 'methods']:
+                    preferences['broadcast'][parts[1]] = value
+        
+        # Save updated preferences
+        logger.info(f"Saving updated preferences to database")
+        doc_ref.set(preferences, merge=True)
+        
+        # If SMS carrier is being updated, save that separately
+        if 'sms' in settings_update and 'carrier' in settings_update['sms']:
+            try:
+                from sms_service import save_carrier_preference
+                save_carrier_preference(db, user['uid'], settings_update['sms']['carrier'])
+            except Exception as e:
+                logger.warning(f"Failed to save SMS carrier preference: {e}")
+        
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Error updating notification settings: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({"success": False, "error": str(e)}), 500
+        
+# Helper functions for processing broadcast alert settings
+def get_selected_animals(form_data):
+    """Extract selected animals from form data"""
+    if 'animal_all' in form_data:
+        return ['all']  # If "all" is selected, we don't need individual selections
+    
+    animals = []
+    animal_types = ['tiger', 'leopard', 'elephant', 'bear', 'wildboar']
+    
+    for animal in animal_types:
+        if f'animal_{animal}' in form_data:
+            animals.append(animal)
+    
+    return animals if animals else ['all']  # Default to all if nothing selected
+
+def get_broadcast_methods(form_data):
+    """Extract selected notification methods for broadcast alerts"""
+    methods = []
+    
+    if 'broadcast_email' in form_data:
+        methods.append('email')
+    if 'broadcast_sms' in form_data:
+        methods.append('sms')
+    if 'broadcast_telegram' in form_data:
+        methods.append('telegram')
+    if 'broadcast_call' in form_data:
+        methods.append('call')
+    
+    return methods if methods else ['email', 'sms']  # Default to email and SMS if nothing selected
 
 @app.route("/test_notifications", methods=["POST"])
 @login_required

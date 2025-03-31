@@ -1,15 +1,19 @@
 import logging
 import os
 import requests
+import re
 import time
+from typing import Dict, Optional, Union
 from datetime import datetime
-from typing import Dict, Optional, List
 import io
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Telegram credentials (load from environment variables)
+# Telegram API base URL
+TELEGRAM_API_URL = "https://api.telegram.org/bot{token}/{method}"
+
+# Get Telegram bot token from environment
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 EMERGENCY_CONTACT = os.environ.get('EMERGENCY_CONTACT', 'Forest Dept: XXX-XXX-XXXX')
@@ -121,6 +125,119 @@ A lion has been detected at {camera_name}.
 """
 }
 
+# Broadcast alert templates
+BROADCAST_TELEGRAM_TEMPLATES = {
+    'default': """
+🔔 *NEARBY ALERT*: Animal Detected {distance}km Away 🔔
+
+An unidentified animal has been detected {distance}km from your location.
+
+*General precautions:*
+• Be aware of your surroundings
+• Keep a safe distance if venturing outside
+• Contact local authorities if the animal approaches
+
+This alert was generated from another WildEye user's camera.
+""",
+    'tiger': """
+🚨 *URGENT DANGER*: Tiger Detected {distance}km Away 🚨
+
+A tiger has been detected {distance}km from your location.
+
+*IMMEDIATE ACTIONS RECOMMENDED:*
+• Stay alert and be cautious when outside
+• Keep all pets and livestock secured
+• Do NOT approach if sighted
+• Contact forest department immediately if sighted: {emergency_contact}
+
+⚠️ Tigers are apex predators and extremely dangerous
+This alert was generated from another WildEye user's camera.
+""",
+    'leopard': """
+🚨 *URGENT DANGER*: Leopard Detected {distance}km Away 🚨
+
+A leopard has been detected {distance}km from your location.
+
+*IMMEDIATE ACTIONS RECOMMENDED:*
+• Stay alert and be cautious when outside
+• Keep all pets and livestock secured
+• Do NOT approach if sighted
+• Contact forest department immediately if sighted: {emergency_contact}
+
+⚠️ Leopards can climb trees and buildings - be extra vigilant
+This alert was generated from another WildEye user's camera.
+""",
+    'elephant': """
+🚨 *WARNING*: Elephant Detected {distance}km Away 🚨
+
+An elephant has been detected {distance}km from your location.
+
+*Take these precautions:*
+• Be cautious when traveling in the area
+• Keep a significant distance if sighted
+• Do NOT approach - elephants require significant space
+• Contact forest department if sighted: {emergency_contact}
+
+⚠️ Elephants can cause significant property damage
+This alert was generated from another WildEye user's camera.
+""",
+    'bear': """
+🚨 *DANGER*: Bear Detected {distance}km Away 🚨
+
+A bear has been detected {distance}km from your location.
+
+*ACTIONS RECOMMENDED:*
+• Be cautious when traveling in the area
+• Secure food sources if camping or outdoors
+• Do NOT approach if sighted
+• Contact forest department immediately if sighted: {emergency_contact}
+
+⚠️ Bears are particularly dangerous if they feel threatened
+This alert was generated from another WildEye user's camera.
+""",
+    'wild boar': """
+🚨 *CAUTION*: Wild Boar Detected {distance}km Away 🚨
+
+A wild boar has been detected {distance}km from your location.
+
+*Take these precautions:*
+• Be cautious when traveling in the area
+• Keep pets supervised when outdoors
+• Wild boars may charge if threatened
+• Contact wildlife authorities if aggressive: {emergency_contact}
+
+This alert was generated from another WildEye user's camera.
+""",
+    'wild buffalo': """
+🚨 *DANGER*: Wild Buffalo Detected {distance}km Away 🚨
+
+A wild buffalo has been detected {distance}km from your location.
+
+*ACTIONS RECOMMENDED:*
+• Be extremely cautious when traveling in the area
+• Keep far away if sighted - wild buffaloes can be aggressive
+• Do NOT approach under any circumstances
+• Contact forest department immediately if sighted: {emergency_contact}
+
+⚠️ Wild buffaloes are unpredictable and dangerous
+This alert was generated from another WildEye user's camera.
+""",
+    'lion': """
+🚨 *EXTREME DANGER*: Lion Detected {distance}km Away 🚨
+
+A lion has been detected {distance}km from your location.
+
+*ACTIONS RECOMMENDED:*
+• Avoid traveling in the area if possible
+• Travel only in vehicles with closed windows
+• Do NOT approach under any circumstances
+• Contact emergency services immediately if sighted: {emergency_contact}
+
+⚠️ This is an extremely dangerous situation
+This alert was generated from another WildEye user's camera.
+"""
+}
+
 def format_date_dmy(date_obj):
     """
     Format a datetime object to day-month-year format with 12-hour time
@@ -135,25 +252,44 @@ def format_date_dmy(date_obj):
         return None
     return date_obj.strftime("%d-%m-%Y %I:%M:%S %p")
 
-def get_animal_telegram_template(animal_type: str) -> str:
+def get_animal_telegram_template(animal_type: str, is_broadcast: bool = False, distance: str = None) -> str:
     """
     Get the appropriate Telegram template for the specified animal type.
     
     Args:
         animal_type: The type of animal detected
+        is_broadcast: Whether this is a broadcast alert from another user's camera
+        distance: Distance from user's location (for broadcast alerts)
         
     Returns:
         str: Telegram message template for the animal
     """
     animal_type = animal_type.lower()
     
-    # Check for specific animal matches
-    for animal in ANIMAL_TELEGRAM_TEMPLATES:
-        if animal in animal_type:
-            return ANIMAL_TELEGRAM_TEMPLATES[animal]
-    
-    # Return default template if no match
-    return ANIMAL_TELEGRAM_TEMPLATES['default']
+    # Use broadcast templates for broadcast alerts
+    if is_broadcast:
+        templates = BROADCAST_TELEGRAM_TEMPLATES
+        # Default distance if not provided
+        distance = distance or "unknown"
+        
+        # Check for specific animal matches
+        for animal in templates:
+            if animal in animal_type:
+                return templates[animal].format(distance=distance, emergency_contact=EMERGENCY_CONTACT)
+        
+        # Return default template if no match
+        return templates['default'].format(distance=distance, emergency_contact=EMERGENCY_CONTACT)
+    else:
+        # Use regular templates for direct alerts
+        templates = ANIMAL_TELEGRAM_TEMPLATES
+        
+        # Check for specific animal matches
+        for animal in templates:
+            if animal in animal_type:
+                return templates[animal]
+        
+        # Return default template if no match
+        return templates['default']
 
 def convert_google_drive_url(url: str) -> str:
     """
@@ -442,6 +578,10 @@ def send_telegram_notification(chat_id: str, detection_data: Dict) -> bool:
             logger.warning("Missing Telegram credentials or chat ID")
             return False
             
+        # Check if this is a broadcast alert
+        is_broadcast = detection_data.get('is_broadcast', False)
+        distance = detection_data.get('distance', "unknown") if is_broadcast else None
+            
         # Get animal details
         animal_type = detection_data.get('detection_label', '')
         
@@ -488,13 +628,19 @@ def send_telegram_notification(chat_id: str, detection_data: Dict) -> bool:
         screenshot_url = detection_data.get('screenshot_url', '')
         
         # Get animal-specific template
-        template = get_animal_telegram_template(animal_type)
+        if is_broadcast:
+            template = get_animal_telegram_template(animal_type, is_broadcast=True, distance=distance)
+        else:
+            template = get_animal_telegram_template(animal_type)
         
         # Construct the message
-        message = template.format(
-            camera_name=camera_name,
-            emergency_contact=EMERGENCY_CONTACT
-        )
+        if is_broadcast:
+            message = template
+        else:
+            message = template.format(
+                camera_name=camera_name,
+                emergency_contact=EMERGENCY_CONTACT
+            )
         
         # Add date and time information separately
         message += f"\n*Date:* {date_str}"
@@ -606,6 +752,8 @@ def send_telegram_notification(chat_id: str, detection_data: Dict) -> bool:
         
     except Exception as e:
         logger.error(f"Failed to send Telegram notification: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return False
 
 def send_telegram_test(chat_id: str) -> bool:

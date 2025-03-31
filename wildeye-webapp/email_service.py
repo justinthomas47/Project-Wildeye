@@ -119,6 +119,107 @@ ANIMAL_EMAIL_TEMPLATES = {
     """
 }
 
+# Broadcast alert templates
+BROADCAST_EMAIL_TEMPLATES = {
+    'default': """
+        <h3>NEARBY WILDLIFE ALERT: Animal Detected {distance}km Away</h3>
+        <p>An animal has been detected {distance}km from your location.</p>
+        <p>General precautions when traveling in the area:</p>
+        <ul>
+            <li>Be aware of your surroundings</li>
+            <li>Keep a safe distance if you spot the animal</li>
+            <li>Contact local wildlife authorities if needed</li>
+        </ul>
+        <p><em>This alert was generated from another WildEye user's camera in your area.</em></p>
+    """,
+    'tiger': """
+        <h3>NEARBY DANGER: Tiger Detected {distance}km Away</h3>
+        <p>A tiger has been detected {distance}km from your location.</p>
+        <p>Take these precautions when traveling in the area:</p>
+        <ul>
+            <li>Be extremely vigilant and watchful</li>
+            <li>Travel in groups when possible</li>
+            <li>Keep all pets and livestock secured</li>
+            <li>Do NOT approach if sighted</li>
+            <li>Contact forest department immediately if sighted: {emergency_contact}</li>
+        </ul>
+        <p><em>This alert was generated from another WildEye user's camera in your area.</em></p>
+    """,
+    'leopard': """
+        <h3>NEARBY DANGER: Leopard Detected {distance}km Away</h3>
+        <p>A leopard has been detected {distance}km from your location.</p>
+        <p>Take these precautions when traveling in the area:</p>
+        <ul>
+            <li>Be extremely vigilant and watchful</li>
+            <li>Keep all pets and livestock secured</li>
+            <li>Do NOT approach if sighted</li>
+            <li>Contact forest department immediately if sighted: {emergency_contact}</li>
+            <li>Leopards can climb trees and buildings - be extra cautious in forested areas</li>
+        </ul>
+        <p><em>This alert was generated from another WildEye user's camera in your area.</em></p>
+    """,
+    'elephant': """
+        <h3>NEARBY WARNING: Elephant Detected {distance}km Away</h3>
+        <p>An elephant has been detected {distance}km from your location.</p>
+        <p>Take these precautions when traveling in the area:</p>
+        <ul>
+            <li>Be aware of your surroundings</li>
+            <li>Avoid sudden movements or loud noises if you spot elephants</li>
+            <li>Do NOT approach elephants - they require significant space</li>
+            <li>Contact forest department if sighted: {emergency_contact}</li>
+        </ul>
+        <p><em>This alert was generated from another WildEye user's camera in your area.</em></p>
+    """,
+    'bear': """
+        <h3>NEARBY DANGER: Bear Detected {distance}km Away</h3>
+        <p>A bear has been detected {distance}km from your location.</p>
+        <p>Take these precautions when traveling in the area:</p>
+        <ul>
+            <li>Be vigilant and watchful</li>
+            <li>Secure food and scented items if camping</li>
+            <li>Do NOT approach if sighted</li>
+            <li>Contact forest department immediately if sighted: {emergency_contact}</li>
+        </ul>
+        <p><em>This alert was generated from another WildEye user's camera in your area.</em></p>
+    """,
+    'wild boar': """
+        <h3>NEARBY CAUTION: Wild Boar Detected {distance}km Away</h3>
+        <p>A wild boar has been detected {distance}km from your location.</p>
+        <p>Take these precautions when traveling in the area:</p>
+        <ul>
+            <li>Be aware of your surroundings</li>
+            <li>Keep pets on leashes</li>
+            <li>Wild boars can charge if threatened</li>
+            <li>Contact wildlife authorities if the animal appears aggressive: {emergency_contact}</li>
+        </ul>
+        <p><em>This alert was generated from another WildEye user's camera in your area.</em></p>
+    """,
+    'wild buffalo': """
+        <h3>NEARBY DANGER: Wild Buffalo Detected {distance}km Away</h3>
+        <p>A wild buffalo has been detected {distance}km from your location.</p>
+        <p>Take these precautions when traveling in the area:</p>
+        <ul>
+            <li>Be extremely vigilant</li>
+            <li>Keep far away if sighted - wild buffaloes can be aggressive</li>
+            <li>Do NOT approach under any circumstances</li>
+            <li>Contact forest department immediately if sighted: {emergency_contact}</li>
+        </ul>
+        <p><em>This alert was generated from another WildEye user's camera in your area.</em></p>
+    """,
+    'lion': """
+        <h3>NEARBY EXTREME DANGER: Lion Detected {distance}km Away</h3>
+        <p>A lion has been detected {distance}km from your location.</p>
+        <p>Take these precautions when traveling in the area:</p>
+        <ul>
+            <li>Consider avoiding the area entirely</li>
+            <li>Travel only in vehicles with closed windows</li>
+            <li>Do NOT approach under any circumstances</li>
+            <li>Contact emergency services immediately if sighted: {emergency_contact}</li>
+        </ul>
+        <p><em>This alert was generated from another WildEye user's camera in your area.</em></p>
+    """
+}
+
 def format_date_dmy(date_obj):
     """
     Format a datetime object to day-month-year format with 12-hour time
@@ -133,25 +234,44 @@ def format_date_dmy(date_obj):
         return None
     return date_obj.strftime("%d-%m-%Y %I:%M:%S %p")
 
-def get_animal_email_template(animal_type: str) -> str:
+def get_animal_email_template(animal_type: str, is_broadcast: bool = False, distance: str = None) -> str:
     """
     Get the appropriate email template for the specified animal type.
     
     Args:
         animal_type: The type of animal detected
+        is_broadcast: Whether this is a broadcast alert from another user
+        distance: Distance from user's location (for broadcast alerts)
         
     Returns:
         str: HTML email template for the animal
     """
     animal_type = animal_type.lower()
     
-    # Check for specific animal matches
-    for animal in ANIMAL_EMAIL_TEMPLATES:
-        if animal in animal_type:
-            return ANIMAL_EMAIL_TEMPLATES[animal].format(emergency_contact=EMERGENCY_CONTACT)
-    
-    # Return default template if no match
-    return ANIMAL_EMAIL_TEMPLATES['default'].format(emergency_contact=EMERGENCY_CONTACT)
+    # Use broadcast templates for broadcast alerts
+    if is_broadcast:
+        templates = BROADCAST_EMAIL_TEMPLATES
+        
+        # Default distance if not provided
+        distance = distance or "unknown"
+        
+        # Check for specific animal matches
+        for animal in templates:
+            if animal in animal_type:
+                return templates[animal].format(emergency_contact=EMERGENCY_CONTACT, distance=distance)
+        
+        # Return default template if no match
+        return templates['default'].format(emergency_contact=EMERGENCY_CONTACT, distance=distance)
+    else:
+        templates = ANIMAL_EMAIL_TEMPLATES
+        
+        # Check for specific animal matches
+        for animal in templates:
+            if animal in animal_type:
+                return templates[animal].format(emergency_contact=EMERGENCY_CONTACT)
+        
+        # Return default template if no match
+        return templates['default'].format(emergency_contact=EMERGENCY_CONTACT)
 
 def attach_image(msg: MIMEMultipart, image_data: Union[str, bytes, BinaryIO], filename: str = "detection.jpg", embed_in_email: bool = True) -> Optional[str]:
     """
@@ -210,6 +330,7 @@ def attach_image(msg: MIMEMultipart, image_data: Union[str, bytes, BinaryIO], fi
 def send_email(recipient: str, subject: str, detection_data: Dict) -> bool:
     """
     Send an email notification with animal detection details.
+    Handles both direct alerts and broadcast alerts from other users.
     
     Args:
         recipient: Email recipient
@@ -242,8 +363,12 @@ def send_email(recipient: str, subject: str, detection_data: Dict) -> bool:
         if not animal_type:
             animal_type = 'unknown'
             
-        # Get animal specific precautions using existing templates
-        animal_email_content = get_animal_email_template(animal_type)
+        # Check if this is a broadcast alert
+        is_broadcast = detection_data.get('is_broadcast', False)
+        distance = detection_data.get('distance', 'unknown') if is_broadcast else None
+        
+        # Get animal specific precautions using templates (different for broadcast vs direct)
+        animal_email_content = get_animal_email_template(animal_type, is_broadcast, distance)
         
         # Format timestamp in day-month-year format
         timestamp_str = ""
@@ -343,27 +468,63 @@ def send_email(recipient: str, subject: str, detection_data: Dict) -> bool:
             embedded_image_cid = None
         
         # Basic text version (no HTML)
-        text_content = f"""
-        WildEye Alert: {animal_type} detected at {camera_name}
-        Date: {date_display}
-        Time: {time_display}
-        
-        {animal_type} has been detected near your camera at {camera_name}.
-        
-        PRECAUTIONS:
-        - Stay indoors and secure all doors and windows
-        - Do NOT approach the animal
-        - Contact authorities if needed
-        
-        {"Location: " + location_link if location_link else ""}
-        
-        This is an automated message from your WildEye system. Please check your dashboard for more details.
-        """
+        if is_broadcast:
+            text_content = f"""
+            WildEye Nearby Alert: {animal_type} detected {distance}km from your location
+            Date: {date_display}
+            Time: {time_display}
+            
+            BROADCAST ALERT: A {animal_type} has been detected {distance}km from your location by another WildEye user.
+            
+            PRECAUTIONS:
+            - Be vigilant when traveling in the area
+            - Do NOT approach if sighted
+            - Contact authorities if needed
+            
+            {"Location: " + location_link if location_link else ""}
+            
+            This is an automated message from the WildEye system. Please check your dashboard for more details.
+            """
+        else:
+            text_content = f"""
+            WildEye Alert: {animal_type} detected at {camera_name}
+            Date: {date_display}
+            Time: {time_display}
+            
+            {animal_type} has been detected near your camera at {camera_name}.
+            
+            PRECAUTIONS:
+            - Stay indoors and secure all doors and windows
+            - Do NOT approach the animal
+            - Contact authorities if needed
+            
+            {"Location: " + location_link if location_link else ""}
+            
+            This is an automated message from your WildEye system. Please check your dashboard for more details.
+            """
         
         # Get severity if available, otherwise set as low
         severity = detection_data.get('severity', 'low')
         
-        # HTML version with improvements
+        # HTML version with improvements - different for broadcast vs direct
+        if is_broadcast:
+            header_title = "🔔 WildEye Nearby Wildlife Alert"
+            header_text = "This automated alert has been generated for wildlife detected near your location."
+            alert_type = "NEARBY ALERT"
+            detection_text = f"{animal_type.title()} detected {distance}km from your location"
+            broadcast_banner = f"""
+              <div style="background-color: #e0f7fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 5px solid #00bcd4;">
+                <h3 style="margin-top: 0; color: #00838f;">Broadcast Alert</h3>
+                <p style="margin-bottom: 0;">This alert was generated from another WildEye user's camera {distance}km from your location.</p>
+              </div>
+            """
+        else:
+            header_title = "🚨 WildEye Wildlife Detection Alert"
+            header_text = "This automated alert has been generated by the WildEye wildlife monitoring system."
+            alert_type = "DETECTION ALERT"
+            detection_text = f"{animal_type.title()} detected at {camera_name}"
+            broadcast_banner = ""
+        
         html_body = f"""
         <html>
           <head>
@@ -390,12 +551,14 @@ def send_email(recipient: str, subject: str, detection_data: Dict) -> bool:
           <body>
             <div class="container">
               <div class="header">
-                <h2 style="margin-top: 0; margin-bottom: 10px;">🚨 WildEye Wildlife Detection Alert</h2>
-                <p style="margin-bottom: 0; opacity: 0.9;">This automated alert has been generated by the WildEye wildlife monitoring system.</p>
+                <h2 style="margin-top: 0; margin-bottom: 10px;">{header_title}</h2>
+                <p style="margin-bottom: 0; opacity: 0.9;">{header_text}</p>
               </div>
               
+              {broadcast_banner if is_broadcast else ""}
+              
               <div class="severity-{severity}">
-                <h3 style="margin-top: 0;">Alert Details</h3>
+                <h3 style="margin-top: 0;">{alert_type}</h3>
                 
                 <p><strong>Animal Detected:</strong> {animal_type.title()}</p>
                 
@@ -409,6 +572,8 @@ def send_email(recipient: str, subject: str, detection_data: Dict) -> bool:
                 </div>
                 
                 <p style="margin-bottom: 15px;"><strong>Severity:</strong> {severity.upper()}</p>
+                
+                {f'<p><strong>Distance:</strong> {distance}km from your location</p>' if is_broadcast else ''}
                 
                 <a href="#" class="view-button">View Full Details</a>
               </div>
@@ -447,25 +612,6 @@ def send_email(recipient: str, subject: str, detection_data: Dict) -> bool:
           </body>
         </html>
         """
-        
-        # Attach parts
-        part1 = MIMEText(text_content, 'plain')
-        part2 = MIMEText(html_body, 'html')
-        msg.attach(part1)
-        msg.attach(part2)
-        
-        # Connect to server and send email
-        with smtplib.SMTP(EMAIL_SERVER, EMAIL_PORT) as server:
-            server.starttls()
-            server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
-            server.send_message(msg)
-        
-        logger.info(f"Email notification about {animal_type} sent to {recipient}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Failed to send email: {e}")
-        return False
         
         # Attach parts
         part1 = MIMEText(text_content, 'plain')

@@ -3,15 +3,19 @@ import logging
 import smtplib
 import requests
 import os
+import re
+import math
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from twilio.rest import Client
 from datetime import datetime
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 from telegram_service import send_telegram_notification
 from email_service import send_email  # Import the enhanced email function
 from sms_service import send_sms as send_sms_service
 from call_service import make_call, should_call_for_detection  # Import the call service
+from distance_calculation import LocationUtils
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -45,9 +49,53 @@ def format_date_dmy(date_obj):
         return None
     return date_obj.strftime("%d-%m-%Y %I:%M:%S %p")
 
+def extract_coordinates_from_maps_link(maps_link):
+    """
+    Extract coordinates from a Google Maps link using LocationUtils.
+    
+    Args:
+        maps_link: Google Maps URL
+        
+    Returns:
+        tuple: (latitude, longitude) or None if extraction fails
+    """
+    coords = LocationUtils.extract_coordinates(maps_link)
+    if coords:
+        return coords
+    
+    # Fall back to default coordinates if extraction fails
+    logger.warning(f"Could not extract coordinates from {maps_link}, using default coordinates")
+    return 20.5937, 78.9629  # Default to center of India
+
+def calculate_distance(lat1, lng1, lat2, lng2):
+    """
+    Calculate the distance between two points on Earth.
+    
+    Args:
+        lat1, lng1: Latitude and longitude of point 1
+        lat2, lng2: Latitude and longitude of point 2
+        
+    Returns:
+        distance: Distance in kilometers
+    """
+    return LocationUtils.calculate_distance((lat1, lng1), (lat2, lng2))
+
+def format_distance(distance_km):
+    """
+    Format distance in kilometers with proper units.
+    
+    Args:
+        distance_km: Distance in kilometers
+        
+    Returns:
+        formatted_distance: Formatted distance string (number only, no units)
+    """
+    # Return numeric value only without units for display in template
+    return LocationUtils.format_distance_for_display(distance_km, with_units=False)
+
 def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> str:
     """
-    Create a warning in the database based on a detection.
+    Create a warning in the database based on a detection and trigger broadcast alerts.
     
     Args:
         db: Firestore database instance
@@ -100,6 +148,7 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
             'formatted_date': formatted_date,           # Add new day-month-year format
             'active': True,
             'acknowledged': False,
+            'is_broadcast': False,                      # This is NOT a broadcast alert (it's a direct camera alert)
             'notification_status': {
                 'email': False,
                 'sms': False,
@@ -129,6 +178,25 @@ def create_warning(db, detection_data: Dict, notification_preferences: Dict) -> 
         })
         
         logger.info(f"Created warning {warning_id} for {detection_data.get('detection_label', 'unknown')} detection at {formatted_date}")
+        
+        # Send broadcast alerts if this has a location and is a medium or high severity warning
+        if warning_record['google_maps_link'] and warning_record['severity'] in ['high', 'medium']:
+            logger.info(f"Triggering broadcast alerts for warning {warning_id}")
+            broadcast_result = broadcast_warning(db, warning_record)
+            
+            # Add broadcast info to warning
+            warning_ref.update({
+                'broadcast_status': broadcast_result
+            })
+            
+            if broadcast_result.get('broadcast'):
+                logger.info(f"Broadcast alert sent for warning {warning_id} to {broadcast_result.get('users_notified', 0)} users")
+            else:
+                logger.warning(f"No broadcast alerts sent for warning {warning_id}: {broadcast_result.get('reason', 'unknown reason')}")
+        else:
+            reason = "No Google Maps link" if not warning_record['google_maps_link'] else f"Low severity ({warning_record['severity']})"
+            logger.info(f"Skipping broadcast for warning {warning_id}: {reason}")
+        
         return warning_id
         
     except Exception as e:
@@ -185,10 +253,27 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
     else:
         time_display = warning['formatted_timestamp'] if 'formatted_timestamp' in warning else format_date_dmy(warning['timestamp'])
     
+    # Check if this is a broadcast alert
+    is_broadcast = warning.get('is_broadcast', False)
+    
+    # Get distance for broadcast alerts
+    distance = None
+    if is_broadcast:
+        # Use distance_km if available (numeric value)
+        if 'distance_km' in warning:
+            distance = warning['distance_km']
+        # Otherwise use distance (might be pre-formatted)
+        elif 'distance' in warning:
+            distance = warning['distance']
+    
     # Construct the message
     message = f"🚨 WildEye Alert: {warning['type']} detected at {warning['camera_name']}\n\n"
     message += f"Severity: {warning['severity'].upper()}\n"
     message += f"Time: {time_display}\n"
+    
+    # For broadcast alerts, include distance information
+    if is_broadcast and distance is not None:
+        message += f"Distance: {distance} km from your location\n"
     
     # Add location information without the direct link
     if warning['google_maps_link']:
@@ -198,7 +283,7 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
     if warning['screenshot_url']:
         message += f"Screenshot is available in email or app\n"
     
-    # Send email if enabled - now using the enhanced email_service function
+    # Send email if enabled - now using the enhanced email function
     if preferences.get('email', {}).get('enabled', False):
         try:
             email_recipient = preferences.get('email', {}).get('recipient')
@@ -220,11 +305,12 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
             mobile_number = warning.get('mobile_number') or preferences.get('sms', {}).get('recipient')
             country_code = preferences.get('sms', {}).get('country_code', '+91')  # Default to India code if not specified
             if mobile_number:
-                from sms_service import send_sms as send_sms_service
+                # Pass the entire warning object, including broadcast flag and distance
                 notification_status['sms'] = send_sms_service(
                     recipient=mobile_number,
-                    message=message,
-                    country_code=country_code 
+                    message=message if message else None,  # Provide message as a fallback
+                    country_code=country_code,
+                    detection_data=warning  # Pass the entire warning object
                 )
         except Exception as e:
             logger.error(f"Error sending SMS notification: {e}")
@@ -233,6 +319,8 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
     if preferences.get('telegram', {}).get('enabled', False):
         try:
             chat_id = preferences.get('telegram', {}).get('chat_id', TELEGRAM_CHAT_ID)
+            logger.info(f"Sending Telegram notification to chat_id: {chat_id} for {'broadcast' if warning.get('is_broadcast') else 'direct'} alert")
+            
             # Pass the entire warning object to the telegram function
             notification_status['telegram'] = send_telegram(
                 chat_id=chat_id,
@@ -264,14 +352,309 @@ def send_notifications(warning: Dict, preferences: Dict) -> Dict:
                     mobile_number = f"{country_code}{mobile_number}"
             
             if mobile_number:
+                # Pass the entire warning object to make_call
                 notification_status['call'] = make_call(
                     recipient=mobile_number,
-                    detection_data=warning
+                    detection_data=warning  # Pass the entire warning object
                 )
         except Exception as e:
             logger.error(f"Error making call notification: {e}")
     
     return notification_status
+
+def broadcast_warning(db, warning):
+    """
+    Send broadcast alerts to nearby users based on their preferences.
+    This function is called after a regular warning is created for the camera owner.
+    
+    Args:
+        db: Firestore database instance
+        warning: The original warning to broadcast
+        
+    Returns:
+        dict: Summary of broadcast notifications sent
+    """
+    try:
+        logger.info(f"Processing broadcast for warning {warning.get('warning_id')}")
+        
+        # Check if warning has location information
+        if not warning.get('google_maps_link'):
+            logger.info(f"Warning {warning.get('warning_id')} has no location data, skipping broadcast")
+            return {'broadcast': False, 'reason': 'no_location'}
+        
+        # Extract location coordinates using improved method
+        from distance_calculation import LocationUtils
+        
+        warning_location = None
+        # Try multiple times with increasing timeouts to extract coordinates
+        for attempt in range(3):
+            try:
+                logger.info(f"Attempting to extract coordinates (attempt {attempt+1}/3)")
+                warning_location = LocationUtils.extract_coordinates(warning.get('google_maps_link'))
+                if warning_location:
+                    break
+                time.sleep(1)  # Wait a bit before retrying
+            except Exception as e:
+                logger.error(f"Error extracting coordinates (attempt {attempt+1}): {e}")
+                time.sleep(1)
+        
+        if not warning_location:
+            # Try the specialized method for shortened URLs
+            try:
+                logger.info("Attempting specialized extraction for shortened URL")
+                warning_location = LocationUtils.extract_coordinates_from_shortened_url(warning.get('google_maps_link'))
+            except Exception as e:
+                logger.error(f"Error with specialized extraction: {e}")
+        
+        if not warning_location:
+            # Last resort - try to fetch the maps link directly
+            try:
+                logger.info("Attempting direct HTML content extraction")
+                import requests
+                response = requests.get(warning.get('google_maps_link'), timeout=20)
+                content = response.text
+                # Look for coordinate patterns in the HTML
+                import re
+                
+                # Try multiple patterns
+                patterns = [
+                    r'@(-?\d+\.\d+),(-?\d+\.\d+)',
+                    r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)'
+                ]
+                
+                for pattern in patterns:
+                    matches = re.search(pattern, content)
+                    if matches:
+                        if pattern == r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)':
+                            # For !3d!4d pattern, order is lat then lng
+                            lat = float(matches.group(1))
+                            lng = float(matches.group(2))
+                        else:
+                            # For other patterns, order is lat then lng
+                            lat = float(matches.group(1))
+                            lng = float(matches.group(2))
+                        
+                        warning_location = (lat, lng)
+                        logger.info(f"Successfully extracted coordinates from HTML: {lat}, {lng}")
+                        break
+            except Exception as e:
+                logger.error(f"Error with direct HTML extraction: {e}")
+        
+        if not warning_location:
+            logger.info(f"Could not extract location from warning, skipping broadcast")
+            return {'broadcast': False, 'reason': 'invalid_location'}
+            
+        warning_lat, warning_lng = warning_location
+        logger.info(f"Warning location: {warning_lat}, {warning_lng}")
+        
+        # Get all user notification preferences
+        settings_ref = db.collection('settings').where('broadcast.enabled', '==', True)
+        
+        # Track number of notifications sent
+        broadcast_count = 0
+        user_count = 0
+        
+        # Store original warning owner ID
+        original_owner_uid = warning.get('owner_uid')
+        logger.info(f"Original warning owner: {original_owner_uid}")
+        
+        for doc in settings_ref.stream():
+            try:
+                user_prefs = doc.to_dict()
+                user_id = user_prefs.get('owner_uid')
+                
+                if not user_id:
+                    logger.info(f"Skipping document without owner_uid: {doc.id}")
+                    continue
+                
+                # Skip if this is the user who triggered the warning
+                if user_id == original_owner_uid:
+                    logger.info(f"Skipping broadcast to original warning owner: {user_id}")
+                    continue
+                    
+                broadcast_settings = user_prefs.get('broadcast', {})
+                user_location_str = broadcast_settings.get('location', '')
+                
+                # Skip if user has no location set
+                if not user_location_str:
+                    logger.info(f"User {user_id} has no location set, skipping")
+                    continue
+                    
+                # Parse user location using improved method
+                user_location = LocationUtils.extract_coordinates(user_location_str)
+                if not user_location:
+                    logger.info(f"Could not parse location for user {user_id}, skipping")
+                    continue
+                    
+                user_lat, user_lng = user_location
+                logger.info(f"User {user_id} location: {user_lat}, {user_lng}")
+                
+                # Calculate distance using improved method
+                distance = LocationUtils.calculate_distance(
+                    (warning_lat, warning_lng), 
+                    (user_lat, user_lng)
+                )
+                
+                if distance is None:
+                    logger.warning(f"Failed to calculate distance for user {user_id}")
+                    continue
+                
+                # Format distance for display (without units)
+                distance_str = LocationUtils.format_distance_for_display(distance, with_units=False)
+                
+                logger.info(f"User {user_id} is {distance_str}km from warning location")
+                
+                # Check if within radius - handle both string and int types
+                try:
+                    user_radius = broadcast_settings.get('radius', 10)
+                    # Convert to float if it's a string
+                    if isinstance(user_radius, str):
+                        user_radius = float(user_radius)
+                    
+                    # Ensure we have a valid number
+                    if not isinstance(user_radius, (int, float)) or user_radius <= 0:
+                        user_radius = 10  # Default to 10km
+                        
+                    logger.info(f"User {user_id} has radius set to {user_radius}km")
+                    
+                    if distance > user_radius:
+                        logger.info(f"User {user_id} is outside broadcast radius ({distance}km > {user_radius}km), skipping")
+                        continue
+                        
+                except (ValueError, TypeError) as e:
+                    logger.error(f"Error parsing radius for user {user_id}: {e}")
+                    # Default to 10km if we can't parse the radius
+                    user_radius = 10
+                    if distance > user_radius:
+                        logger.info(f"User {user_id} is outside default radius, skipping")
+                        continue
+                    
+                # Check if user is interested in this animal type
+                animal_type = warning.get('type', '').lower()
+                user_animals = broadcast_settings.get('animals', ['all'])
+                
+                logger.info(f"User {user_id} is interested in animals: {user_animals}")
+                logger.info(f"Current animal type: {animal_type}")
+                
+                if 'all' not in user_animals and animal_type not in user_animals:
+                    logger.info(f"User {user_id} is not interested in {animal_type}, skipping")
+                    continue
+                    
+                logger.info(f"Preparing broadcast for user {user_id} - within radius and interested in {animal_type}")
+                
+                # User is within radius and interested in this animal type
+                # Prepare broadcast notification
+                broadcast_methods = broadcast_settings.get('methods', [])
+                
+                # Create a modified message for broadcast
+                broadcast_message = f"🚨 NEARBY ALERT: {warning['type']} detected {distance_str}km from your location\n\n"
+                broadcast_message += f"Severity: {warning['severity'].upper()}\n"
+                broadcast_message += f"Time: {warning.get('formatted_date', warning.get('formatted_timestamp', 'Unknown'))}\n"
+                broadcast_message += f"Detected by: Another WildEye user\n"
+                # Format distance with proper units for the message
+                broadcast_message += f"Distance: {LocationUtils.format_distance_for_display(distance, with_units=True)} from your location\n"
+                
+                # Create a copy of warning with modified message for broadcast
+                broadcast_warning_copy = warning.copy()
+                broadcast_warning_copy['message'] = broadcast_message
+                broadcast_warning_copy['is_broadcast'] = True  # Explicitly set this flag
+                broadcast_warning_copy['distance'] = distance_str
+                
+                # Add a new field in database for the warning document 
+                broadcast_ref = db.collection('warnings').document()
+                broadcast_id = broadcast_ref.id
+                
+                # Create broadcast warning record with all necessary fields
+                broadcast_record = {
+                    'warning_id': broadcast_id,
+                    'detection_id': broadcast_warning_copy.get('detection_id', ''),
+                    'camera_id': broadcast_warning_copy.get('camera_id', ''),
+                    'camera_name': broadcast_warning_copy.get('camera_name', ''),
+                    'type': broadcast_warning_copy.get('type', ''),
+                    'detection_label': broadcast_warning_copy.get('detection_label', ''),
+                    'message': broadcast_message,
+                    'screenshot_url': broadcast_warning_copy.get('screenshot_url', ''),
+                    'google_maps_link': broadcast_warning_copy.get('google_maps_link', ''),
+                    'severity': broadcast_warning_copy.get('severity', 'medium'),
+                    'timestamp': datetime.now(),
+                    'formatted_date': format_date_dmy(datetime.now()),
+                    'active': True,
+                    'acknowledged': False,
+                    'is_broadcast': True,  # This is a broadcast alert
+                    'distance': distance_str,  # Store numeric value without units
+                    'distance_km': distance,   # Store the actual numeric distance value
+                    'original_warning_id': warning.get('warning_id', ''),  # Reference to original
+                    'owner_uid': user_id,  # This should be the recipient's ID
+                    'notification_status': {
+                        'email': False,
+                        'sms': False,
+                        'telegram': False,
+                        'call': False
+                    }
+                }
+                
+                # Save broadcast warning to database
+                broadcast_ref.set(broadcast_record)
+                logger.info(f"Created broadcast warning {broadcast_id} for user {user_id}")
+                
+                # Create special notification preferences based on user's broadcast methods
+                broadcast_prefs = {
+                    'email': {
+                        'enabled': 'email' in broadcast_methods,
+                        'recipient': user_prefs.get('email', {}).get('recipient', '')
+                    },
+                    'sms': {
+                        'enabled': 'sms' in broadcast_methods,
+                        'recipient': user_prefs.get('sms', {}).get('recipient', ''),
+                        'country_code': user_prefs.get('sms', {}).get('country_code', '+91')
+                    },
+                    'telegram': {
+                        'enabled': 'telegram' in broadcast_methods,
+                        'chat_id': user_prefs.get('telegram', {}).get('chat_id', '')
+                    },
+                    'call': {
+                        'enabled': 'call' in broadcast_methods and warning.get('severity') == 'high',  # Only call for high severity
+                        'recipient': user_prefs.get('call', {}).get('recipient', ''),
+                        'country_code': user_prefs.get('call', {}).get('country_code', '+91')
+                    }
+                }
+                
+                # Log the broadcast preferences
+                logger.info(f"Broadcast preferences for user {user_id}: {broadcast_prefs}")
+                
+                # Send notifications
+                notification_status = send_notifications(broadcast_record, broadcast_prefs)
+                
+                # Log the notification status
+                logger.info(f"Broadcast notification status for user {user_id}: {notification_status}")
+                
+                # Update notification status in the database
+                broadcast_ref.update({
+                    'notification_status': notification_status
+                })
+                
+                # Count broadcasts
+                if any(notification_status.values()):
+                    broadcast_count += sum(1 for status in notification_status.values() if status)
+                    user_count += 1
+                    
+                    # Log the broadcast
+                    logger.info(f"Broadcast alert sent to user {user_id} ({distance_str}km away)")
+                
+            except Exception as user_error:
+                logger.error(f"Error processing broadcast for user: {user_error}")
+                continue
+                
+        logger.info(f"Broadcast complete. Notified {user_count} users with {broadcast_count} notifications")
+        return {
+            'broadcast': True,
+            'users_notified': user_count,
+            'notifications_sent': broadcast_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in broadcast_warning: {e}")
+        return {'broadcast': False, 'error': str(e)}
 
 def send_sms(recipient: str, message: str) -> bool:
     """
@@ -331,6 +714,10 @@ def send_telegram(chat_id: str, message: str, screenshot_url: Optional[str] = No
             logger.warning("Missing Telegram chat ID")
             return False
         
+        # Add debug logging for broadcast alerts
+        is_broadcast = warning and warning.get('is_broadcast', False)
+        logger.info(f"Sending Telegram notification to chat_id: {chat_id}, is_broadcast: {is_broadcast}")
+        
         # If we have a full warning object, use the enhanced notification function
         if warning:
             # Make sure screenshot_url is included in the warning data
@@ -338,7 +725,9 @@ def send_telegram(chat_id: str, message: str, screenshot_url: Optional[str] = No
                 warning['screenshot_url'] = screenshot_url
                 
             # Call the enhanced function from telegram_service
-            return send_telegram_notification(chat_id, warning)
+            result = send_telegram_notification(chat_id, warning)
+            logger.info(f"Telegram notification result: {result}")
+            return result
         
         # Otherwise, create a minimal warning object with just the message
         else:
@@ -352,10 +741,14 @@ def send_telegram(chat_id: str, message: str, screenshot_url: Optional[str] = No
                 'screenshot_url': screenshot_url
             }
             
-            return send_telegram_notification(chat_id, minimal_warning)
+            result = send_telegram_notification(chat_id, minimal_warning)
+            logger.info(f"Telegram notification result: {result}")
+            return result
             
     except Exception as e:
         logger.error(f"Failed to send Telegram notification: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return False
 
 def acknowledge_warning(db, warning_id: str) -> bool:
@@ -449,6 +842,13 @@ def get_notification_preferences(db, user_id: str = None) -> Dict:
                 'recipient': '',
                 'country_code': '+91',  # Default to India
                 'threshold': 'high'     # Options: 'high', 'medium', 'all'
+            },
+            'broadcast': {
+                'enabled': False,
+                'location': '',
+                'radius': 10,           # Default radius in km
+                'animals': ['all'],     # Default to all animals
+                'methods': ['email', 'sms']  # Default notification methods
             }
         }
         
@@ -471,6 +871,10 @@ def get_notification_preferences(db, user_id: str = None) -> Dict:
                 if preferences.get('sms', {}).get('enabled', False):
                     preferences['call']['recipient'] = preferences.get('sms', {}).get('recipient', '')
                     preferences['call']['country_code'] = preferences.get('sms', {}).get('country_code', '+91')
+            
+            # Ensure broadcast settings exist for older records
+            if 'broadcast' not in preferences:
+                preferences['broadcast'] = default_preferences['broadcast']
                 
             return preferences
         else:

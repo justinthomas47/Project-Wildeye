@@ -140,6 +140,90 @@ IMMEDIATE ACTIONS:
 """
 }
 
+# Broadcast alert templates
+BROADCAST_SMS_TEMPLATES = {
+    'default': """
+NEARBY ALERT: Animal detected {distance}km from your location.
+Time: {timestamp}
+PRECAUTIONS:
+- Be aware of surroundings
+- Keep safe distance if spotted
+- Contact authorities if needed
+
+This alert is from another WildEye user's camera.
+""",
+    'tiger': """
+NEARBY DANGER: Tiger detected {distance}km from your location.
+Time: {timestamp}
+PRECAUTIONS:
+- Be vigilant in the area
+- Do NOT approach if sighted
+- Contact forest dept if spotted: {emergency_contact}
+
+This alert is from another WildEye user's camera.
+""",
+    'leopard': """
+NEARBY DANGER: Leopard detected {distance}km from your location.
+Time: {timestamp}
+PRECAUTIONS:
+- Be vigilant in the area
+- Do NOT approach if sighted
+- Contact forest dept if spotted: {emergency_contact}
+
+This alert is from another WildEye user's camera.
+""",
+    'elephant': """
+NEARBY WARNING: Elephant detected {distance}km from your location.
+Time: {timestamp}
+PRECAUTIONS:
+- Be cautious in the area
+- Keep significant distance if spotted
+- Contact forest dept if sighted: {emergency_contact}
+
+This alert is from another WildEye user's camera.
+""",
+    'bear': """
+NEARBY DANGER: Bear detected {distance}km from your location.
+Time: {timestamp}
+PRECAUTIONS:
+- Be vigilant in the area
+- Keep food secure outdoors
+- Contact forest dept if sighted: {emergency_contact}
+
+This alert is from another WildEye user's camera.
+""",
+    'wild boar': """
+NEARBY CAUTION: Wild Boar detected {distance}km from your location.
+Time: {timestamp}
+PRECAUTIONS:
+- Be cautious in the area
+- Keep pets supervised outdoors
+- Contact authorities if seen: {emergency_contact}
+
+This alert is from another WildEye user's camera.
+""",
+    'wild buffalo': """
+NEARBY DANGER: Wild Buffalo detected {distance}km from your location.
+Time: {timestamp}
+PRECAUTIONS:
+- Be extremely cautious in the area
+- Do NOT approach if sighted
+- Contact forest dept if spotted: {emergency_contact}
+
+This alert is from another WildEye user's camera.
+""",
+    'lion': """
+NEARBY EXTREME DANGER: Lion detected {distance}km from your location.
+Time: {timestamp}
+PRECAUTIONS:
+- Avoid area if possible
+- Travel in vehicle with closed windows
+- Contact emergency services if sighted: {emergency_contact}
+
+This alert is from another WildEye user's camera.
+"""
+}
+
 def format_date_dmy(date_obj):
     """
     Format a datetime object to day-month-year format with 12-hour time
@@ -154,25 +238,44 @@ def format_date_dmy(date_obj):
         return None
     return date_obj.strftime("%d-%m-%Y %I:%M:%S %p")
 
-def get_animal_sms_template(animal_type: str) -> str:
+def get_animal_sms_template(animal_type: str, is_broadcast: bool = False, distance: str = None) -> str:
     """
     Get the appropriate SMS template for the specified animal type.
     
     Args:
         animal_type: The type of animal detected
+        is_broadcast: Whether this is a broadcast alert from another user's camera
+        distance: Distance from user's location (for broadcast alerts)
         
     Returns:
         str: SMS template text for the animal
     """
     animal_type = animal_type.lower()
     
-    # Check for specific animal matches
-    for animal in ANIMAL_SMS_TEMPLATES:
-        if animal in animal_type:
-            return ANIMAL_SMS_TEMPLATES[animal]
-    
-    # Return default template if no match
-    return ANIMAL_SMS_TEMPLATES['default']
+    # Use broadcast templates for broadcast alerts
+    if is_broadcast:
+        templates = BROADCAST_SMS_TEMPLATES
+        
+        # Default distance if not provided
+        distance = distance or "unknown"
+        
+        # Check for specific animal matches
+        for animal in templates:
+            if animal in animal_type:
+                return templates[animal].format(distance=distance, emergency_contact=EMERGENCY_CONTACT, timestamp="{timestamp}")
+        
+        # Return default template if no match
+        return templates['default'].format(distance=distance, emergency_contact=EMERGENCY_CONTACT, timestamp="{timestamp}")
+    else:
+        templates = ANIMAL_SMS_TEMPLATES
+        
+        # Check for specific animal matches
+        for animal in templates:
+            if animal in animal_type:
+                return templates[animal].format(camera_name="{camera_name}", emergency_contact=EMERGENCY_CONTACT, timestamp="{timestamp}")
+        
+        # Return default template if no match
+        return templates['default'].format(camera_name="{camera_name}", emergency_contact=EMERGENCY_CONTACT, timestamp="{timestamp}")
 
 def format_phone_number(phone_number: str, country_code: str = None) -> str:
     """
@@ -214,6 +317,8 @@ def format_phone_number(phone_number: str, country_code: str = None) -> str:
     logger.warning(f"No country code provided for {phone_number}. Defaulting to India (+91).")
     return f"+91{phone_number}"
 
+# Update in sms_service.py - fixed send_sms function
+# Update in sms_service.py - fixed send_sms function
 def send_sms(recipient: str, message: str = None, detection_data: Dict = None, country_code: str = None) -> bool:
     """
     Send an SMS notification using Twilio.
@@ -251,6 +356,21 @@ def send_sms(recipient: str, message: str = None, detection_data: Dict = None, c
             sms_message = message
         # Otherwise, generate message from detection data
         elif detection_data:
+            # Check if this is a broadcast alert
+            is_broadcast = detection_data.get('is_broadcast', False)
+            
+            # Get distance for broadcast alerts
+            distance = None
+            if is_broadcast:
+                # Use distance_km if available (numeric value)
+                if 'distance_km' in detection_data:
+                    distance = detection_data['distance_km']
+                # Otherwise use distance (might be pre-formatted)
+                elif 'distance' in detection_data:
+                    distance = detection_data['distance']
+                
+                logger.info(f"Processing broadcast alert with distance: {distance}")
+            
             # Get animal type - check both field names
             animal_type = detection_data.get('detection_label', '')
             if not animal_type:
@@ -275,13 +395,13 @@ def send_sms(recipient: str, message: str = None, detection_data: Dict = None, c
             else:
                 timestamp_str = str(timestamp)
             
-            # Get template and fill in the details
-            template = get_animal_sms_template(animal_type)
-            sms_message = template.format(
-                camera_name=camera_name,
-                timestamp=timestamp_str,
-                emergency_contact=EMERGENCY_CONTACT
-            )
+            # Get template based on whether it's a broadcast alert
+            if is_broadcast:
+                template = get_animal_sms_template(animal_type, is_broadcast=True, distance=distance)
+                sms_message = template.format(timestamp=timestamp_str)
+            else:
+                template = get_animal_sms_template(animal_type)
+                sms_message = template.format(camera_name=camera_name, timestamp=timestamp_str)
         else:
             logger.error("Neither message nor detection data provided")
             return False
@@ -304,8 +424,8 @@ def send_sms(recipient: str, message: str = None, detection_data: Dict = None, c
                 raise
             
             # Limit message length for SMS
-            if len(sms_message) > 1600:
-                sms_message = sms_message[:1597] + "..."
+            if len(sms_message) > SMS_MAX_LENGTH:
+                sms_message = sms_message[:SMS_MAX_LENGTH-3] + "..."
             
             # Send SMS
             logger.info(f"Sending SMS to {formatted_recipient} via Twilio")
