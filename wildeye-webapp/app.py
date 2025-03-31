@@ -1404,8 +1404,8 @@ def call_status_callback():
 
 if __name__ == "__main__":
     if not is_running_from_reloader():
-        webbrowser.open("http://127.0.0.1:5000")
+        webbrowser.open("http://127.0.0.1:8080")
     try:
-        app.run(debug=True, threaded=True, use_reloader=True)
+        app.run(debug=True, threaded=True, use_reloader=True, port=8080)
     finally:
         cleanup_streams()
