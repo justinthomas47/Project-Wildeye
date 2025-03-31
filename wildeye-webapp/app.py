@@ -1,7 +1,10 @@
 #app.py
 from logging_config import configure_logging
+from dotenv import load_dotenv
+load_dotenv()
 configure_logging()
-
+from telegram_init import setup_telegram_environment
+telegram_config = setup_telegram_environment()
 import os
 import threading
 import webbrowser
@@ -15,12 +18,14 @@ import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from process_stream import process_stream, pause_stream, resume_stream
 from werkzeug.serving import is_running_from_reloader
-from detection_handler import init_drive_service as init_detection_drive
+from process_stream import init_drive_service as init_detection_drive
 import logging
 import cv2
 import gc
 import numpy as np
 import traceback
+from flask import Response
+from call_service import create_call_webhook
 from warning_system import (
     get_all_warnings, 
     acknowledge_warning, 
@@ -30,7 +35,7 @@ from warning_system import (
     test_notification_channels
 )
 from functools import wraps
-
+telegram_config = setup_telegram_environment()
 # Set up logger for this module
 logger = logging.getLogger(__name__)
 
@@ -91,6 +96,51 @@ def login_required(f):
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
+def format_date_for_display(date_str):
+    """
+    Convert a date string from YYYY-MM-DD format to DD-MM-YYYY format
+    Returns the original string if conversion fails
+    """
+    try:
+        # Check if the input is a string
+        if not isinstance(date_str, str):
+            if hasattr(date_str, 'strftime'):
+                # It's a datetime object
+                return date_str.strftime("%d-%m-%Y")
+            return str(date_str)
+            
+        # Split by space to get just the date part (not time)
+        date_part = date_str.split(' ')[0]
+        
+        # Split the date by the delimiter
+        if '-' in date_part:
+            parts = date_part.split('-')
+        elif '/' in date_part:
+            parts = date_part.split('/')
+        else:
+            return date_str
+            
+        # Check if we have a proper date format with 3 parts
+        if len(parts) == 3:
+            year, month, day = parts
+            # Check if the input was already in day-month-year format
+            if len(year) == 2 or len(year) == 1:  # If year has 1 or 2 digits, it's likely the day
+                return date_str  # Already in the desired format
+                
+            # Rearrange to day-month-year format
+            return f"{day}-{month}-{year}"
+            
+        return date_str
+    except Exception as e:
+        logger.error(f"Error formatting date: {e}")
+        return date_str
+
+@app.template_filter('format_date')
+def format_date_filter(date_str):
+    """
+    Jinja2 template filter to format dates in DD-MM-YYYY format
+    """
+    return format_date_for_display(date_str)
 
 class CameraStream:
     def __init__(self, input_type, input_value, seek_time=0, visible=False, camera_id=None):
@@ -566,9 +616,9 @@ def detection_history():
             
             # Only include if camera belongs to user
             if log_data.get('camera') in user_cameras:
-                # Format the timestamp for display
+                # Format the timestamp for display in 12-hour format
                 if 'timestamp' in log_data and isinstance(log_data['timestamp'], datetime):
-                    log_data['timestamp'] = log_data['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
+                    log_data['timestamp'] = log_data['timestamp'].strftime("%Y-%m-%d %I:%M:%S %p")
                     
                 # Ensure confidence is a number
                 if 'confidence' in log_data:
@@ -610,15 +660,25 @@ def warnings():
             user_cameras.append(camera_data['camera_id'])
         
         # Get all warnings
-        warnings_ref = db.collection('warnings').order_by('timestamp', direction='desc').limit(100)
+        warnings_ref = db.collection('warnings').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(100)
         all_warnings = []
         
         for doc in warnings_ref.stream():
             warning_data = doc.to_dict()
-            # Only include warnings for cameras owned by this user
-            if warning_data.get('camera_id') in user_cameras:
-                all_warnings.append(warning_data)
+            
+            # For broadcast alerts, check if this user is the intended recipient
+            if warning_data.get('is_broadcast', False):
+                # Only show broadcast warnings where this user is the intended recipient (owner_uid)
+                if warning_data.get('owner_uid') == user['uid']:
+                    logger.info(f"Including broadcast warning {warning_data.get('warning_id')} for user {user['uid']}")
+                    all_warnings.append(warning_data)
+            else:
+                # For direct alerts, check if the camera belongs to this user
+                if warning_data.get('camera_id') in user_cameras:
+                    logger.info(f"Including direct warning {warning_data.get('warning_id')} for user {user['uid']}")
+                    all_warnings.append(warning_data)
         
+        logger.info(f"Found {len(all_warnings)} warnings total for user {user['uid']}")
         return render_template("warnings.html", warnings=all_warnings, current_page='warnings')
     except Exception as e:
         logger.error(f"Error loading warnings: {e}")
@@ -653,7 +713,7 @@ def resolve_warning_route(warning_id):
         logger.error(f"Error resolving warning: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route("/notification_settings", methods=["GET", "POST"])
+@app.route("/notification_settings", methods=["GET"])
 @login_required
 def notification_settings():
     """Page to manage notification settings"""
@@ -665,41 +725,39 @@ def notification_settings():
         return redirect(url_for('index'))
         
     try:
-        if request.method == "POST":
-            # Process form submission
-            preferences = {
-                'email': {
-                    'enabled': 'email_enabled' in request.form,
-                    'recipient': request.form.get('email_recipient', '')
-                },
-                'sms': {
-                    'enabled': 'sms_enabled' in request.form,
-                    'recipient': request.form.get('sms_recipient', '')
-                },
-                'telegram': {
-                    'enabled': 'telegram_enabled' in request.form,
-                    'chat_id': request.form.get('telegram_chat_id', '')
-                },
-                'owner_uid': user['uid']  # Add user ID to preferences
-            }
-            
-            # Save preferences to user-specific document
-            doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
-            doc_ref.set(preferences)
-            
-            return render_template(
-                "notification_settings.html", 
-                preferences=preferences, 
-                success="Notification settings updated successfully",
-                current_page='settings'
-            )
+        # Import required functions from sms_service for carriers dropdown
+        from sms_service import get_available_carriers
+        # Get available carriers for the dropdown
+        carriers = get_available_carriers()
         
-        # GET request - show current settings
+        # Get current settings
         doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
         doc = doc_ref.get()
         
         if doc.exists:
             preferences = doc.to_dict()
+            # Make sure SMS has country_code field
+            if 'sms' in preferences and 'country_code' not in preferences['sms']:
+                preferences['sms']['country_code'] = '+91'  # Default to India
+                
+            # Make sure call settings exist
+            if 'call' not in preferences:
+                preferences['call'] = {
+                    'enabled': False,
+                    'recipient': preferences.get('sms', {}).get('recipient', ''),  # Default to SMS number
+                    'country_code': preferences.get('sms', {}).get('country_code', '+91'),  # Default to SMS country code
+                    'threshold': 'high'  # Default to high severity only
+                }
+            
+            # Make sure broadcast settings exist
+            if 'broadcast' not in preferences:
+                preferences['broadcast'] = {
+                    'enabled': False,
+                    'location': '',
+                    'radius': 10,  # Default radius of 10km
+                    'animals': ['all'],  # Default to all animals
+                    'methods': ['email', 'sms']  # Default notification methods
+                }
         else:
             # Default preferences
             preferences = {
@@ -709,11 +767,26 @@ def notification_settings():
                 },
                 'sms': {
                     'enabled': False,
-                    'recipient': ''
+                    'recipient': '',
+                    'country_code': '+91',  # Default to India
+                    'carrier': 'default'
                 },
                 'telegram': {
                     'enabled': False,
                     'chat_id': ''
+                },
+                'call': {
+                    'enabled': False,
+                    'recipient': '',
+                    'country_code': '+91',  # Default to India
+                    'threshold': 'high'  # Default to high severity only
+                },
+                'broadcast': {
+                    'enabled': False,
+                    'location': '',
+                    'radius': 10,  # Default radius of 10km
+                    'animals': ['all'],  # Default to all animals
+                    'methods': ['email', 'sms']  # Default notification methods
                 },
                 'owner_uid': user['uid']
             }
@@ -723,15 +796,148 @@ def notification_settings():
         return render_template(
             "notification_settings.html", 
             preferences=preferences,
+            carriers=carriers,
             current_page='settings'
         )
     except Exception as e:
         logger.error(f"Error with notification settings: {e}")
+        logger.error(traceback.format_exc())
         return render_template(
             "notification_settings.html", 
             error=f"Error: {str(e)}",
+            carriers=get_available_carriers() if 'get_available_carriers' in locals() else [],
             current_page='settings'
         )
+
+@app.route("/update_notification_settings", methods=["POST"])
+@login_required
+def update_notification_settings():
+    """API endpoint to update notification settings via AJAX"""
+    if db is None:
+        return jsonify({"success": False, "error": "Firebase not initialized"}), 500
+        
+    user = get_current_user()
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+        
+    try:
+        # Get request data
+        settings_update = request.json
+        if not settings_update:
+            return jsonify({"success": False, "error": "No settings provided"}), 400
+            
+        # Log the received settings for debugging
+        logger.info(f"Received settings update: {settings_update}")
+            
+        # Get existing settings
+        doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            preferences = doc.to_dict()
+        else:
+            # Create default settings if none exist
+            preferences = {
+                'email': {
+                    'enabled': False,
+                    'recipient': user.get('email', '')
+                },
+                'sms': {
+                    'enabled': False,
+                    'recipient': '',
+                    'country_code': '+91'
+                },
+                'telegram': {
+                    'enabled': False,
+                    'chat_id': ''
+                },
+                'call': {
+                    'enabled': False,
+                    'recipient': '',
+                    'country_code': '+91',
+                    'threshold': 'high'
+                },
+                'broadcast': {
+                    'enabled': False,
+                    'location': '',
+                    'radius': 10,
+                    'animals': ['all'],
+                    'methods': ['email', 'sms']
+                },
+                'owner_uid': user['uid']
+            }
+        
+        # Update settings
+        for key, value in settings_update.items():
+            parts = key.split('.')
+            
+            if len(parts) == 1:
+                # Top-level setting
+                preferences[parts[0]] = value
+            elif len(parts) == 2:
+                # Nested setting
+                if parts[0] not in preferences:
+                    preferences[parts[0]] = {}
+                    
+                # Special handling for broadcast.location to ensure it's always a string
+                if parts[0] == 'broadcast' and parts[1] == 'location':
+                    logger.info(f"Updating broadcast location: {value}")
+                    # If value is None or empty, use an empty string
+                    preferences[parts[0]][parts[1]] = str(value) if value else ''
+                else:
+                    preferences[parts[0]][parts[1]] = value
+            else:
+                # Handle arrays specially
+                if parts[0] == 'broadcast' and parts[1] in ['animals', 'methods']:
+                    preferences['broadcast'][parts[1]] = value
+        
+        # Save updated preferences
+        logger.info(f"Saving updated preferences to database")
+        doc_ref.set(preferences, merge=True)
+        
+        # If SMS carrier is being updated, save that separately
+        if 'sms' in settings_update and 'carrier' in settings_update['sms']:
+            try:
+                from sms_service import save_carrier_preference
+                save_carrier_preference(db, user['uid'], settings_update['sms']['carrier'])
+            except Exception as e:
+                logger.warning(f"Failed to save SMS carrier preference: {e}")
+        
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Error updating notification settings: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({"success": False, "error": str(e)}), 500
+        
+# Helper functions for processing broadcast alert settings
+def get_selected_animals(form_data):
+    """Extract selected animals from form data"""
+    if 'animal_all' in form_data:
+        return ['all']  # If "all" is selected, we don't need individual selections
+    
+    animals = []
+    animal_types = ['tiger', 'leopard', 'elephant', 'bear', 'wildboar']
+    
+    for animal in animal_types:
+        if f'animal_{animal}' in form_data:
+            animals.append(animal)
+    
+    return animals if animals else ['all']  # Default to all if nothing selected
+
+def get_broadcast_methods(form_data):
+    """Extract selected notification methods for broadcast alerts"""
+    methods = []
+    
+    if 'broadcast_email' in form_data:
+        methods.append('email')
+    if 'broadcast_sms' in form_data:
+        methods.append('sms')
+    if 'broadcast_telegram' in form_data:
+        methods.append('telegram')
+    if 'broadcast_call' in form_data:
+        methods.append('call')
+    
+    return methods if methods else ['email', 'sms']  # Default to email and SMS if nothing selected
 
 @app.route("/test_notifications", methods=["POST"])
 @login_required
@@ -741,32 +947,21 @@ def test_notifications():
         return jsonify({"success": False, "error": "Firebase not initialized"}), 500
         
     try:
-        # Get current notification preferences
+        # Get current user
         user = get_current_user()
         if not user:
             return jsonify({"success": False, "error": "User not authenticated"}), 401
             
-        # Get user-specific preferences
-        doc_ref = db.collection('settings').document(f"notifications_{user['uid']}")
-        doc = doc_ref.get()
+        # Import test function from warning system
+        from warning_system import test_notification_channels
         
-        if doc.exists:
-            preferences = doc.to_dict()
-        else:
-            preferences = get_notification_preferences(db)
+        # Run test
+        test_results = test_notification_channels(db, user['uid'])
         
-        # Send test notifications
-        test_results = test_notification_channels(db, preferences)
-        
-        return jsonify({
-            "success": True,
-            "email": test_results.get('email', False),
-            "sms": test_results.get('sms', False),
-            "telegram": test_results.get('telegram', False)
-        })
+        return jsonify(test_results)
     except Exception as e:
         logger.error(f"Error testing notifications: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500    
+        return jsonify({"success": False, "error": str(e)}), 500
     
 @app.route("/about")
 def about():
@@ -1172,11 +1367,45 @@ def cleanup_streams():
             gc.collect()
         except:
             pass
+@app.route("/call_webhook", methods=["POST", "GET"])
+def call_webhook():
+    """
+    Webhook for Twilio voice calls.
+    Returns TwiML instructions for the call.
+    """
+    response = create_call_webhook()
+    return Response(response, mimetype='text/xml')
+
+@app.route("/call_status_callback", methods=["POST"])
+def call_status_callback():
+    """
+    Callback URL for Twilio to report call status updates.
+    """
+    try:
+        call_sid = request.form.get('CallSid')
+        call_status = request.form.get('CallStatus')
+        call_duration = request.form.get('CallDuration')
+        
+        logger.info(f"Call status update - SID: {call_sid}, Status: {call_status}, Duration: {call_duration}s")
+        
+        # If you want to store call status in the database:
+        # if db is not None and call_sid:
+        #     db.collection('call_logs').document(call_sid).set({
+        #         'call_sid': call_sid,
+        #         'status': call_status,
+        #         'duration': call_duration,
+        #         'timestamp': datetime.now()
+        #     }, merge=True)
+        
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Error processing call status callback: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     if not is_running_from_reloader():
-        webbrowser.open("http://127.0.0.1:5000")
+        webbrowser.open("http://127.0.0.1:8080")
     try:
-        app.run(debug=True, threaded=True, use_reloader=True)
+        app.run(debug=True, threaded=True, use_reloader=True, port=8080)
     finally:
         cleanup_streams()

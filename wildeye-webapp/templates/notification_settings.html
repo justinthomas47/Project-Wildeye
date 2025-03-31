@@ -1,6 +1,6 @@
-<!-- notification_settings.html -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,14 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <title>WildEye - Notification Settings</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- Add intl-tel-input CSS and JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/js/intlTelInput.min.js"></script>
+
+    <!-- Add SweetAlert2 for nicer notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,11 +26,13 @@
             color: #333;
             min-height: 100vh;
         }
+
         .toggle-checkbox {
             height: 0;
             width: 0;
             visibility: hidden;
         }
+
         .toggle-label {
             display: flex;
             align-items: center;
@@ -35,6 +45,7 @@
             position: relative;
             transition: background-color .2s;
         }
+
         .toggle-label .toggle-button {
             content: '';
             position: absolute;
@@ -47,215 +58,519 @@
             background: #fff;
             box-shadow: 0 0 2px 0 rgba(10, 10, 10, 0.29);
         }
-        .toggle-checkbox:checked + .toggle-label {
+
+        .toggle-checkbox:checked+.toggle-label {
             background: #4f46e5;
         }
-        .toggle-checkbox:checked + .toggle-label .toggle-button {
+
+        .toggle-checkbox:checked+.toggle-label .toggle-button {
             left: calc(100% - 2px);
             transform: translateX(-100%);
         }
+
+        /* Fix for intl-tel-input with Tailwind */
+        .iti {
+            width: 100%;
+        }
+
+        .iti__flag {
+            background-image: url("https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/img/flags.png");
+        }
+
+        @media (-webkit-min-device-pixel-ratio: 2),
+        (min-resolution: 192dpi) {
+            .iti__flag {
+                background-image: url("https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.13/img/flags@2x.png");
+            }
+        }
+
+        /* Spinner animation */
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Saving indicator */
+        .save-indicator {
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+        }
+
+        .save-indicator.visible {
+            opacity: 1;
+        }
+
+        /* Map styles - hidden by default */
+        #map-container {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
     {% include "includes/navbar.html" %}
-    
+
     <div class="min-h-screen bg-gray-100">
         <div class="container mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-gray-800">Notification Settings</h1>
-                
-                <a href="{{ url_for('warnings') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+
+                <!-- Save indicator -->
+                <div id="saveIndicator" class="save-indicator flex items-center text-gray-600">
+                    <svg id="savingSpinner" class="w-5 h-5 mr-2 spinner" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    <span id="saveText">Saving...</span>
+                </div>
+
+                <a href="{{ url_for('warnings') }}"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
                     Back to Warnings
                 </a>
             </div>
-            
+
             {% if error %}
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6" role="alert">
                 <p>{{ error }}</p>
             </div>
             {% endif %}
-            
+
             {% if success %}
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6" role="alert">
                 <p>{{ success }}</p>
             </div>
             {% endif %}
-            
+
             <div class="bg-white rounded-xl shadow-md p-6 mb-8">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Notification Methods</h2>
                 <p class="text-gray-600 mb-6">Configure how you want to be notified when animals are detected.</p>
-                
-                <form id="notificationForm" method="POST" action="{{ url_for('notification_settings') }}">
-                    <!-- Email Notifications -->
-                    <div class="border-b border-gray-200 pb-6 mb-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-800">Email Notifications</h3>
-                                <p class="text-sm text-gray-600">Receive detection alerts via email</p>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="email_enabled" name="email_enabled" class="toggle-checkbox" 
-                                       {% if preferences.email.enabled %}checked{% endif %}>
-                                <label for="email_enabled" class="toggle-label">
-                                    <span class="toggle-button"></span>
-                                </label>
-                            </div>
+
+                <!-- Voice Call Notifications Section -->
+                <div class="border-b border-gray-200 pb-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">Voice Call Notifications</h3>
+                            <p class="text-sm text-gray-600">Receive phone calls for critical wildlife detections
+                            </p>
                         </div>
-                        
-                        <div class="email-settings {% if not preferences.email.enabled %}opacity-50{% endif %}">
-                            <div class="mb-4">
-                                <label for="email_recipient" class="block text-sm font-medium text-gray-700 mb-1">Recipient Email Address</label>
-                                <input type="email" id="email_recipient" name="email_recipient" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                       value="{{ preferences.email.recipient }}" placeholder="email@example.com">
-                            </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="call_enabled" name="call_enabled"
+                                class="toggle-checkbox auto-save" data-setting="call.enabled" {% if
+                                preferences.call.enabled %}checked{% endif %}>
+                            <label for="call_enabled" class="toggle-label">
+                                <span class="toggle-button"></span>
+                            </label>
                         </div>
                     </div>
-                    
-                    <!-- SMS Notifications -->
-                    <div class="border-b border-gray-200 pb-6 mb-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-800">SMS Notifications</h3>
-                                <p class="text-sm text-gray-600">Receive detection alerts via SMS</p>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="sms_enabled" name="sms_enabled" class="toggle-checkbox"
-                                       {% if preferences.sms.enabled %}checked{% endif %}>
-                                <label for="sms_enabled" class="toggle-label">
-                                    <span class="toggle-button"></span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="sms-settings {% if not preferences.sms.enabled %}opacity-50{% endif %}">
-                            <div class="mb-4">
-                                <label for="sms_recipient" class="block text-sm font-medium text-gray-700 mb-1">Default Phone Number</label>
-                                <input type="tel" id="sms_recipient" name="sms_recipient" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                       value="{{ preferences.sms.recipient }}" placeholder="+91XXXXXXXXXX">
-                                <p class="text-xs text-gray-500 mt-1">Include country code (e.g., +91 for India). Camera-specific numbers take precedence when available.</p>
-                            </div>
+
+                    <div class="call-settings {% if not preferences.call.enabled %}opacity-50{% endif %}">
+                        <div class="mb-4">
+                            <label for="call_recipient" class="block text-sm font-medium text-gray-700 mb-1">Phone
+                                Number for Calls</label>
+                            <input type="tel" id="call_recipient" name="call_recipient"
+                                value="{{ preferences.call.recipient }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 auto-save"
+                                data-setting="call.recipient">
+                            <input type="hidden" id="country_code_call" name="country_code_call"
+                                value="{{ preferences.call.country_code }}">
+                            <p class="text-xs text-gray-500 mt-1">Enter the phone number you want to receive voice calls
+                                on</p>
                         </div>
                     </div>
-                    
-                    <!-- Telegram Notifications -->
-                    <div class="pb-6 mb-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-800">Telegram Notifications</h3>
-                                <p class="text-sm text-gray-600">Receive detection alerts via Telegram</p>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="telegram_enabled" name="telegram_enabled" class="toggle-checkbox"
-                                       {% if preferences.telegram.enabled %}checked{% endif %}>
-                                <label for="telegram_enabled" class="toggle-label">
-                                    <span class="toggle-button"></span>
-                                </label>
-                            </div>
+                </div>
+
+                <!-- Email Notifications -->
+                <div class="border-b border-gray-200 pb-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">Email Notifications</h3>
+                            <p class="text-sm text-gray-600">Receive detection alerts via email</p>
                         </div>
-                        
-                        <div class="telegram-settings {% if not preferences.telegram.enabled %}opacity-50{% endif %}">
-                            <div class="mb-4">
-                                <label for="telegram_chat_id" class="block text-sm font-medium text-gray-700 mb-1">Telegram Chat ID</label>
-                                <input type="text" id="telegram_chat_id" name="telegram_chat_id" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                       value="{{ preferences.telegram.chat_id }}" placeholder="Your Telegram Chat ID">
-                                <p class="text-xs text-gray-500 mt-1">You can get your Chat ID by messaging @userinfobot on Telegram</p>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <p class="text-sm text-gray-700 mb-2">To receive Telegram notifications:</p>
-                                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                                    <li class="mb-1">Start a chat with your WildEye bot on Telegram</li>
-                                    <li class="mb-1">Send it a message like "/start" to activate it</li>
-                                    <li class="mb-1">Find your Chat ID by messaging @userinfobot on Telegram</li>
-                                    <li>Enter your Chat ID above</li>
-                                </ol>
-                            </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="email_enabled" name="email_enabled"
+                                class="toggle-checkbox auto-save" data-setting="email.enabled" {% if
+                                preferences.email.enabled %}checked{% endif %}>
+                            <label for="email_enabled" class="toggle-label">
+                                <span class="toggle-button"></span>
+                            </label>
                         </div>
                     </div>
-                    
-                    <div class="flex justify-end">
-                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                            Save Settings
-                        </button>
+
+                    <div class="email-settings {% if not preferences.email.enabled %}opacity-50{% endif %}">
+                        <div class="mb-4">
+                            <label for="email_recipient" class="block text-sm font-medium text-gray-700 mb-1">Recipient
+                                Email Address</label>
+                            <input type="email" id="email_recipient" name="email_recipient"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 auto-save"
+                                data-setting="email.recipient" value="{{ preferences.email.recipient }}"
+                                placeholder="email@example.com">
+                        </div>
                     </div>
-                </form>
+                </div>
+
+                <!-- SMS Notifications -->
+                <div class="border-b border-gray-200 pb-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">SMS Notifications</h3>
+                            <p class="text-sm text-gray-600">Receive detection alerts via SMS</p>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="sms_enabled" name="sms_enabled" class="toggle-checkbox auto-save"
+                                data-setting="sms.enabled" {% if preferences.sms.enabled %}checked{% endif %}>
+                            <label for="sms_enabled" class="toggle-label">
+                                <span class="toggle-button"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="sms-settings {% if not preferences.sms.enabled %}opacity-50{% endif %}">
+                        <div class="mb-4">
+                            <label for="sms_recipient" class="block text-sm font-medium text-gray-700 mb-1">Phone
+                                Number</label>
+                            <input type="tel" id="sms_recipient" name="sms_recipient"
+                                value="{{ preferences.sms.recipient }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 auto-save"
+                                data-setting="sms.recipient">
+                            <input type="hidden" id="country_code" name="country_code"
+                                value="{{ preferences.sms.country_code }}">
+                            <p class="text-xs text-gray-500 mt-1">Select your country code and enter your phone
+                                number</p>
+                            <button type="button" id="copy_from_voice_call"
+                                class="mt-2 text-xs text-blue-600 hover:text-blue-800">Copy from Voice Call</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telegram Notifications -->
+                <div class="border-b border-gray-200 pb-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800">Telegram Notifications</h3>
+                            <p class="text-sm text-gray-600">Receive detection alerts via Telegram</p>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="telegram_enabled" name="telegram_enabled"
+                                class="toggle-checkbox auto-save" data-setting="telegram.enabled" {% if
+                                preferences.telegram.enabled %}checked{% endif %}>
+                            <label for="telegram_enabled" class="toggle-label">
+                                <span class="toggle-button"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="telegram-settings {% if not preferences.telegram.enabled %}opacity-50{% endif %}">
+                        <div class="mb-4">
+                            <label for="telegram_chat_id" class="block text-sm font-medium text-gray-700 mb-1">Telegram
+                                Chat ID</label>
+                            <input type="text" id="telegram_chat_id" name="telegram_chat_id"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 auto-save"
+                                data-setting="telegram.chat_id" value="{{ preferences.telegram.chat_id }}"
+                                placeholder="Your Telegram Chat ID">
+                            <p class="text-xs text-gray-500 mt-1">You can get your Chat ID by messaging @userinfobot
+                                on Telegram</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-700 mb-2">To receive Telegram notifications:</p>
+                            <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
+                                <li class="mb-1">Start a chat with your WildEye bot on Telegram</li>
+                                <li class="mb-1">Send it a message like "/start" to activate it</li>
+                                <li class="mb-1">Find your Chat ID by messaging @userinfobot on Telegram</li>
+                                <li>Enter your Chat ID above</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Notification Setup Guide</h2>
-                
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Email Notifications</h3>
-                    <p class="text-gray-700 mb-3">To receive email notifications:</p>
-                    <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                        <li class="mb-1">Enter a valid email address in the Email Notifications section</li>
-                        <li class="mb-1">Make sure the toggle is enabled</li>
-                        <li>Email alerts will be sent whenever an animal is detected</li>
-                    </ol>
+
+            <!-- Broadcast Alert Settings in separate box -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8 border-l-4 border-indigo-500">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800">Broadcast Alert Settings</h2>
+                        <p class="text-gray-600">Receive alerts about animals detected by other users in your area</p>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="broadcast_enabled" name="broadcast_enabled"
+                            class="toggle-checkbox auto-save" data-setting="broadcast.enabled" {% if
+                            preferences.broadcast.enabled %}checked{% endif %}>
+                        <label for="broadcast_enabled" class="toggle-label">
+                            <span class="toggle-button"></span>
+                        </label>
+                    </div>
                 </div>
-                
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up SMS Notifications</h3>
-                    <p class="text-gray-700 mb-3">To receive SMS notifications:</p>
-                    <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                        <li class="mb-1">Enter your mobile number with country code (e.g., +91XXXXXXXXXX)</li>
-                        <li class="mb-1">Make sure the toggle is enabled</li>
-                        <li class="mb-1">You can also set camera-specific phone numbers when adding cameras</li>
-                        <li>SMS alerts will be sent whenever an animal is detected</li>
-                    </ol>
+
+                <div class="broadcast-settings {% if not preferences.broadcast.enabled %}opacity-50{% endif %}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="broadcast_location" class="block text-sm font-medium text-gray-700 mb-1">Your
+                                Location</label>
+                            <div class="flex">
+                                <input type="text" id="broadcast_location" name="broadcast_location"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 auto-save"
+                                    data-setting="broadcast.location" value="{{ preferences.broadcast.location }}"
+                                    placeholder="Enter Google Maps link">
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Enter Google Maps link (https://maps.google.com/...)</p>
+                        </div>
+
+                        <!-- Map container (hidden) -->
+                        <div id="map-container" class="hidden"></div>
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="broadcast_radius" class="block text-sm font-medium text-gray-700 mb-1">Alert
+                            Radius</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="range" id="broadcast_radius" name="broadcast_radius" min="1" max="200" step="1"
+                                value="{{ preferences.broadcast.radius|default(10) }}"
+                                class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer auto-save"
+                                data-setting="broadcast.radius">
+                            <div class="w-16 text-center font-medium text-indigo-600 bg-indigo-100 px-2 py-1 rounded">
+                                <span id="radius_value">{{ preferences.broadcast.radius|default(10) }}</span> km
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>1 km</span>
+                            <span>100 km</span>
+                            <span>200 km</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Choose the distance within which you want to receive
+                            alerts</p>
+                    </div>
                 </div>
-                
-                <div>
-                    <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Telegram Notifications</h3>
-                    <p class="text-gray-700 mb-3">To receive Telegram notifications:</p>
-                    <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                        <li class="mb-1">Find the WildEye Telegram bot on Telegram</li>
-                        <li class="mb-1">Start a chat with the bot by sending "/start"</li>
-                        <li class="mb-1">Get your Chat ID by messaging @userinfobot on Telegram</li>
-                        <li class="mb-1">Enter your Chat ID in the Telegram Notifications section</li>
-                        <li class="mb-1">Make sure the toggle is enabled</li>
-                        <li>Telegram alerts will be sent whenever an animal is detected</li>
-                    </ol>
+
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Animals to Monitor</label>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="animal_all" name="animal_all"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
+                                    data-animal="all" {% if 'all' in preferences.broadcast.animals %}checked{% endif %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="animal_all" class="font-medium text-gray-700">All animals</label>
+                            </div>
+                        </div>
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="animal_tiger" name="animal_tiger"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
+                                    data-animal="tiger" {% if 'tiger' in preferences.broadcast.animals %}checked{% endif
+                                    %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="animal_tiger" class="font-medium text-gray-700">Tiger</label>
+                            </div>
+                        </div>
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="animal_leopard" name="animal_leopard"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
+                                    data-animal="leopard" {% if 'leopard' in preferences.broadcast.animals %}checked{%
+                                    endif %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="animal_leopard" class="font-medium text-gray-700">Leopard</label>
+                            </div>
+                        </div>
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="animal_elephant" name="animal_elephant"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
+                                    data-animal="elephant" {% if 'elephant' in preferences.broadcast.animals %}checked{%
+                                    endif %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="animal_elephant" class="font-medium text-gray-700">Elephant</label>
+                            </div>
+                        </div>
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="animal_bear" name="animal_bear"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
+                                    data-animal="bear" {% if 'bear' in preferences.broadcast.animals %}checked{% endif
+                                    %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="animal_bear" class="font-medium text-gray-700">Bear</label>
+                            </div>
+                        </div>
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="animal_wildboar" name="animal_wildboar"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
+                                    data-animal="wildboar" {% if 'wildboar' in preferences.broadcast.animals %}checked{%
+                                    endif %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="animal_wildboar" class="font-medium text-gray-700">Wild Boar</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notification Methods for Broadcast
+                        Alerts</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="broadcast_email" name="broadcast_email"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-method"
+                                    data-method="email" {% if 'email' in preferences.broadcast.methods %}checked{% endif
+                                    %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="broadcast_email" class="font-medium text-gray-700">Email</label>
+                            </div>
+                        </div>
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="broadcast_sms" name="broadcast_sms"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-method"
+                                    data-method="sms" {% if 'sms' in preferences.broadcast.methods %}checked{% endif %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="broadcast_sms" class="font-medium text-gray-700">SMS</label>
+                            </div>
+                        </div>
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="broadcast_telegram" name="broadcast_telegram"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-method"
+                                    data-method="telegram" {% if 'telegram' in preferences.broadcast.methods %}checked{%
+                                    endif %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="broadcast_telegram" class="font-medium text-gray-700">Telegram</label>
+                            </div>
+                        </div>
+                        <div class="relative flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" id="broadcast_call" name="broadcast_call"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-method"
+                                    data-method="call" {% if 'call' in preferences.broadcast.methods %}checked{% endif
+                                    %}>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="broadcast_call" class="font-medium text-gray-700">Call</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Notification Setup Guide</h2>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Voice Call Notifications</h3>
+                <p class="text-gray-700 mb-3">To receive voice call notifications:</p>
+                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
+                    <li class="mb-1">Select your country code and enter your phone number</li>
+                    <li class="mb-1">Enter your preferred phone number for receiving calls</li>
+                    <li class="mb-1">Make sure the toggle is enabled</li>
+                    <li>Call alerts will be sent for critical wildlife detections</li>
+                </ol>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Email Notifications</h3>
+                <p class="text-gray-700 mb-3">To receive email notifications:</p>
+                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
+                    <li class="mb-1">Enter a valid email address in the Email Notifications section</li>
+                    <li class="mb-1">Make sure the toggle is enabled</li>
+                    <li>Email alerts will be sent whenever an animal is detected</li>
+                </ol>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Telegram Notifications</h3>
+                <p class="text-gray-700 mb-3">To receive Telegram notifications:</p>
+                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
+                    <li class="mb-1">Find the WildEye Telegram bot on Telegram</li>
+                    <li class="mb-1">Start a chat with the bot by sending "/start"</li>
+                    <li class="mb-1">Get your Chat ID by messaging @userinfobot on Telegram</li>
+                    <li class="mb-1">Enter your Chat ID in the Telegram Notifications section</li>
+                    <li class="mb-1">Make sure the toggle is enabled</li>
+                    <li>Telegram alerts will be sent whenever an animal is detected</li>
+                </ol>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Broadcast Alert Notifications</h3>
+                <p class="text-gray-700 mb-3">To receive broadcast alerts from other WildEye users:</p>
+                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
+                    <li class="mb-1">Enter a Google Maps link in the location field</li>
+                    <li class="mb-1">Set your desired alert radius (the distance within which you want to receive
+                        alerts)</li>
+                    <li class="mb-1">Select which animals you want to monitor</li>
+                    <li class="mb-1">Choose which notification methods to use for broadcast alerts</li>
+                    <li class="mb-1">Make sure the toggle is enabled</li>
+                    <li>You will now receive alerts when animals are detected by other users within your specified
+                        radius</li>
+                </ol>
+            </div>
+        </div>
     </div>
-    
+    </div>
+
+    <!-- Load the fixed notification functions script -->
     <script>
+        // Load the fixed notification functions
         document.addEventListener('DOMContentLoaded', function() {
-            // Toggle for email settings
-            const emailEnabledCheckbox = document.getElementById('email_enabled');
-            const emailSettings = document.querySelector('.email-settings');
+            console.log("Loading fixed notification functions");
             
-            emailEnabledCheckbox.addEventListener('change', function() {
-                emailSettings.classList.toggle('opacity-50', !this.checked);
-            });
-            
-            // Toggle for SMS settings
-            const smsEnabledCheckbox = document.getElementById('sms_enabled');
-            const smsSettings = document.querySelector('.sms-settings');
-            
-            smsEnabledCheckbox.addEventListener('change', function() {
-                smsSettings.classList.toggle('opacity-50', !this.checked);
-            });
-            
-            // Toggle for Telegram settings
-            const telegramEnabledCheckbox = document.getElementById('telegram_enabled');
-            const telegramSettings = document.querySelector('.telegram-settings');
-            
-            telegramEnabledCheckbox.addEventListener('change', function() {
-                telegramSettings.classList.toggle('opacity-50', !this.checked);
-            });
+            var script = document.createElement('script');
+            script.src = "/static/js/notification-functions-fixed.js";  // Make sure to save the fixed JS with this name
+            script.onload = function() {
+                console.log("Fixed notification functions loaded successfully");
+                // Initialize notification settings when script is loaded
+                if (typeof initializeNotificationSettings === 'function') {
+                    initializeNotificationSettings();
+                } else {
+                    console.error("initializeNotificationSettings function not found");
+                }
+            };
+            script.onerror = function() {
+                console.error("Failed to load fixed notification functions");
+                
+                // Fallback to original script if fixed version fails to load
+                var fallbackScript = document.createElement('script');
+                fallbackScript.src = "/static/js/notification-functions.js";
+                fallbackScript.onload = function() {
+                    console.log("Original notification-functions.js loaded as fallback");
+                    if (typeof initializeNotificationSettings === 'function') {
+                        initializeNotificationSettings();
+                    }
+                };
+                document.head.appendChild(fallbackScript);
+            };
+            document.head.appendChild(script);
         });
     </script>
-    
+
     <script type="module">
         import { initAuthStateObserver, logout } from '/static/js/firebase-auth.js';
         initAuthStateObserver();
         window.logOut = logout;
     </script>
 </body>
+
 </html>
