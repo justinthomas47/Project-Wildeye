@@ -317,8 +317,7 @@ def format_phone_number(phone_number: str, country_code: str = None) -> str:
     logger.warning(f"No country code provided for {phone_number}. Defaulting to India (+91).")
     return f"+91{phone_number}"
 
-# Update in sms_service.py - fixed send_sms function
-# Update in sms_service.py - fixed send_sms function
+# Updated send_sms function with limited decimal places for kilometers
 def send_sms(recipient: str, message: str = None, detection_data: Dict = None, country_code: str = None) -> bool:
     """
     Send an SMS notification using Twilio.
@@ -364,10 +363,22 @@ def send_sms(recipient: str, message: str = None, detection_data: Dict = None, c
             if is_broadcast:
                 # Use distance_km if available (numeric value)
                 if 'distance_km' in detection_data:
-                    distance = detection_data['distance_km']
+                    # Format distance to have at most 2 decimal places
+                    try:
+                        distance = float(detection_data['distance_km'])
+                        distance = f"{distance:.2f}"  # Format to 2 decimal places
+                    except (ValueError, TypeError):
+                        # If conversion fails, use the raw value
+                        distance = detection_data['distance_km']
                 # Otherwise use distance (might be pre-formatted)
                 elif 'distance' in detection_data:
-                    distance = detection_data['distance']
+                    # Try to format the distance if it's a number
+                    try:
+                        distance = float(detection_data['distance'])
+                        distance = f"{distance:.2f}"  # Format to 2 decimal places
+                    except (ValueError, TypeError):
+                        # If conversion fails, use the raw value
+                        distance = detection_data['distance']
                 
                 logger.info(f"Processing broadcast alert with distance: {distance}")
             
