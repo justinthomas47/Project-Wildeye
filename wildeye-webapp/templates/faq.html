@@ -9,6 +9,7 @@
     <title>WildEye - FAQ</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
         body {
             font-family: "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
@@ -20,8 +21,17 @@
             line-height: 1.6;
         }
         
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
         .faq-container {
             max-width: 1200px;
+            padding-top: 64px;
         }
         
         .section-title {
@@ -124,19 +134,195 @@
             background: url("{{ url_for('static', filename='images/pattern-bg.png') }}") repeat;
             background-color: #2d3748;
             background-blend-mode: multiply;
+            margin-top: 64px;
         }
     </style>
 </head>
 <body>
-    <div style="width: 100%;">
-        {% include 'includes/navbar.html' %}
+    {% if not current_user %}
+    <!-- SIMPLE NAVBAR FOR LOGGED OUT USERS (copied exactly from index.html) -->
+    <header class="navbar bg-gradient-to-l from-black to-gray-900 text-white py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center">
+            <a href="/" class="text-2xl font-bold mr-4 hover:text-blue-400 transition-colors flex items-center">
+                <i class='bx bx-show-alt text-white text-3xl mr-1'></i> WildEye
+            </a>
+        </div>
+        <nav>
+            <a href="/about" class="text-white hover:text-blue-400 transition-colors text-lg mr-8">About</a>
+            <a href="/faq" class="text-white hover:text-blue-400 transition-colors text-lg">FAQ</a>
+        </nav>
+    </header>
+    {% else %}
+    <!-- FULL NAVBAR FOR LOGGED IN USERS -->
+    <header class="bg-gradient-to-l from-black to-gray-900 text-white py-4 px-6 flex justify-between items-center relative z-50">
+        <div class="flex items-center">
+            <!-- Menu Toggle Button -->
+            <button 
+                id="sidebarToggle"
+                class="relative z-50 p-2 hover:bg-gray-700 rounded-md transition-colors focus:outline-none">
+                <svg id="menuIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+                <svg id="closeIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
+            <!-- Logo -->
+            <a href="/home" 
+               class="text-2xl font-bold ml-4 relative z-50 hover:text-blue-400 transition-colors">
+                WildEye
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="ml-8 space-x-4 relative z-50">
+                <a href="/home" 
+                   class="text-white hover:text-blue-400 transition-colors">
+                   Home
+                </a>
+                <a href="/about" 
+                   class="text-white hover:text-blue-400 transition-colors">
+                   About
+                </a>
+                <a href="/faq" 
+                   class="text-white hover:text-blue-400 transition-colors text-blue-400">
+                   FAQ
+                </a>
+            </nav>
+        </div>
+
+        <!-- Logout Button -->
+        <button id="logout-btn" 
+                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-bold relative z-50">
+            Logout
+        </button>
+    </header>
+
+    <!-- Sidebar Menu -->
+    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-gray-900 text-white transform -translate-x-full transition-transform duration-200 ease-in-out z-40 pt-20">
+        <div class="p-4 space-y-4">
+            <!-- Cameras Button -->
+            <a href="{{ url_for('cameras') }}"
+               class="w-full flex items-center p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+                <svg class="mr-3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span class="font-medium">Cameras</span>
+            </a>
+
+            <!-- Detection History Button -->
+            <a href="{{ url_for('detection_history') }}" 
+               class="w-full flex items-center p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+                <svg class="mr-3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span class="font-medium">Detection History</span>
+            </a>
+
+            <!-- Warning System Button -->
+            <a href="{{ url_for('warnings') }}"
+               class="w-full flex items-center p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+                <svg class="mr-3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span class="font-medium">Warning System</span>
+            </a>
+            
+            <!-- Notification Settings Button -->
+            <a href="{{ url_for('notification_settings') }}"
+               class="w-full flex items-center p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+                <svg class="mr-3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"></path>
+                    <circle cx="12" cy="10" r="1"></circle>
+                </svg>
+                <span class="font-medium">Notification Settings</span>
+            </a>
+        </div>
     </div>
+
+    <!-- Scripts for sidebar and logout -->
+    <script>
+        // Sidebar functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const menuIcon = document.getElementById('menuIcon');
+            const closeIcon = document.getElementById('closeIcon');
+
+            function toggleSidebar() {
+                if (sidebar.classList.contains('-translate-x-full')) {
+                    // Open sidebar
+                    sidebar.classList.remove('-translate-x-full');
+                    menuIcon.classList.add('hidden');
+                    closeIcon.classList.remove('hidden');
+                } else {
+                    // Close sidebar
+                    sidebar.classList.add('-translate-x-full');
+                    menuIcon.classList.remove('hidden');
+                    closeIcon.classList.add('hidden');
+                }
+            }
+
+            // Add click event listener to toggle button
+            sidebarToggle.addEventListener('click', function(event) {
+                event.stopPropagation();
+                toggleSidebar();
+            });
+
+            // Close sidebar when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!sidebar.contains(event.target) && 
+                    !sidebarToggle.contains(event.target) && 
+                    !sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
+            });
+
+            // Close sidebar when clicking a menu item
+            sidebar.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function() {
+                    toggleSidebar();
+                });
+            });
+        });
+    </script>
+
+    <script type="module">
+        import { logout, initAuthStateObserver } from '/static/js/firebase-auth.js';
+
+        // Initialize auth observer
+        initAuthStateObserver();
+
+        // Add logout event listener
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            const logoutBtn = document.getElementById('logout-btn');
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = 'Logging out...';
+
+            try {
+                await logout();
+            } catch (error) {
+                console.error(error);
+                alert(error.message);
+                logoutBtn.disabled = false;
+                logoutBtn.textContent = 'Logout';
+            }
+        });
+    </script>
+    {% endif %}
     
-    <div class="faq-header py-12 mb-8">
+    <div class="pt-24 pb-10 mb-6">
         <div class="container mx-auto px-4 md:px-8">
             <div class="max-w-3xl mx-auto text-center">
-                <h1 class="text-4xl md:text-5xl font-bold mb-4 text-white">Frequently Asked Questions</h1>
-                <p class="text-xl text-blue-100 opacity-90">Everything you need to know about WildEye's wildlife detection system</p>
+                <h1 class="text-4xl md:text-5xl font-bold mb-3 text-blue-800">Frequently Asked Questions</h1>
+                <div class="w-20 h-1 bg-blue-500 mx-auto mb-4 rounded-full"></div>
+                <p class="text-lg text-gray-600">Everything you need to know about WildEye's wildlife detection system</p>
             </div>
         </div>
     </div>
@@ -148,7 +334,6 @@
             <a href="#setup" class="px-5 py-2 bg-blue-100 text-blue-800 font-medium rounded-full hover:bg-blue-200 transition duration-300">Setup</a>
             <a href="#alerts" class="px-5 py-2 bg-blue-100 text-blue-800 font-medium rounded-full hover:bg-blue-200 transition duration-300">Alerts</a>
             <a href="#technical" class="px-5 py-2 bg-blue-100 text-blue-800 font-medium rounded-full hover:bg-blue-200 transition duration-300">Technical</a>
-            <a href="#support" class="px-5 py-2 bg-blue-100 text-blue-800 font-medium rounded-full hover:bg-blue-200 transition duration-300">Support</a>
         </div>
         
         <!-- General Information -->
@@ -160,7 +345,7 @@
                     <div class="p-6">
                         <h3 class="text-xl font-semibold mb-4 faq-question text-blue-800">What is WildEye?</h3>
                         <div class="prose max-w-none text-gray-700">
-                            <p class="mb-3">WildEye is an advanced AI-powered wildlife detection and warning system that uses computer vision technology to identify wild animals in real-time through CCTV camera feeds. The system is built on YOLOv8, a state-of-the-art object detection algorithm specifically trained to recognize various species of wildlife.</p>
+                            <p class="mb-3">WildEye is an advanced ML-powered wildlife detection and warning system that uses computer vision technology to identify wild animals in real-time through CCTV camera feeds. The system is built on YOLOv8, a state-of-the-art object detection algorithm specifically trained to recognize various species of wildlife.</p>
                             <p>When an animal is detected, WildEye immediately alerts users through multiple communication channels, providing critical information to help ensure both human and wildlife safety.</p>
                         </div>
                     </div>
@@ -170,7 +355,7 @@
                     <div class="p-6">
                         <h3 class="text-xl font-semibold mb-4 faq-question text-blue-800">How does WildEye work?</h3>
                         <div class="prose max-w-none text-gray-700">
-                            <p class="mb-3">WildEye connects to your existing CCTV cameras using the RTSP protocol, analyzing the video feed in real-time. Our AI model, based on YOLOv8, continuously scans for wildlife and immediately triggers an alert when an animal is detected.</p>
+                            <p class="mb-3">WildEye connects to your existing CCTV cameras using the RTSP protocol, analyzing the video feed in real-time. Our ML model, based on YOLOv8, continuously scans for wildlife and immediately triggers an alert when an animal is detected.</p>
                             <p class="mb-3">The system captures an image of the detected animal, determines its exact location, and sends this information through your preferred notification channels. Each alert includes safety precautions specific to the type of animal detected.</p>
                             <p>All detection events are logged in your secure dashboard for later review and analysis.</p>
                         </div>
@@ -198,14 +383,17 @@
                     <div class="p-6">
                         <h3 class="text-xl font-semibold mb-4 faq-question text-blue-800">What types of animals can WildEye detect?</h3>
                         <div class="prose max-w-none text-gray-700">
-                            <p class="mb-3">WildEye can detect a wide range of wildlife including:</p>
+                            <p class="mb-3">WildEye is specifically trained to detect the following wildlife species:</p>
                             <ul class="feature-list list-none pl-0">
-                                <li>Predators (bears, wolves, lions, tigers)</li>
-                                <li>Ungulates (deer, elk, moose)</li>
-                                <li>Reptiles (crocodiles, large snakes)</li>
-                                <li>Other potentially dangerous wild animals</li>
+                                <li>Elephant</li>
+                                <li>Tiger</li>
+                                <li>Leopard</li>
+                                <li>Wild Boar</li>
+                                <li>Wild Buffalo</li>
+                                <li>Bear</li>
+                                <li>Lion</li>
                             </ul>
-                            <p class="mt-3">Our AI model is continuously trained and updated to improve detection accuracy and expand the range of identifiable species. We can also customize detection for specific regional wildlife upon request.</p>
+                            <p class="mt-3">Our ML model is continuously trained and updated to improve detection accuracy for these specific species. The system is optimized to identify these animals in various lighting conditions and environments.</p>
                         </div>
                     </div>
                 </div>
@@ -272,21 +460,99 @@
                                         <li>Recommended safety precautions specific to the detected animal</li>
                                         <li>Severity level of the potential threat</li>
                                     </ul>
+                                    <p class="mt-3">Our alerts are designed to provide actionable information within seconds of detection. The system tailors safety recommendations based on the specific animal detected and its proximity to human settlements.</p>
+                                    <p class="mb-2">For dangerous animals like tigers or leopards, alerts include emergency contact numbers for forest department officials and wildlife rangers in your area.</p>
+                                    <p>All alert data is also stored securely in your account, allowing you to review past incidents and analyze wildlife movement patterns over time.</p>
                                 </div>
                                 <div class="md:w-1/2">
-                                    <div class="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                                        <div class="text-sm text-gray-500 mb-2">Sample Alert Preview</div>
-                                        <div class="border border-gray-300 rounded p-3 bg-white">
-                                            <div class="text-red-600 font-semibold mb-1">⚠️ WILDLIFE ALERT: Bear Detected</div>
-                                            <div class="text-sm mb-2">Time: 07:13 AM, March 26, 2025</div>
-                                            <div class="bg-gray-200 h-32 flex items-center justify-center mb-2 rounded">
-                                                <i class="fas fa-image text-gray-400 text-2xl"></i>
+                                    <div class="bg-gray-50 rounded-lg">
+                                        <div class="text-sm text-gray-600 p-2">Sample Alert Preview</div>
+                                        <div class="border border-gray-200 rounded">
+                                            <!-- Full width image -->
+                                            <div class="relative w-full">
+                                                <img src="{{ url_for('static', filename='leopard_detection.jpg') }}" alt="Leopard Detection" class="w-full">
+                                                <div class="absolute top-0 left-0 bg-green-500 px-2 py-0.5 text-white text-sm">leopard (0.82)</div>
                                             </div>
-                                            <div class="text-sm mb-1">Location: <span class="text-blue-600">North Property Line</span></div>
-                                            <div class="text-sm mb-2">
-                                                <a href="#" class="text-blue-500 underline text-xs">View on Google Maps</a>
-                                            </div>
-                                            <div class="text-sm p-2 bg-yellow-50 border border-yellow-200 rounded mt-2">
-                                                <span class="font-semibold">Safety Precautions:</span> Remain indoors. Make noise if you must go outside. Keep pets contained.
+                                            
+                                            <!-- Alert content -->
+                                            <div class="p-3 bg-white">
+                                                <div class="text-red-600 font-semibold mb-1">🚨 WARNING: Leopard Detected</div>
+                                                <div class="text-sm mb-2">Detected at cam2 - 06:32 AM, 12-03-2025</div>
+                                                
+                                                <div class="mb-2">
+                                                    <div class="font-semibold mb-1">Safety Precautions:</div>
+                                                    <ul class="list-disc pl-5 space-y-0.5">
+                                                        <li>Stay indoors</li>
+                                                        <li>Avoid sudden movements</li>
+                                                        <li>Call forest dept: 1926</li>
+                                                    </ul>
+                                                </div>
+                                                
+                                                <div class="flex items-center justify-between mt-2 pt-1 border-t border-gray-100">
+                                                    <span class="text-yellow-600">⚠️ Dangerous animal</span>
+                                                    <a href="#" class="text-blue-500">View on map</a>
+                                                </div>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Technical Information -->
+        <div id="technical" class="mb-12">
+            <h2 class="text-2xl md:text-3xl font-bold section-title">Technical Information</h2>
+            
+            <div class="space-y-6">
+                <div class="faq-item bg-white">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-4 faq-question text-blue-800">How accurate is WildEye's detection?</h3>
+                        <div class="prose max-w-none text-gray-700">
+                            <p class="mb-3">WildEye's detection model has been trained on thousands of wildlife images across varying conditions, achieving an overall accuracy rate of over 90% for supported species. Performance varies slightly by:</p>
+                            <ul class="feature-list list-none pl-0">
+                                <li>Lighting conditions (daylight performance is strongest)</li>
+                                <li>Weather conditions (clear weather provides optimal results)</li>
+                                <li>Distance from camera (15-50 feet is optimal range)</li>
+                                <li>Animal species (larger animals are detected with higher accuracy)</li>
+                            </ul>
+                            <p class="mt-3">Our system continuously improves through regular model updates based on real-world detection data. The system also includes false positive filtering to minimize unnecessary alerts.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="faq-item bg-white">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-4 faq-question text-blue-800">What are the system requirements?</h3>
+                        <div class="prose max-w-none text-gray-700">
+                            <p>For optimal performance, WildEye requires:</p>
+                            <div class="grid md:grid-cols-2 gap-6 my-4">
+                                <div>
+                                    <h4 class="font-semibold text-blue-700 mb-2">Camera Requirements</h4>
+                                    <ul class="feature-list list-none pl-0">
+                                        <li>Cameras with RTSP streaming capability</li>
+                                        <li>Minimum resolution of 720p (1080p recommended)</li>
+                                        <li>Stable network connectivity (wired preferred)</li>
+                                        <li>Proper positioning for wildlife monitoring areas</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-blue-700 mb-2">Network Requirements</h4>
+                                    <ul class="feature-list list-none pl-0">
+                                        <li>Stable internet connection (min 5 Mbps upload)</li>
+                                        <li>Port forwarding for remote access (if needed)</li>
+                                        <li>Fixed IP or dynamic DNS for remote cameras</li>
+                                        <li>Firewall settings that allow camera connections</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>

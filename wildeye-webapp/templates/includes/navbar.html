@@ -1,8 +1,7 @@
-<!-- navbar.html -->
+<!-- FULL NAVBAR FOR LOGGED IN USERS -->
 <header class="bg-gradient-to-l from-black to-gray-900 text-white py-4 px-6 flex justify-between items-center relative z-50">
     <div class="flex items-center">
         <!-- Menu Toggle Button -->
-        {% if current_page != 'index' %}
         <button 
             id="sidebarToggle"
             class="relative z-50 p-2 hover:bg-gray-700 rounded-md transition-colors focus:outline-none">
@@ -16,22 +15,19 @@
                 <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
         </button>
-        {% endif %}
 
         <!-- Logo -->
-        <a href="{% if current_page == 'index' %}/{% else %}/home{% endif %}" 
+        <a href="/home" 
            class="text-2xl font-bold ml-4 relative z-50 hover:text-blue-400 transition-colors">
             WildEye
         </a>
 
         <!-- Navigation Links -->
         <nav class="ml-8 space-x-4 relative z-50">
-            {% if current_page != 'index' %}
-                <a href="/home" 
-                   class="text-white hover:text-blue-400 transition-colors {% if current_page == 'home' %}text-blue-400{% endif %}">
-                   Home
-                </a>
-            {% endif %}
+            <a href="/home" 
+               class="text-white hover:text-blue-400 transition-colors {% if current_page == 'home' %}text-blue-400{% endif %}">
+               Home
+            </a>
             <a href="/about" 
                class="text-white hover:text-blue-400 transition-colors {% if current_page == 'about' %}text-blue-400{% endif %}">
                About
@@ -44,16 +40,13 @@
     </div>
 
     <!-- Logout Button -->
-    {% if current_page != 'index' %}
-        <button id="logout-btn" 
-                class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-bold relative z-50">
-            Logout
-        </button>
-    {% endif %}
+    <button id="logout-btn" 
+            class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors font-bold relative z-50">
+        Logout
+    </button>
 </header>
 
 <!-- Sidebar Menu -->
-{% if current_page != 'index' %}
 <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-gray-900 text-white transform -translate-x-full transition-transform duration-200 ease-in-out z-40 pt-20">
     <div class="p-4 space-y-4">
         <!-- Cameras Button -->
@@ -98,7 +91,7 @@
     </div>
 </div>
 
-<!-- Scripts remain the same -->
+<!-- Scripts for sidebar and logout -->
 <script>
     // Sidebar functionality
     document.addEventListener('DOMContentLoaded', function() {
@@ -167,4 +160,3 @@
         }
     });
 </script>
-{% endif %}
