@@ -1,3 +1,4 @@
+<!-- notification_settings.html -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -113,6 +114,16 @@
         #map-container {
             display: none;
         }
+
+        /* Custom card hover effects */
+        .notification-card {
+            transition: all 0.3s ease;
+        }
+
+        .notification-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
 
@@ -154,14 +165,30 @@
             {% endif %}
 
             <div class="bg-white rounded-xl shadow-md p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Notification Methods</h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                        </path>
+                    </svg>
+                    Notification Methods
+                </h2>
                 <p class="text-gray-600 mb-6">Configure how you want to be notified when animals are detected.</p>
 
                 <!-- Voice Call Notifications Section -->
                 <div class="border-b border-gray-200 pb-6 mb-6">
                     <div class="flex justify-between items-center mb-4">
                         <div>
-                            <h3 class="text-lg font-medium text-gray-800">Voice Call Notifications</h3>
+                            <h3 class="text-lg font-medium text-gray-800 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
+                                    </path>
+                                </svg>
+                                Voice Call Notifications
+                            </h3>
                             <p class="text-sm text-gray-600">Receive phone calls for critical wildlife detections
                             </p>
                         </div>
@@ -175,7 +202,8 @@
                         </div>
                     </div>
 
-                    <div class="call-settings {% if not preferences.call.enabled %}opacity-50{% endif %}">
+                    <div
+                        class="call-settings {% if not preferences.call.enabled %}opacity-50{% endif %} bg-gray-50 p-4 rounded-lg">
                         <div class="mb-4">
                             <label for="call_recipient" class="block text-sm font-medium text-gray-700 mb-1">Phone
                                 Number for Calls</label>
@@ -195,7 +223,15 @@
                 <div class="border-b border-gray-200 pb-6 mb-6">
                     <div class="flex justify-between items-center mb-4">
                         <div>
-                            <h3 class="text-lg font-medium text-gray-800">Email Notifications</h3>
+                            <h3 class="text-lg font-medium text-gray-800 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                Email Notifications
+                            </h3>
                             <p class="text-sm text-gray-600">Receive detection alerts via email</p>
                         </div>
                         <div class="flex items-center">
@@ -208,7 +244,8 @@
                         </div>
                     </div>
 
-                    <div class="email-settings {% if not preferences.email.enabled %}opacity-50{% endif %}">
+                    <div
+                        class="email-settings {% if not preferences.email.enabled %}opacity-50{% endif %} bg-gray-50 p-4 rounded-lg">
                         <div class="mb-4">
                             <label for="email_recipient" class="block text-sm font-medium text-gray-700 mb-1">Recipient
                                 Email Address</label>
@@ -224,7 +261,15 @@
                 <div class="border-b border-gray-200 pb-6 mb-6">
                     <div class="flex justify-between items-center mb-4">
                         <div>
-                            <h3 class="text-lg font-medium text-gray-800">SMS Notifications</h3>
+                            <h3 class="text-lg font-medium text-gray-800 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                                    </path>
+                                </svg>
+                                SMS Notifications
+                            </h3>
                             <p class="text-sm text-gray-600">Receive detection alerts via SMS</p>
                         </div>
                         <div class="flex items-center">
@@ -236,7 +281,8 @@
                         </div>
                     </div>
 
-                    <div class="sms-settings {% if not preferences.sms.enabled %}opacity-50{% endif %}">
+                    <div
+                        class="sms-settings {% if not preferences.sms.enabled %}opacity-50{% endif %} bg-gray-50 p-4 rounded-lg">
                         <div class="mb-4">
                             <label for="sms_recipient" class="block text-sm font-medium text-gray-700 mb-1">Phone
                                 Number</label>
@@ -249,7 +295,8 @@
                             <p class="text-xs text-gray-500 mt-1">Select your country code and enter your phone
                                 number</p>
                             <button type="button" id="copy_from_voice_call"
-                                class="mt-2 text-xs text-blue-600 hover:text-blue-800">Copy from Voice Call</button>
+                                class="mt-2 px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition">Copy
+                                from Voice Call</button>
                         </div>
                     </div>
                 </div>
@@ -258,7 +305,14 @@
                 <div class="border-b border-gray-200 pb-6 mb-6">
                     <div class="flex justify-between items-center mb-4">
                         <div>
-                            <h3 class="text-lg font-medium text-gray-800">Telegram Notifications</h3>
+                            <h3 class="text-lg font-medium text-gray-800 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                                Telegram Notifications
+                            </h3>
                             <p class="text-sm text-gray-600">Receive detection alerts via Telegram</p>
                         </div>
                         <div class="flex items-center">
@@ -271,7 +325,8 @@
                         </div>
                     </div>
 
-                    <div class="telegram-settings {% if not preferences.telegram.enabled %}opacity-50{% endif %}">
+                    <div
+                        class="telegram-settings {% if not preferences.telegram.enabled %}opacity-50{% endif %} bg-gray-50 p-4 rounded-lg">
                         <div class="mb-4">
                             <label for="telegram_chat_id" class="block text-sm font-medium text-gray-700 mb-1">Telegram
                                 Chat ID</label>
@@ -285,11 +340,27 @@
 
                         <div class="mb-4">
                             <p class="text-sm text-gray-700 mb-2">To receive Telegram notifications:</p>
-                            <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                                <li class="mb-1">Start a chat with your WildEye bot on Telegram</li>
-                                <li class="mb-1">Send it a message like "/start" to activate it</li>
-                                <li class="mb-1">Find your Chat ID by messaging @userinfobot on Telegram</li>
-                                <li>Enter your Chat ID above</li>
+                            <ol class="space-y-2 text-sm text-gray-700">
+                                <li class="flex items-center">
+                                    <span
+                                        class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full mr-2 text-xs">1</span>
+                                    <span>Start a chat with your WildEye bot on Telegram</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span
+                                        class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full mr-2 text-xs">2</span>
+                                    <span>Send it a message like "/start" to activate it</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span
+                                        class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full mr-2 text-xs">3</span>
+                                    <span>Find your Chat ID by messaging @userinfobot on Telegram</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span
+                                        class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full mr-2 text-xs">4</span>
+                                    <span>Enter your Chat ID above</span>
+                                </li>
                             </ol>
                         </div>
                     </div>
@@ -297,10 +368,18 @@
             </div>
 
             <!-- Broadcast Alert Settings in separate box -->
-            <div class="bg-white rounded-xl shadow-md p-6 mb-8 border-l-4 border-indigo-500">
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8">
                 <div class="flex justify-between items-center mb-4">
                     <div>
-                        <h2 class="text-xl font-semibold text-gray-800">Broadcast Alert Settings</h2>
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0">
+                                </path>
+                            </svg>
+                            Broadcast Alert Settings
+                        </h2>
                         <p class="text-gray-600">Receive alerts about animals detected by other users in your area</p>
                     </div>
                     <div class="flex items-center">
@@ -313,7 +392,8 @@
                     </div>
                 </div>
 
-                <div class="broadcast-settings {% if not preferences.broadcast.enabled %}opacity-50{% endif %}">
+                <div
+                    class="broadcast-settings {% if not preferences.broadcast.enabled %}opacity-50{% endif %} bg-gray-50 p-4 rounded-lg mt-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="broadcast_location" class="block text-sm font-medium text-gray-700 mb-1">Your
@@ -324,7 +404,8 @@
                                     data-setting="broadcast.location" value="{{ preferences.broadcast.location }}"
                                     placeholder="Enter Google Maps link">
                             </div>
-                            <p class="text-xs text-gray-500 mt-1">Enter Google Maps link (https://maps.google.com/...)</p>
+                            <p class="text-xs text-gray-500 mt-1">Enter Google Maps link (https://maps.google.com/...)
+                            </p>
                         </div>
 
                         <!-- Map container (hidden) -->
@@ -356,7 +437,8 @@
                 <div class="mt-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Animals to Monitor</label>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <div class="relative flex items-start">
+                        <div
+                            class="relative flex items-start bg-white p-3 rounded border border-gray-200 hover:border-indigo-300 transition">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="animal_all" name="animal_all"
                                     class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
@@ -366,7 +448,8 @@
                                 <label for="animal_all" class="font-medium text-gray-700">All animals</label>
                             </div>
                         </div>
-                        <div class="relative flex items-start">
+                        <div
+                            class="relative flex items-start bg-white p-3 rounded border border-gray-200 hover:border-indigo-300 transition">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="animal_tiger" name="animal_tiger"
                                     class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
@@ -377,7 +460,8 @@
                                 <label for="animal_tiger" class="font-medium text-gray-700">Tiger</label>
                             </div>
                         </div>
-                        <div class="relative flex items-start">
+                        <div
+                            class="relative flex items-start bg-white p-3 rounded border border-gray-200 hover:border-indigo-300 transition">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="animal_leopard" name="animal_leopard"
                                     class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
@@ -388,7 +472,8 @@
                                 <label for="animal_leopard" class="font-medium text-gray-700">Leopard</label>
                             </div>
                         </div>
-                        <div class="relative flex items-start">
+                        <div
+                            class="relative flex items-start bg-white p-3 rounded border border-gray-200 hover:border-indigo-300 transition">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="animal_elephant" name="animal_elephant"
                                     class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
@@ -399,7 +484,8 @@
                                 <label for="animal_elephant" class="font-medium text-gray-700">Elephant</label>
                             </div>
                         </div>
-                        <div class="relative flex items-start">
+                        <div
+                            class="relative flex items-start bg-white p-3 rounded border border-gray-200 hover:border-indigo-300 transition">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="animal_bear" name="animal_bear"
                                     class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
@@ -410,7 +496,8 @@
                                 <label for="animal_bear" class="font-medium text-gray-700">Bear</label>
                             </div>
                         </div>
-                        <div class="relative flex items-start">
+                        <div
+                            class="relative flex items-start bg-white p-3 rounded border border-gray-200 hover:border-indigo-300 transition">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="animal_wildboar" name="animal_wildboar"
                                     class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-animal"
@@ -424,122 +511,266 @@
                     </div>
                 </div>
 
+                <!-- Improved Notification Methods for Broadcast Alerts Section -->
                 <div class="mt-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Notification Methods for Broadcast
-                        Alerts</label>
+                    <label
+                        class="block text-lg font-semibold text-gray-800 mb-4 bg-indigo-50 p-3 rounded-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                            </path>
+                        </svg>
+                        Notification Methods for Broadcast Alerts
+                    </label>
+
+                    <p class="text-sm text-gray-600 mb-3 italic">Select which notification methods to use when animals
+                        are detected by other users in your area.</p>
+
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div class="relative flex items-start">
+                        <div
+                            class="relative flex items-start bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all shadow-sm">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="broadcast_email" name="broadcast_email"
-                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-method"
+                                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded auto-save-method"
                                     data-method="email" {% if 'email' in preferences.broadcast.methods %}checked{% endif
                                     %}>
                             </div>
-                            <div class="ml-3 text-sm">
-                                <label for="broadcast_email" class="font-medium text-gray-700">Email</label>
+                            <div class="ml-3">
+                                <label for="broadcast_email" class="font-medium text-gray-800">Email</label>
+                                <p class="text-xs text-gray-500 mt-1">Receive alerts in your inbox</p>
                             </div>
                         </div>
-                        <div class="relative flex items-start">
+
+                        <div
+                            class="relative flex items-start bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all shadow-sm">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="broadcast_sms" name="broadcast_sms"
-                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-method"
+                                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded auto-save-method"
                                     data-method="sms" {% if 'sms' in preferences.broadcast.methods %}checked{% endif %}>
                             </div>
-                            <div class="ml-3 text-sm">
-                                <label for="broadcast_sms" class="font-medium text-gray-700">SMS</label>
+                            <div class="ml-3">
+                                <label for="broadcast_sms" class="font-medium text-gray-800">SMS</label>
+                                <p class="text-xs text-gray-500 mt-1">Receive text message alerts</p>
                             </div>
                         </div>
-                        <div class="relative flex items-start">
+
+                        <div
+                            class="relative flex items-start bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all shadow-sm">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="broadcast_telegram" name="broadcast_telegram"
-                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-method"
+                                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded auto-save-method"
                                     data-method="telegram" {% if 'telegram' in preferences.broadcast.methods %}checked{%
                                     endif %}>
                             </div>
-                            <div class="ml-3 text-sm">
-                                <label for="broadcast_telegram" class="font-medium text-gray-700">Telegram</label>
+                            <div class="ml-3">
+                                <label for="broadcast_telegram" class="font-medium text-gray-800">Telegram</label>
+                                <p class="text-xs text-gray-500 mt-1">Receive alerts in Telegram</p>
                             </div>
                         </div>
-                        <div class="relative flex items-start">
+
+                        <div
+                            class="relative flex items-start bg-white p-4 rounded-lg border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all shadow-sm">
                             <div class="flex items-center h-5">
                                 <input type="checkbox" id="broadcast_call" name="broadcast_call"
-                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded auto-save-method"
+                                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded auto-save-method"
                                     data-method="call" {% if 'call' in preferences.broadcast.methods %}checked{% endif
                                     %}>
                             </div>
-                            <div class="ml-3 text-sm">
-                                <label for="broadcast_call" class="font-medium text-gray-700">Call</label>
+                            <div class="ml-3">
+                                <label for="broadcast_call" class="font-medium text-gray-800">Call</label>
+                                <p class="text-xs text-gray-500 mt-1">Receive phone call alerts</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Notification Setup Guide</h2>
-
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Voice Call Notifications</h3>
-                <p class="text-gray-700 mb-3">To receive voice call notifications:</p>
-                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                    <li class="mb-1">Select your country code and enter your phone number</li>
-                    <li class="mb-1">Enter your preferred phone number for receiving calls</li>
-                    <li class="mb-1">Make sure the toggle is enabled</li>
-                    <li>Call alerts will be sent for critical wildlife detections</li>
-                </ol>
+            <!-- SEPARATE Notification Setup Guide Box -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Notification Setup Guide
+                </h2>
+            
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Voice Call Setup -->
+                    <div class="bg-gray-50 rounded-lg p-5 border-l-4 border-indigo-500 transition-all hover:shadow-md notification-card">
+                        <div class="flex items-center mb-3">
+                            <div class="bg-indigo-100 p-2 rounded-full mr-3">
+                                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-800">Voice Call Notifications</h3>
+                        </div>
+                        <div class="ml-12">
+                            <ol class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-indigo-500 text-white rounded-full mr-2 text-xs">1</span>
+                                    <span>Select your country code</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-indigo-500 text-white rounded-full mr-2 text-xs">2</span>
+                                    <span>Enter your preferred phone number</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-indigo-500 text-white rounded-full mr-2 text-xs">3</span>
+                                    <span>Enable the toggle switch</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-indigo-500 text-white rounded-full mr-2 text-xs">4</span>
+                                    <span>Receive calls for critical wildlife detections</span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+            
+                    <!-- Email Setup -->
+                    <div class="bg-gray-50 rounded-lg p-5 border-l-4 border-blue-500 transition-all hover:shadow-md notification-card">
+                        <div class="flex items-center mb-3">
+                            <div class="bg-blue-100 p-2 rounded-full mr-3">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-800">Email Notifications</h3>
+                        </div>
+                        <div class="ml-12">
+                            <ol class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full mr-2 text-xs">1</span>
+                                    <span>Enter a valid email address</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full mr-2 text-xs">2</span>
+                                    <span>Enable the toggle switch</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full mr-2 text-xs">3</span>
+                                    <span>Receive email alerts for animal detections</span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+            
+                    <!-- Telegram Setup -->
+                    <div class="bg-gray-50 rounded-lg p-5 border-l-4 border-blue-400 transition-all hover:shadow-md notification-card">
+                        <div class="flex items-center mb-3">
+                            <div class="bg-blue-100 p-2 rounded-full mr-3">
+                                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-800">Telegram Notifications</h3>
+                        </div>
+                        <div class="ml-12">
+                            <ol class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-400 text-white rounded-full mr-2 text-xs">1</span>
+                                    <span>Find the WildEye Telegram bot</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-400 text-white rounded-full mr-2 text-xs">2</span>
+                                    <span>Start a chat with "/start" command</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-400 text-white rounded-full mr-2 text-xs">3</span>
+                                    <span>Get your Chat ID from @userinfobot</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-400 text-white rounded-full mr-2 text-xs">4</span>
+                                    <span>Enter your Chat ID and enable toggle</span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+            
+                    <!-- Broadcast Alert Setup -->
+                    <div class="bg-gray-50 rounded-lg p-5 border-l-4 border-green-500 transition-all hover:shadow-md notification-card">
+                        <div class="flex items-center mb-3">
+                            <div class="bg-green-100 p-2 rounded-full mr-3">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-800">Broadcast Alert Notifications</h3>
+                        </div>
+                        <div class="ml-12">
+                            <ol class="space-y-2 text-gray-700">
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full mr-2 text-xs">1</span>
+                                    <span>Enter your Google Maps location link</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full mr-2 text-xs">2</span>
+                                    <span>Set your desired alert radius</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full mr-2 text-xs">3</span>
+                                    <span>Select animals to monitor</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full mr-2 text-xs">4</span>
+                                    <span>Choose notification methods</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <span class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-green-500 text-white rounded-full mr-2 text-xs">5</span>
+                                    <span>Enable the toggle switch</span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Additional Tips Section -->
+                <div class="mt-8 bg-gray-50 rounded-lg p-5">
+                    <h3 class="text-lg font-medium text-gray-800 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                        Tips for Effective Notifications
+                    </h3>
+                    <ul class="space-y-2 text-gray-700 ml-5">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-indigo-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Enable multiple notification methods for critical animals</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-indigo-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Choose voice calls for the most urgent notifications</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-indigo-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Set a reasonable alert radius to avoid notification fatigue</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-indigo-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Configure all notification methods before enabling broadcast alerts</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
-
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Email Notifications</h3>
-                <p class="text-gray-700 mb-3">To receive email notifications:</p>
-                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                    <li class="mb-1">Enter a valid email address in the Email Notifications section</li>
-                    <li class="mb-1">Make sure the toggle is enabled</li>
-                    <li>Email alerts will be sent whenever an animal is detected</li>
-                </ol>
-            </div>
-
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Telegram Notifications</h3>
-                <p class="text-gray-700 mb-3">To receive Telegram notifications:</p>
-                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                    <li class="mb-1">Find the WildEye Telegram bot on Telegram</li>
-                    <li class="mb-1">Start a chat with the bot by sending "/start"</li>
-                    <li class="mb-1">Get your Chat ID by messaging @userinfobot on Telegram</li>
-                    <li class="mb-1">Enter your Chat ID in the Telegram Notifications section</li>
-                    <li class="mb-1">Make sure the toggle is enabled</li>
-                    <li>Telegram alerts will be sent whenever an animal is detected</li>
-                </ol>
-            </div>
-
-            <div>
-                <h3 class="text-lg font-medium text-gray-800 mb-2">Setting Up Broadcast Alert Notifications</h3>
-                <p class="text-gray-700 mb-3">To receive broadcast alerts from other WildEye users:</p>
-                <ol class="text-sm text-gray-700 list-decimal list-inside ml-2">
-                    <li class="mb-1">Enter a Google Maps link in the location field</li>
-                    <li class="mb-1">Set your desired alert radius (the distance within which you want to receive
-                        alerts)</li>
-                    <li class="mb-1">Select which animals you want to monitor</li>
-                    <li class="mb-1">Choose which notification methods to use for broadcast alerts</li>
-                    <li class="mb-1">Make sure the toggle is enabled</li>
-                    <li>You will now receive alerts when animals are detected by other users within your specified
-                        radius</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-    </div>
 
     <!-- Load the fixed notification functions script -->
     <script>
         // Load the fixed notification functions
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log("Loading fixed notification functions");
-            
+
             var script = document.createElement('script');
             script.src = "/static/js/notification-functions-fixed.js";  // Make sure to save the fixed JS with this name
-            script.onload = function() {
+            script.onload = function () {
                 console.log("Fixed notification functions loaded successfully");
                 // Initialize notification settings when script is loaded
                 if (typeof initializeNotificationSettings === 'function') {
@@ -548,13 +779,13 @@
                     console.error("initializeNotificationSettings function not found");
                 }
             };
-            script.onerror = function() {
+            script.onerror = function () {
                 console.error("Failed to load fixed notification functions");
-                
+
                 // Fallback to original script if fixed version fails to load
                 var fallbackScript = document.createElement('script');
                 fallbackScript.src = "/static/js/notification-functions.js";
-                fallbackScript.onload = function() {
+                fallbackScript.onload = function () {
                     console.log("Original notification-functions.js loaded as fallback");
                     if (typeof initializeNotificationSettings === 'function') {
                         initializeNotificationSettings();

@@ -3,7 +3,7 @@ import cv2
 from ultralytics import YOLO
 import yt_dlp
 import threading
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 import concurrent.futures
 import numpy as np
 from typing import Generator, Dict, List, Optional, Tuple
@@ -189,7 +189,9 @@ def get_video_hash(url):
 
 def download_youtube_video(url, seek_time=0, max_duration=None):
     """
-    Download a YouTube video to a temporary file
+    Enhanced function to download a YouTube video to a temporary file
+    with better quality control and error handling.
+    
     Returns: Path to the downloaded video file
     """
     video_hash = get_video_hash(url)
@@ -200,21 +202,57 @@ def download_youtube_video(url, seek_time=0, max_duration=None):
         file_age = time.time() - os.path.getmtime(video_path)
         # Keep videos in cache for up to 24 hours
         if file_age < 86400:  # 24 hours in seconds
-            logger.info(f"Using cached video for {url}")
-            return video_path
+            try:
+                # Validate the cached file before using it
+                cap = cv2.VideoCapture(video_path)
+                if cap.isOpened():
+                    # Read a test frame to check if file is valid
+                    ret, _ = cap.read()
+                    cap.release()
+                    
+                    if ret:
+                        logger.info(f"Using valid cached video for {url}")
+                        return video_path
+                    else:
+                        logger.warning(f"Cached video exists but cannot be read, re-downloading")
+                        os.remove(video_path)
+                else:
+                    logger.warning(f"Cached video exists but cannot be opened, re-downloading")
+                    os.remove(video_path)
+            except Exception as e:
+                logger.warning(f"Error validating cached video: {e}, re-downloading")
+                try:
+                    os.remove(video_path)
+                except:
+                    pass
         else:
             # Remove old cached file
-            os.remove(video_path)
+            try:
+                os.remove(video_path)
+            except Exception as e:
+                logger.error(f"Error removing old cached file: {e}")
     
     logger.info(f"Downloading YouTube video: {url}")
     
+    # Use a temporary file during download to avoid using partially downloaded files
+    temp_video_path = f"{video_path}.downloading"
+    
     try:
+        # First, try getting the best quality mp4 stream
         ydl_opts = {
-            'format': 'best[ext=mp4]/best',
-            'outtmpl': video_path,
+            'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best[ext=mp4]/best',
+            'outtmpl': temp_video_path,
             'quiet': True,
             'no_warnings': True,
-            'ignoreerrors': True
+            'ignoreerrors': True,
+            'noplaylist': True,
+            # Add retries and continuation
+            'retries': 3,
+            'fragment_retries': 3,
+            'continuedl': True,
+            # Force single-part download for frame seeking
+            'overwrites': True,
+            'nopart': True,
         }
         
         # Add time range if specified
@@ -231,19 +269,77 @@ def download_youtube_video(url, seek_time=0, max_duration=None):
                 
             download_range['ranges'].append(time_range)
         
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+        download_success = False
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+                
+            # Check if download was successful
+            if os.path.exists(temp_video_path):
+                # Verify the file is valid
+                cap = cv2.VideoCapture(temp_video_path)
+                if cap.isOpened():
+                    ret, _ = cap.read()
+                    cap.release()
+                    
+                    if ret:
+                        # Move the temporary file to the final path
+                        shutil.move(temp_video_path, video_path)
+                        download_success = True
+                        logger.info(f"Successfully downloaded high quality video to {video_path}")
+                    else:
+                        logger.warning(f"Downloaded file cannot be read, will try lower quality")
+                else:
+                    logger.warning(f"Downloaded file cannot be opened, will try lower quality")
+            else:
+                logger.warning(f"High quality download failed, will try lower quality")
+                
+        except Exception as e:
+            logger.warning(f"Error during high quality download: {e}, trying lower quality")
         
-        if os.path.exists(video_path):
-            logger.info(f"Successfully downloaded video to {video_path}")
+        # If high quality download failed, try with lower quality
+        if not download_success:
+            try:
+                # Clean up any partial downloads
+                if os.path.exists(temp_video_path):
+                    os.remove(temp_video_path)
+                
+                # Try with lower quality settings
+                ydl_opts['format'] = 'best[ext=mp4][height<=480]/best[height<=480]/best'
+                
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
+                
+                # Check if download was successful
+                if os.path.exists(temp_video_path):
+                    # Move the temporary file to the final path
+                    shutil.move(temp_video_path, video_path)
+                    download_success = True
+                    logger.info(f"Successfully downloaded lower quality video to {video_path}")
+            except Exception as e:
+                logger.error(f"Error during lower quality download: {e}")
+                
+                # Clean up any partial downloads
+                if os.path.exists(temp_video_path):
+                    os.remove(temp_video_path)
+        
+        if download_success and os.path.exists(video_path):
             youtube_cache[url] = video_path
             return video_path
         else:
-            logger.error(f"Failed to download video: file not found")
+            logger.error(f"Failed to download video: file not found or invalid")
             return None
             
     except Exception as e:
         logger.error(f"Error downloading YouTube video: {e}")
+        
+        # Clean up any partial downloads
+        if os.path.exists(temp_video_path):
+            try:
+                os.remove(temp_video_path)
+            except:
+                pass
+                
         return None
 
 def clean_youtube_cache(max_size_gb=5):
@@ -486,6 +582,7 @@ class VideoProcessor:
         self.last_detection_log = 0  # Timestamp of last detection log
         self.prefetch_buffer = Queue(maxsize=30)  # Buffer for prefetched frames
         self.current_video_path = None  # Path to current video file
+        self.input_type = None  # Store input type (youtube_link, manual, etc.)
         
         try:
             logger.info(f"Loading YOLO model from {model_path}")
@@ -508,47 +605,83 @@ class VideoProcessor:
         self.pause_flag.clear()
 
     def _frame_prefetcher(self, cap: cv2.VideoCapture) -> None:
-        """Prefetch frames into a buffer for smoother playback"""
+        """Enhanced prefetcher with better timing control for YouTube videos"""
         frame_count = 0
         last_frame_time = time.time()
         consecutive_failures = 0
         max_failures = 5
+        buffer_target = 15  # Target number of frames to keep in buffer
         
-        logger.info("Starting frame prefetcher thread")
+        # Get video FPS for proper timing
+        video_fps = cap.get(cv2.CAP_PROP_FPS)
+        if video_fps <= 0 or video_fps > 60:  # Invalid or unreasonable FPS
+            video_fps = 30
+        target_frame_time = 1.0 / video_fps
+        
+        is_youtube = self.input_type == "youtube_link"
+        
+        logger.info(f"Starting frame prefetcher thread (YouTube: {is_youtube}, FPS: {video_fps})")
         
         while not self.stop_flag.is_set():
             try:
-                # If buffer is full, sleep briefly
-                if self.prefetch_buffer.full():
-                    time.sleep(0.01)
-                    continue
+                current_buffer_size = self.prefetch_buffer.qsize()
                 
-                # Read frame
-                ret, frame = cap.read()
-                if not ret:
-                    consecutive_failures += 1
-                    logger.warning(f"Prefetcher: Failed to read frame ({consecutive_failures}/{max_failures})")
-                    if consecutive_failures >= max_failures:
-                        logger.error("Prefetcher: Too many consecutive failures, breaking")
-                        break
+                # If buffer is full enough, wait a bit
+                if current_buffer_size >= buffer_target:
                     time.sleep(0.1)
                     continue
                 
-                # Reset failures counter and add to buffer
-                consecutive_failures = 0
-                frame_count += 1
+                # Calculate how many frames we need to read
+                frames_needed = buffer_target - current_buffer_size
+                
+                # Batch read frames to fill buffer
+                for _ in range(frames_needed):
+                    if self.stop_flag.is_set():
+                        break
+                        
+                    # Read frame
+                    ret, frame = cap.read()
+                    if not ret:
+                        consecutive_failures += 1
+                        logger.warning(f"Prefetcher: Failed to read frame ({consecutive_failures}/{max_failures})")
+                        if consecutive_failures >= max_failures:
+                            logger.error("Prefetcher: Too many consecutive failures, breaking")
+                            return
+                        time.sleep(0.1)
+                        break  # Try again later
+                    
+                    # Reset failures counter 
+                    consecutive_failures = 0
+                    frame_count += 1
+                    
+                    # Add frame to prefetch buffer
+                    try:
+                        # For YouTube videos, apply a slight blur to reduce compression artifacts
+                        # This can help YOLO detect objects more reliably
+                        if is_youtube:
+                            frame = cv2.GaussianBlur(frame, (3, 3), 0)
+                        
+                        # Use non-blocking put with a short timeout
+                        if not self.prefetch_buffer.full():
+                            self.prefetch_buffer.put((frame, time.time()), block=False)
+                    except Full:
+                        # If buffer is full, just continue
+                        break
+                    except Exception as e:
+                        logger.error(f"Prefetcher: Error adding to buffer: {e}")
+                        break
+                
+                # Control timing based on video frame rate
+                elapsed = time.time() - last_frame_time
+                if elapsed < target_frame_time and frames_needed == 0:
+                    time.sleep(min(0.1, target_frame_time - elapsed))  # Cap max sleep time
+                
                 last_frame_time = time.time()
-                
-                # Add frame to prefetch buffer
-                try:
-                    self.prefetch_buffer.put((frame, time.time()), timeout=1)
-                except Exception as e:
-                    logger.error(f"Prefetcher: Error adding to buffer: {e}")
-                
+                    
             except Exception as e:
                 logger.error(f"Frame prefetcher error: {e}")
-                break
-                
+                time.sleep(0.1)  # Prevent tight loop on error
+                    
         logger.info("Frame prefetcher thread exiting")
         
     def _frame_producer(self, cap: cv2.VideoCapture) -> None:
@@ -557,6 +690,19 @@ class VideoProcessor:
         consecutive_failures = 0
         max_failures = 5  # Maximum number of consecutive failures before breaking
         last_frame = None  # Store the last successfully read frame
+        
+        # Get video FPS for proper timing
+        video_fps = cap.get(cv2.CAP_PROP_FPS)
+        if video_fps <= 0 or video_fps > 60:  # Invalid or unreasonable FPS
+            video_fps = 30
+        target_frame_time = 1.0 / video_fps
+        
+        # Adjust frame skip based on input type
+        frame_skip = 1  # Process every frame by default
+        if self.input_type == "youtube_link":
+            # For YouTube, process fewer frames to avoid lag
+            frame_skip = 3  # Process every 3rd frame
+            logger.info(f"YouTube video detected, processing every {frame_skip}th frame")
         
         # Start prefetcher thread for smoother playback
         prefetcher_thread = threading.Thread(target=self._frame_prefetcher, args=(cap,), daemon=True)
@@ -597,11 +743,12 @@ class VideoProcessor:
                     
                     continue
 
-                # Maintain proper timing for normal operation
+                # Strict timing control for video playback
                 current_time = time.time()
                 time_diff = current_time - last_frame_time
-                if time_diff < self.frame_time:
-                    time.sleep(self.frame_time - time_diff)
+                if time_diff < target_frame_time:
+                    # Sleep precisely to maintain target frame rate
+                    time.sleep(target_frame_time - time_diff)
 
                 # Try to get frame from prefetch buffer first
                 try:
@@ -627,8 +774,8 @@ class VideoProcessor:
                 last_frame_time = time.time()
                 frame_count += 1
                 
-                # Process every other frame to reduce load
-                if frame_count % 2 != 0:
+                # Process frames based on frame_skip setting
+                if frame_count % frame_skip != 0:
                     continue
 
                 try:
@@ -639,7 +786,7 @@ class VideoProcessor:
                         except Empty:
                             pass
 
-                    self.frame_queue.put((frame, time.time()), timeout=1)
+                    self.frame_queue.put((frame, timestamp), timeout=1)
                 except Exception as queue_error:
                     logger.error(f"Queue error: {queue_error}")
                     continue
@@ -773,6 +920,7 @@ class VideoProcessor:
     def process_stream(self, input_type: str, input_value: str, seek_time: int = 0, camera_id: str = None, db = None, is_visible: bool = False) -> Generator:
         self.camera_id = camera_id  # Store camera_id
         self.db = db  # Store database instance
+        self.input_type = input_type  # Store input type for use in other methods
         
         # Set initial pause state based on visibility
         if not is_visible:
@@ -805,7 +953,7 @@ class VideoProcessor:
                     # Fall back to streaming if download fails
                     logger.warning("Downloaded video not available, falling back to streaming")
                     ydl_opts = {
-                        'format': 'best[ext=mp4]',
+                        'format': 'best[ext=mp4]/best',  # Try to get mp4 format for better compatibility
                         'quiet': True,
                         'youtube_include_dash_manifest': False
                     }
@@ -819,24 +967,83 @@ class VideoProcessor:
             logger.info(f"Opening video stream from source: {stream_source}")
             cap = cv2.VideoCapture(stream_source)
             
-            # Add buffer size for network streams
-            if isinstance(stream_source, str) and (stream_source.startswith('rtsp://') or stream_source.startswith('http://')):
-                cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
+            # For YouTube videos, set a larger buffer size and higher priority
+            if input_type == "youtube_link":
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 5)  # Larger buffer for YouTube
+            elif isinstance(stream_source, str) and (stream_source.startswith('rtsp://') or stream_source.startswith('http://')):
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # Standard buffer for other streams
 
             if not cap.isOpened():
                 raise RuntimeError(f"Failed to open video stream from source: {stream_source}")
 
-            # Get and validate video FPS
+            # Get and validate video FPS with better fallback
             self.fps = cap.get(cv2.CAP_PROP_FPS)
             if self.fps <= 0 or self.fps > 60:  # Invalid or unreasonable FPS
-                self.fps = 30
+                # For YouTube, try to get FPS from the video info if available
+                if input_type == "youtube_link" and self.current_video_path:
+                    try:
+                        # Try to read a few frames and calculate FPS
+                        start_time = time.time()
+                        frame_count = 0
+                        for _ in range(20):  # Read 20 frames for estimation
+                            ret, _ = cap.read()
+                            if ret:
+                                frame_count += 1
+                        
+                        elapsed = time.time() - start_time
+                        if elapsed > 0 and frame_count > 0:
+                            measured_fps = frame_count / elapsed
+                            self.fps = min(60, measured_fps)  # Cap at 60 FPS
+                            logger.info(f"Measured YouTube video FPS: {self.fps}")
+                        
+                        # Reset position
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    except Exception as e:
+                        logger.error(f"Error measuring FPS: {e}")
+                        self.fps = 30  # Fallback
+                else:
+                    self.fps = 30  # Default FPS
+                    
             self.frame_time = 1/self.fps
             logger.info(f"Video FPS: {self.fps}")
 
             # Handle seeking for video files
-            if seek_time > 0 and input_type != "manual" and not self.current_video_path:
-                frame_number = int(seek_time * self.fps)
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+            if seek_time > 0:
+                if input_type == "youtube_link":
+                    if self.current_video_path:
+                        # For downloaded YouTube videos, seeking works well
+                        frame_number = int(seek_time * self.fps)
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+                        logger.info(f"Seeked to frame {frame_number} (time: {seek_time}s)")
+                    else:
+                        # For streaming YouTube, seeking is less reliable
+                        # Try to get a new stream URL with the seek time
+                        logger.info(f"Getting new YouTube stream with seek time: {seek_time}s")
+                        try:
+                            ydl_opts = {
+                                'format': 'best[ext=mp4]/best',
+                                'quiet': True,
+                                'youtube_include_dash_manifest': False
+                            }
+                            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                                info = ydl.extract_info(f"{input_value}&t={seek_time}", download=False)
+                                new_stream_source = info['url']
+                                
+                                # Close existing capture and open new one
+                                cap.release()
+                                cap = cv2.VideoCapture(new_stream_source)
+                                cap.set(cv2.CAP_PROP_BUFFERSIZE, 5)  # Larger buffer for YouTube
+                                
+                                if not cap.isOpened():
+                                    logger.error("Failed to open seeked YouTube stream, falling back")
+                                    cap = cv2.VideoCapture(stream_source)
+                                    cap.set(cv2.CAP_PROP_BUFFERSIZE, 5)
+                        except Exception as e:
+                            logger.error(f"Error seeking YouTube stream: {e}, using original stream")
+                elif input_type != "manual":
+                    # For other file types, normal seeking should work
+                    frame_number = int(seek_time * self.fps)
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
 
             # Reset stop flag
             self.stop_flag.clear()
@@ -850,21 +1057,26 @@ class VideoProcessor:
             producer_thread.start()
 
             last_frame_time = time.time()
+            frame_delivery_rate = self.fps  # Target frame rate for delivery
+            target_frame_time = 1.0 / frame_delivery_rate
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_workers) as executor:
                 # Start worker threads
                 futures = [executor.submit(self._frame_processor_worker, worker_id)
                           for worker_id in range(self.num_workers)]
 
+                frame_count = 0
                 while not self.stop_flag.is_set():
                     try:
-                        processed_frame, detections, timestamp = self.result_queue.get(timeout=1.0)
+                        processed_frame, detections, timestamp = self.result_queue.get(timeout=0.5)
 
-                        # Control frame rate
+                        # Control frame rate for consistent playback
                         current_time = time.time()
                         elapsed = current_time - last_frame_time
-                        if elapsed < self.frame_time:
-                            time.sleep(self.frame_time - elapsed)
+                        
+                        # Strictly enforce frame timing for smoother playback
+                        if elapsed < target_frame_time:
+                            time.sleep(target_frame_time - elapsed)
 
                         if processed_frame is not None:
                             # Encode frame as JPEG
@@ -873,8 +1085,26 @@ class VideoProcessor:
                             yield (b'--frame\r\n'
                                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
                             last_frame_time = time.time()
+                            frame_count += 1
+                            
+                            # Periodically log frame delivery rate
+                            if frame_count % 30 == 0:
+                                delivery_time = time.time() - (current_time - elapsed)
+                                actual_fps = 30 / delivery_time
+                                logger.info(f"Stream delivery rate: {actual_fps:.2f} fps (target: {frame_delivery_rate})")
 
                     except Empty:
+                        # If queue is empty, yield the last processed frame if available
+                        # to maintain a constant frame rate
+                        if hasattr(self, 'last_processed_frame') and self.last_processed_frame is not None:
+                            try:
+                                # Encode and send last frame to maintain continuity
+                                _, buffer = cv2.imencode('.jpg', self.last_processed_frame)
+                                frame = buffer.tobytes()
+                                yield (b'--frame\r\n'
+                                      b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                            except Exception as e:
+                                logger.error(f"Error yielding last frame: {e}")
                         continue
                     except Exception as e:
                         logger.error(f"Frame delivery error: {e}")

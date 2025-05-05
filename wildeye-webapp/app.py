@@ -416,7 +416,8 @@ def create_error_frame(error_message):
 
 @app.route("/")
 def index():
-    return render_template("index.html", current_page='index')
+    # Already on login page, no need to check authentication
+    return render_template("index.html", current_page='index', current_user=None)
 
 @app.route('/set-session', methods=['POST'])
 def set_session():
@@ -583,10 +584,10 @@ def home():
         # Only get cameras for current user
         cameras_ref = db.collection("cameras").where("owner_uid", "==", user['uid'])
         cameras = [doc.to_dict() for doc in cameras_ref.stream()]
-        return render_template("home.html", cameras=cameras, current_page='home')
+        return render_template("home.html", cameras=cameras, current_page='home', current_user=user)
     except Exception as e:
         logger.error(f"Error loading cameras: {e}")
-        return render_template("home.html", cameras=[], error="Failed to load cameras", current_page='home')
+        return render_template("home.html", cameras=[], error="Failed to load cameras", current_page='home', current_user=user)
     
 @app.route("/detection-history")
 @login_required
@@ -965,15 +966,15 @@ def test_notifications():
     
 @app.route("/about")
 def about():
-    return render_template("about.html", current_page='about')
-
-@app.route("/contact")
-def contact():
-    return render_template("contact.html", current_page='contact')
+    # Check if user is authenticated
+    user = get_current_user()
+    return render_template("about.html", current_page='about', current_user=user)
 
 @app.route("/faq")
 def faq():
-    return render_template("faq.html", current_page='faq')
+    # Check if user is authenticated
+    user = get_current_user()
+    return render_template("faq.html", current_page='faq', current_user=user)
 
 @app.route("/cameras")
 @login_required
