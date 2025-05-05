@@ -4,3 +4,5 @@ __pycache__/
 logs/*.log
 logs/wildeye_complete.log
 logs/
+firebase_admin_key.json
+service_account.json

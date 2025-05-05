@@ -3,6 +3,10 @@ window.map = null;
 window.marker = null;
 window.radiusCircle = null;
 
+// Track changes that need to be saved
+let pendingChanges = {};
+let isSaving = false;
+
 // Function to create Google Maps link from coordinates
 function createGoogleMapsLink(lat, lng) {
     return `https://www.google.com/maps?q=${lat},${lng}`;
@@ -30,6 +34,7 @@ function showSaving() {
         savingSpinner.classList.add('spinner');
         saveText.textContent = 'Saving...';
     }
+    isSaving = true;
 }
 
 // Function to show saved indicator
@@ -47,6 +52,8 @@ function showSaved() {
             saveIndicator.classList.remove('visible');
         }, 2000);
     }
+    isSaving = false;
+    pendingChanges = {}; // Clear pending changes after successful save
 }
 
 // Function to show error
@@ -74,6 +81,7 @@ function showError(error) {
             saveIndicator.classList.remove('visible');
         }, 3000);
     }
+    isSaving = false;
 }
 
 // Helper function to convert dial code to country code
@@ -373,8 +381,8 @@ function setupBroadcastLocationSaving() {
                     locationInput.dataset.lng = coordinates.lng.toFixed(6);
                 }
                 
-                // Save the validated location
-                saveSettings({ 'broadcast.location': locationInput.value });
+                // Save the validated location - ensure it is saved
+                saveSettingsNow({ 'broadcast.location': locationInput.value });
             } else {
                 // Show error for invalid input
                 showError("Please enter a valid Google Maps link or coordinates in format 'latitude,longitude'");
@@ -384,17 +392,61 @@ function setupBroadcastLocationSaving() {
         // Also add input event listener with debounce
         locationInput.addEventListener('input', debounce(function() {
             console.log("Input detected in broadcast location:", locationInput.value);
-            // We'll only validate on blur to avoid interrupting the user while typing
+            // Track that we have changes pending
+            pendingChanges['broadcast.location'] = locationInput.value;
         }, 1000));
     }
 }
 
-// Auto-save functionality 
-const saveSettings = debounce(function(settings) {
+// Immediate, non-debounced save function for critical saves
+function saveSettingsNow(settings) {
     showSaving();
     
     // Debug the settings being saved
-    console.log("Saving settings:", settings);
+    console.log("Saving settings immediately:", settings);
+    
+    // Make API call to save settings
+    return fetch('/update_notification_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSaved();
+            console.log("Settings saved successfully");
+            return true;
+        } else {
+            showError(data.error || 'Unknown error');
+            console.error("Error saving settings:", data.error);
+            return false;
+        }
+    })
+    .catch(error => {
+        console.error('Error saving settings:', error);
+        showError('Failed to save settings');
+        return false;
+    });
+}
+
+// Auto-save functionality with debounce
+const saveSettings = debounce(function(settings) {
+    // Add settings to pending changes
+    Object.assign(pendingChanges, settings);
+    
+    // If already saving, just add to pending changes
+    if (isSaving) {
+        console.log("Already saving, added to pending changes:", settings);
+        return;
+    }
+    
+    showSaving();
+    
+    // Debug the settings being saved
+    console.log("Saving settings:", pendingChanges);
     
     // Make API call to save settings
     fetch('/update_notification_settings', {
@@ -402,7 +454,7 @@ const saveSettings = debounce(function(settings) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(pendingChanges)
     })
     .then(response => response.json())
     .then(data => {
@@ -418,11 +470,32 @@ const saveSettings = debounce(function(settings) {
         console.error('Error saving settings:', error);
         showError('Failed to save settings');
     });
-}, 500);
+}, 500); // Keep original 500ms debounce time
 
 // Initialize the page when DOM is loaded
 function initializeNotificationSettings() {
     console.log("Initializing notification settings");
+    
+    // Add page unload handler to save pending changes
+    window.addEventListener('beforeunload', function(e) {
+        if (Object.keys(pendingChanges).length > 0) {
+            // Save all pending changes
+            saveSettingsNow(pendingChanges);
+            
+            // This won't block navigation but gives browser a chance to save data
+            // and shows standard "unsaved changes" dialog
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+    
+    // Add page visibility change handler to save when tab is switched
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden' && Object.keys(pendingChanges).length > 0) {
+            console.log("Page visibility changed to hidden, saving all pending changes");
+            saveSettingsNow(pendingChanges);
+        }
+    });
     
     // Initialize intl-tel-input for SMS
     const smsInput = document.querySelector("#sms_recipient");
@@ -494,6 +567,19 @@ function initializeNotificationSettings() {
                 saveSettings({ 'sms.country_code': '+' + smsIti.getSelectedCountryData().dialCode });
             }
         });
+        
+        // Additionally save on blur
+        smsInput.addEventListener('blur', function() {
+            const countryCodeField = document.getElementById('country_code');
+            if (countryCodeField && smsIti) {
+                countryCodeField.value = '+' + smsIti.getSelectedCountryData().dialCode;
+                const settings = {
+                    'sms.country_code': '+' + smsIti.getSelectedCountryData().dialCode,
+                    'sms.recipient': smsInput.value
+                };
+                saveSettings(settings);
+            }
+        });
     }
     
     if (callInput && callIti) {
@@ -502,6 +588,19 @@ function initializeNotificationSettings() {
             if (countryCodeCallField && callIti) {
                 countryCodeCallField.value = '+' + callIti.getSelectedCountryData().dialCode;
                 saveSettings({ 'call.country_code': '+' + callIti.getSelectedCountryData().dialCode });
+            }
+        });
+        
+        // Additionally save on blur
+        callInput.addEventListener('blur', function() {
+            const countryCodeCallField = document.getElementById('country_code_call');
+            if (countryCodeCallField && callIti) {
+                countryCodeCallField.value = '+' + callIti.getSelectedCountryData().dialCode;
+                const settings = {
+                    'call.country_code': '+' + callIti.getSelectedCountryData().dialCode,
+                    'call.recipient': callInput.value
+                };
+                saveSettings(settings);
             }
         });
     }
@@ -514,8 +613,10 @@ function initializeNotificationSettings() {
             smsIti.setCountry(callIti.getSelectedCountryData().iso2);
             
             // Save the updated SMS number
-            saveSettings({ 'sms.recipient': callInput.value });
-            saveSettings({ 'sms.country_code': '+' + callIti.getSelectedCountryData().dialCode });
+            saveSettings({ 
+                'sms.recipient': callInput.value,
+                'sms.country_code': '+' + callIti.getSelectedCountryData().dialCode
+            });
             
             // Show notification
             Swal.fire({
@@ -602,8 +703,13 @@ function initializeNotificationSettings() {
     if (broadcastRadiusInput && radiusValueDisplay) {
         broadcastRadiusInput.addEventListener('input', function() {
             radiusValueDisplay.textContent = this.value;
-            
-            // Save radius value on change
+            // Track changes
+            pendingChanges['broadcast.radius'] = parseInt(this.value);
+        });
+        
+        // Save when user releases the slider
+        broadcastRadiusInput.addEventListener('change', function() {
+            radiusValueDisplay.textContent = this.value;
             saveSettings({ 'broadcast.radius': parseInt(this.value) });
         });
     }
@@ -666,6 +772,12 @@ function initializeNotificationSettings() {
         
         // For text inputs, also listen for blur event (for when user finishes typing)
         if (input.type === 'text' || input.type === 'email' || input.type === 'tel') {
+            // Track input changes
+            input.addEventListener('input', function() {
+                const setting = this.getAttribute('data-setting');
+                pendingChanges[setting] = this.value;
+            });
+            
             input.addEventListener('blur', function() {
                 const setting = this.getAttribute('data-setting');
                 const value = this.value;
