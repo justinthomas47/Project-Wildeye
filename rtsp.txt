@@ -1,1 +1,2 @@
-rtsp://admin:HPGVFX@192.168.204.102:554/H.264
+rtsp://admin:HPGVFX@192.168.1.21:554/H.264
+rtsp://admin:HPGVFX@192.168.1.21:554/H.264?transport=tcp

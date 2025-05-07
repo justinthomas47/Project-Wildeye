@@ -5,6 +5,7 @@ load_dotenv()
 configure_logging()
 from telegram_init import setup_telegram_environment
 telegram_config = setup_telegram_environment()
+from werkzeug.utils import secure_filename
 import os
 import threading
 import webbrowser
@@ -49,6 +50,15 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # Session lifetime in seconds (
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Add this helper function
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Firebase Admin SDK Initialization
 try:
@@ -191,15 +201,15 @@ class CameraStream:
         """Update the visibility status of the stream"""
         if self.is_visible == visible:
             return  # No change needed
-            
-        logger.info(f"Setting visibility for {self.input_value} to {visible}")
-        self.is_visible = visible
         
+        logger.info(f"Setting visibility for camera ID {self.camera_id} to {visible}")
+        self.is_visible = visible
+    
         # Pause or resume the backend processing based on visibility
         if visible:
-            resume_stream(self.input_value)
+            resume_stream(self.camera_id)  # Use camera_id instead of input_value
         else:
-            pause_stream(self.input_value)
+            pause_stream(self.camera_id)  # Use camera_id instead of input_value
 
     def start(self):
         if not self.running.is_set():
@@ -547,13 +557,32 @@ def home():
         try:
             input_type = request.form["input_type"]
             camera_name = request.form["camera_name"]
-            input_value = request.form["input_value"]
             google_maps_link = request.form.get("google_maps_link", "")
             mobile_number = request.form.get("mobile_number", "")
 
             # Generate a unique ID for the camera
             clean_name = re.sub(r'[^a-zA-Z0-9]', '', camera_name.lower())
             camera_id = f"{clean_name}_{str(uuid.uuid4())[:8]}"
+            
+            # Handle file upload
+            if input_type == "file_upload":
+                if 'video_file' not in request.files:
+                    return render_template("home.html", error="No file part", current_page='home')
+                
+                file = request.files['video_file']
+                if file.filename == '':
+                    return render_template("home.html", error="No file selected", current_page='home')
+                
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # Add unique identifier to prevent filename collisions
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}_{filename}")
+                    file.save(file_path)
+                    input_value = file_path
+                else:
+                    return render_template("home.html", error="Invalid file type. Please upload MP4, AVI, MOV, MKV, or WEBM files", current_page='home')
+            else:
+                input_value = request.form["input_value"]
 
             camera_data = {
                 "camera_id": camera_id,
@@ -563,7 +592,7 @@ def home():
                 "google_maps_link": google_maps_link,
                 "mobile_number": mobile_number,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "owner_uid": user['uid']  # Add the owner_uid to link data to user
+                "owner_uid": user['uid']
             }
             
             # Save to Firestore with the generated ID as document ID

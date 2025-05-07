@@ -82,17 +82,25 @@
     <main class="p-8">
         <div class="form-container">
             <h2 class="text-xl font-semibold text-center mb-4">Add Camera Details</h2>
-            <form method="post" id="cameraForm">
+            <form method="post" id="cameraForm" enctype="multipart/form-data">
                 <select name="input_type" required class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <option value="" disabled selected>Select Input Type</option>
                     <option value="rtsp_url">RTSP URL</option>
                     <option value="youtube_link">YouTube Link</option>
-                    <option value="manual">Local Camera</option>
+                    <option value="file_upload">Upload Video File</option>
                 </select>
                 <input type="text" name="camera_name" placeholder="Camera Name" required
                     class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <input type="text" name="input_value" placeholder="Input Value (URL or details)" required
                     class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <!-- Add file input for video upload -->
+                <div id="file-upload-container" class="hidden mx-4 my-2">
+                    <label for="video-file" class="block text-sm font-medium text-gray-700 mb-1">Upload Video
+                        File</label>
+                    <input type="file" name="video_file" id="video-file" accept=".mp4,.avi,.mov,.mkv,.webm"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="mt-1 text-xs text-gray-500">Supported formats: MP4, AVI, MOV, MKV, WEBM</p>
+                </div>
                 <input type="text" name="google_maps_link" placeholder="Google Maps Link (optional)"
                     class="focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <input type="text" name="mobile_number" placeholder="Mobile Number (optional)" pattern="[0-9]{10}"
@@ -110,45 +118,52 @@
 
     <script type="module">
         import { initAuthStateObserver, logout } from '/static/js/firebase-auth.js';
-        
+
         document.addEventListener('DOMContentLoaded', function () {
             const inputTypeSelect = document.querySelector('select[name="input_type"]');
             const inputValueField = document.querySelector('input[name="input_value"]');
-            const cameraForm = document.getElementById('cameraForm');
-            const cameraList = document.createElement('select');
-            cameraList.name = 'input_value';
-            cameraList.className = 'focus:ring-2 focus:ring-blue-500 focus:outline-none hidden';
-            cameraList.required = true;
-            inputValueField.parentNode.insertBefore(cameraList, inputValueField.nextSibling);
+            const inputValueContainer = inputValueField.parentNode;
 
-            inputTypeSelect.addEventListener('change', async function () {
-                if (this.value === 'manual') {
-                    inputValueField.classList.add('hidden');
+            // Create the file input element with the same styling and positioning
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.name = 'video_file';
+            fileInput.id = 'video-file';
+            fileInput.accept = '.mp4,.avi,.mov,.mkv,.webm';
+            fileInput.className = inputValueField.className; // Use the same CSS classes
+            fileInput.style.display = 'none'; // Initially hidden
+
+            // Add a small helper text below the file input
+            const helperText = document.createElement('p');
+            helperText.className = 'text-xs text-gray-500 mx-4';
+            helperText.textContent = 'Supported formats: MP4, AVI, MOV, MKV, WEBM';
+            helperText.style.display = 'none'; // Initially hidden
+
+            // Insert file input right after the input value field
+            inputValueContainer.insertBefore(fileInput, inputValueField.nextSibling);
+            inputValueContainer.insertBefore(helperText, fileInput.nextSibling);
+
+            inputTypeSelect.addEventListener('change', function () {
+                if (this.value === 'file_upload') {
+                    // Hide the URL input field and show the file input
+                    inputValueField.style.display = 'none';
                     inputValueField.required = false;
-                    cameraList.classList.remove('hidden');
-                    cameraList.required = true;
+                    inputValueField.value = 'file_upload_placeholder'; // Set a placeholder value
 
-                    // Fetch available cameras
-                    try {
-                        const response = await fetch('/get_cameras');
-                        const cameras = await response.json();
-
-                        cameraList.innerHTML = '<option value="" disabled selected>Select Camera</option>';
-                        cameras.forEach(camera => {
-                            const option = document.createElement('option');
-                            option.value = camera.index;
-                            option.textContent = camera.name;
-                            cameraList.appendChild(option);
-                        });
-                    } catch (error) {
-                        console.error('Error fetching cameras:', error);
-                        cameraList.innerHTML = '<option value="" disabled selected>No cameras found</option>';
-                    }
+                    // Show file input
+                    fileInput.style.display = '';
+                    fileInput.required = true;
+                    helperText.style.display = '';
                 } else {
-                    inputValueField.classList.remove('hidden');
+                    // Show URL input and hide file input
+                    inputValueField.style.display = '';
                     inputValueField.required = true;
-                    cameraList.classList.add('hidden');
-                    cameraList.required = false;
+                    inputValueField.value = ''; // Clear any placeholder value
+
+                    // Hide file input
+                    fileInput.style.display = 'none';
+                    fileInput.required = false;
+                    helperText.style.display = 'none';
 
                     // Update placeholder based on input type
                     if (this.value === 'rtsp_url') {
@@ -158,18 +173,17 @@
                     }
                 }
             });
-        });
-        // Initialize auth state observer
-        initAuthStateObserver();
 
-        // Make logout function globally available
-        window.logOut = logout;
+            // Make sure the form has the correct enctype for file uploads
+            const cameraForm = document.getElementById('cameraForm');
+            cameraForm.enctype = 'multipart/form-data';
 
-        // Form submission handling
-        document.getElementById('cameraForm').addEventListener('submit', function (e) {
-            const submitButton = this.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Adding Camera...';
+            // Form submission handling
+            cameraForm.addEventListener('submit', function (e) {
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Adding Camera...';
+            });
         });
     </script>
 </body>
